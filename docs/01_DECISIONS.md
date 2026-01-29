@@ -7,73 +7,74 @@ Stand: 2026-01-29
 
 ## D-001 | Projektname/Überbegriff
 **Datum:** 2026-01-27  
-**Entscheidung:** Projekt/Überbegriff lautet künftig: **„LifeTimeCircle - ServiceHeft 4.0“**.  
-**Hinweis:** Alter Projektname/Pfad „Digitale-Fahrzeugzukunft“ ist obsolet; neuer Root-Pfad wird neu angelegt/definiert.
+**Entscheidung:** Projekt/Überbegriff lautet künftig: **„LifeTimeCircle - ServiceHeft 4.0“**.
 
 ## D-002 | Produkt-Titel
 **Datum:** 2026-01-27  
-**Entscheidung:** Produkt-Titel: **„Service Heft 4.0“** (statt Service Heft 2.0/ServiceF 2.0).
+**Entscheidung:** Produkt-Titel: **„Service Heft 4.0“**.
 
 ## D-003 | Branding / Schreibweise
 **Datum:** 2026-01-27  
-**Entscheidung:** Hauptbegriff/Branding: **„LifeTimeCircle“** (zusammengeschrieben, Life/Time/Circle jeweils groß).
+**Entscheidung:** Brand: **„LifeTimeCircle“** (zusammengeschrieben).
 
 ## D-004 | Anmeldung / Verifizierung
 **Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung via **E-Mail-Login** und **Verifizierung** (Code/Link) wird ergänzt/umgesetzt.
+**Entscheidung:** Anmeldung via **E-Mail-Login** und **Verifizierung** (Code/Link).
 
 ## D-005 | AGB & Datenschutz Pflicht
 **Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung nur möglich, wenn **AGB** und **Datenschutzrichtlinien** bestätigt wurden.
+**Entscheidung:** Anmeldung nur mit bestätigten **AGB** und **Datenschutz** (Version + Timestamp speichern).
 
 ## D-006 | Produktionsreife (keine Demo)
 **Datum:** 2026-01-27  
-**Entscheidung:** Oberste Prämisse: **benutzerfertig/produktionsreif** umsetzen, kein Demo-Charakter.
+**Entscheidung:** Umsetzung **produktionsreif**, kein Demo-Charakter.
 
 ## D-007 | Verkauf/Übergabe-QR & interner Verkauf eingeschränkt
 **Datum:** 2026-01-27  
-**Entscheidung:** Fahrzeugverkauf (Übergabe-QR/Code) und interner Verkauf sind **nur** für **VIP-Nutzer** und **Händler (gewerblich)** verfügbar.
+**Entscheidung:** Übergabe/Verkauf nur **VIP** und **Dealer**.
 
 ## D-008 | Public-QR Mini-Check: Ampelsystem & Bedeutung
 **Datum:** 2026-01-27  
-**Entscheidung:** Public-QR Mini-Check nutzt 4-stufige Ampel **Rot/Orange/Gelb/Grün** und bewertet **nur** Dokumentations-/Nachweisqualität, **nicht** den technischen Zustand.
+**Entscheidung:** Ampel **Rot/Orange/Gelb/Grün** bewertet **nur** Dokumentations-/Nachweisqualität (nie technischen Zustand).  
+**Pflicht-Disclaimer (Public, exakte Copy):**  
+„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
 
 ## D-009 | Public-QR Mini-Check: Kriterien
 **Datum:** 2026-01-27  
-**Entscheidung:** Kriterien für Trust-Level:
+**Entscheidung:** Kriterien:
 - Historie vorhanden
-- Verifizierungsgrad (T3/T2/T1)
+- Verifizierungsgrad (T1/T2/T3)
 - Aktualität/Regelmäßigkeit
-- Unfalltrust: Für **Grün** bei Unfall nur bei **Abschluss + Belegen**
+- Unfalltrust: **Grün** bei Unfall nur bei **Abschluss + Belegen**
 
 ## D-010 | VIP-Gewerbe Mitarbeiterplätze
 **Datum:** 2026-01-27  
-**Entscheidung:** VIP-Gewerbe: **2 Mitarbeiterplätze** möglich, müssen vom **Haupt-Admin** geprüft & freigegeben werden.
+**Entscheidung:** VIP-Gewerbe: max **2** Staff. Freigabe nur **SUPERADMIN**.
 
-## D-011 | Moderatoren: Akkreditierung & Zugriff
+## D-011 | Moderatoren: Zugriff
 **Datum:** 2026-01-27  
-**Entscheidung:** Moderatoren können akkreditiert/eingeladen und von Admin freigeschaltet werden. Zugriff **nur** auf News-Blog/Blog-Bereich, stark eingeschränkter Zugriff auf Halterdaten.
+**Entscheidung:** MODERATOR nur Blog/News; keine PII; kein Export; kein Audit.
 
 ## D-012 | Landingpage Layout-Standard
 **Datum:** 2026-01-25  
-**Entscheidung:** Landingpage: Hauptseite mit Erklärtext, obere Headerbar mit Modulen/Tools, Login (E-Mail+Passwort) mit Verifizierung seitlich links/rechts anordbar. Standard: **links**.
+**Entscheidung:** Login-Panel Default **links**.
 
 ## D-013 | Blogbase + Newsletter
 **Datum:** 2026-01-27  
-**Entscheidung:** Frontpage hat aktivierbare **Blogbase** (Admin-News) und **Newsletter** zur wechselseitigen Kommunikation.
+**Entscheidung:** Blogbase (Admin-News) + Newsletter.
 
 ## D-014 | Projekt-Kontakt-E-Mail
 **Datum:** 2026-01-27  
-**Entscheidung:** Kontakt-E-Mail: **lifetimecircle@online.de**
+**Entscheidung:** Kontakt: **lifetimecircle@online.de**
 
-## D-015 | Security-Baseline: deny-by-default + least-privilege + serverseitiges RBAC
+## D-015 | Security Baseline: deny-by-default + least privilege + serverseitiges RBAC
 **Datum:** 2026-01-29  
-**Entscheidung:** Standard ist **deny-by-default** und **least privilege**. Rollen-/Rechte werden **serverseitig** erzwungen (RBAC), UI spiegelt nur wider.
+**Entscheidung:** Standard ist **deny-by-default** und **least privilege**. Rechte werden **serverseitig** erzwungen.
 
-## D-016 | Logs/Audit/PII: Keine Secrets/keine Klartext-PII, Pseudonymisierung per HMAC
+## D-016 | Logs/Audit/PII: keine Secrets/keine Klartext-PII, Pseudonymisierung via HMAC
 **Datum:** 2026-01-29  
-**Entscheidung:** In Logs/Audit/Exports **keine Secrets** und **keine Klartext-PII**. Pseudonymisierung erfolgt via **HMAC** (kein unsalted SHA).
+**Entscheidung:** In Logs/Audit/Exports keine Secrets, keine Klartext-PII. Pseudonymisierung via **HMAC** (kein unsalted SHA).
 
 ## D-017 | Export-Regel: Standard redacted, Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung
 **Datum:** 2026-01-29  
-**Entscheidung:** Exports sind standardmäßig **redacted**. **Full Export** nur durch **SUPERADMIN** (Admin-Claim), mit **Audit**, **TTL/Limit** und **Verschlüsselung**.
+**Entscheidung:** Export default **redacted**. Full Export nur **SUPERADMIN** + **Audit** + **TTL/Limit** + **Verschlüsselung**.
