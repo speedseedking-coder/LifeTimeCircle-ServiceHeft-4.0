@@ -5,3 +5,7 @@ server/data/*.db-*
 server/data/*.db-journal
 
 *.zip
+
+.env
+.env.*
+!.env.example
