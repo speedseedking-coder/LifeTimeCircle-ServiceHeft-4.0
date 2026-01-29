@@ -3,3 +3,5 @@ __pycache__/
 server/data/*.db
 server/data/*.db-*
 server/data/*.db-journal
+
+*.zip
