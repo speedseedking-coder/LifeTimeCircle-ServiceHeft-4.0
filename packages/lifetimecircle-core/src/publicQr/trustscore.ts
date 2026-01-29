@@ -8,7 +8,7 @@
 export type TrafficLight = "rot" | "orange" | "gelb" | "gruen";
 
 /**
- * Pflicht-Disclaimer (Policy P-PUBLIC-003, exakte UI Copy):
+ * Pflicht-Disclaimer (Policy, exakte UI Copy):
  * „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität.
  *  Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
  */
@@ -77,10 +77,6 @@ export function computePublicQrTrust(snapshot: PublicQrSnapshot): PublicQrResult
   else indicators.push("accident_open_or_unproven");
 
   // Ampel-Regeln (ohne Metriken in der Ausgabe)
-  // Grün: Historie + T3/T2 + regelmäßig + (bei Unfall: abgeschlossen+Belege)
-  // Gelb: Historie vorhanden und mind. T1/T2, aber nicht alles optimal
-  // Orange: geringe Verifikation / unregelmäßig / Unfall nicht sauber
-  // Rot: keine Historie oder gravierende Lücken
   const hasGoodVerification = snapshot.verification === "t3" || snapshot.verification === "t2";
   const hasAnyVerification = snapshot.verification !== "none";
   const accidentOk = !snapshot.hasAccident || snapshot.accidentClosedWithEvidence;
@@ -93,12 +89,10 @@ export function computePublicQrTrust(snapshot: PublicQrSnapshot): PublicQrResult
     light = "gruen";
   } else if (hasAnyVerification && accidentOk) {
     light = "gelb";
-    // downgrade auf orange bei klaren Schwächen
     if (!snapshot.isRegularlyUpdated || snapshot.verification === "t1") {
       light = "orange";
     }
   } else {
-    // Unfall offen/ohne Belege => max orange (nicht gelb/grün)
     light = "orange";
   }
 

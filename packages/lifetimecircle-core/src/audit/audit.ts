@@ -2,7 +2,7 @@ import { BadRequestError } from "../errors.js";
 import type { Role } from "../rbac/roles.js";
 
 /**
- * Policy: docs/policies/AUDIT_SCOPE_AND_ENUMS.md (verbindlich)
+ * Policy-konformes Audit-Model (vereinheitlicht):
  * - Pflichtfelder + Redaction
  * - Actions / Target Types als Enums (Uppercase)
  * - Keine Secrets/OTPs/Magic-Links/Tokens/Dokumentinhalte/Klartext-PII
@@ -25,10 +25,6 @@ export const AUDIT_ACTIONS = [
   // RBAC / Governance
   "ROLE_GRANTED",
   "ROLE_REVOKED",
-  "ORG_CREATED",
-  "ORG_MEMBERSHIP_REQUESTED",
-  "ORG_MEMBERSHIP_APPROVED",
-  "ORG_MEMBERSHIP_REVOKED",
   "MODERATOR_ACCREDITED",
   "MODERATOR_REVOKED",
 
@@ -55,8 +51,6 @@ export const AUDIT_ACTIONS = [
   "VERIFICATION_SET_T2",
   "VERIFICATION_SET_T3",
   "VERIFICATION_REVOKED",
-  "T3_PARTNER_ACCREDITED",
-  "T3_PARTNER_REVOKED",
 
   // Public / Transfer / Sale
   "PUBLIC_SHARE_ENABLED",
@@ -76,8 +70,7 @@ export const AUDIT_ACTIONS = [
   // Admin Ops
   "ADMIN_STEP_UP_SUCCESS",
   "ADMIN_STEP_UP_FAILED",
-  "CONFIG_CHANGED",
-  "RETENTION_OVERRIDE_SET"
+  "CONFIG_CHANGED"
 ] as const;
 
 export type AuditAction = typeof AUDIT_ACTIONS[number];
@@ -85,7 +78,6 @@ export type AuditAction = typeof AUDIT_ACTIONS[number];
 export const TARGET_TYPES = [
   "USER",
   "ORG",
-  "ORG_MEMBERSHIP",
   "VEHICLE",
   "ENTRY",
   "ENTRY_VERSION",
@@ -95,7 +87,6 @@ export const TARGET_TYPES = [
   "HANDOVER",
   "EXPORT_JOB",
   "BLOG_POST",
-  "NEWSLETTER_SUBSCRIPTION",
   "SYSTEM_CONFIG"
 ] as const;
 
@@ -105,15 +96,17 @@ export const REASON_CODES = ["RBAC_DENY", "CONSENT_MISSING", "QUARANTINE_BLOCK",
 export type ReasonCode = typeof REASON_CODES[number];
 
 export interface AuditEvent {
-  event_id: string; // UUID
-  created_at: string; // UTC ISO
+  event_id: string;
+  created_at: string;
+
   actor_type: ActorType;
-  actor_id: string; // interne ID (kein Klartext-PII)
-  actor_role: Role; // Snapshot
+  actor_id: string;
+  actor_role: Role;
+
   action: AuditAction;
 
   target_type: TargetType;
-  target_id?: string; // intern, optional
+  target_id?: string;
 
   scope: AuditScope;
   result: AuditResult;
@@ -131,7 +124,6 @@ function isIsoDateString(s: string): boolean {
 }
 
 function isProbablyUuid(s: string): boolean {
-  // tolerant, damit ihr UUIDv4/v7 später problemlos nutzen könnt
   return typeof s === "string" && s.length >= 16 && /^[0-9a-fA-F-]+$/.test(s);
 }
 
@@ -154,12 +146,11 @@ const DISALLOWED_META_KEYS = new Set([
   "accessToken",
   "refreshToken",
   // document content hints
-  "document_name",
+  "content",
+  "body",
   "filename",
   "file_name",
-  "title",
-  "content",
-  "body"
+  "title"
 ]);
 
 function sanitizeMetadata(meta?: Record<string, unknown>): Record<string, string | number | boolean | null> | undefined {
@@ -173,11 +164,9 @@ function sanitizeMetadata(meta?: Record<string, unknown>): Record<string, string
 
     if (typeof v === "string") {
       const s = v.trim();
-      // harte Kürzung, um „versehentliche Dumps“ zu verhindern
       if (s.length === 0) continue;
       if (s.length > 120) continue;
-      // einfache Email-Erkennung blocken (anti PII)
-      if (/@/.test(s)) continue;
+      if (/@/.test(s)) continue; // simple email/PII guard
       out[k] = s;
       continue;
     }
@@ -191,7 +180,9 @@ function sanitizeMetadata(meta?: Record<string, unknown>): Record<string, string
   return Object.keys(out).length ? out : undefined;
 }
 
-export function buildAuditEvent(input: AuditEvent & { redacted_metadata?: Record<string, unknown> }): AuditEvent {
+export function buildAuditEvent(
+  input: Omit<AuditEvent, "redacted_metadata"> & { redacted_metadata?: Record<string, unknown> }
+): AuditEvent {
   if (!isProbablyUuid(input.event_id)) throw new BadRequestError("AuditEvent.event_id ungültig.");
   if (!isIsoDateString(input.created_at)) throw new BadRequestError("AuditEvent.created_at ungültig.");
 
@@ -224,6 +215,7 @@ export function buildAuditEvent(input: AuditEvent & { redacted_metadata?: Record
     request_id: input.request_id
   };
 
+  // optional keys nur setzen, wenn vorhanden (exactOptionalPropertyTypes)
   if (input.target_id) e.target_id = input.target_id;
   if (input.correlation_id) e.correlation_id = input.correlation_id;
   if (input.reason_code) e.reason_code = input.reason_code;
