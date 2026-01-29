@@ -1,122 +1,170 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\02\_BACKLOG.md
-
-\# LifeTimeCircle – Service Heft 4.0 · Backlog (priorisiert)
-
-
-
-Version: 2026-03 | Last-Update: YYYY-MM-DD
-
-
-
-\## EPIC A — Docs/Grundlagen
-
-\- A1: Docs-Struktur final (00\_INDEX, policies, architecture/security/legal)
-
-&nbsp; AC: Alle Links in `docs/00\_INDEX.md` funktionieren, keine doppelten Wahrheiten.
-
-\- A2: Rollenliste final + Benennung
-
-&nbsp; AC: Rollen/Scopes in `docs/policies/ROLES\_AND\_PERMISSIONS.md` sind konsistent.
-
-\- A3: Routine/Archive bereinigen
-
-&nbsp; AC: Keine Altversionen im SoT-Pfad, die Policy-Drift verursachen.
-
-
-
-\## EPIC B — Auth \& Consent (Pflicht)
-
-\- B1: Auth Request (E-Mail)
-
-&nbsp; AC: Response ist anti-enumeration; Rate-Limits aktiv; OTP gespeichert (TTL).
-
-\- B2: Auth Verify (OTP/Link)
-
-&nbsp; AC: One-time; TTL enforced; Audit-Event; Session/JWT ausgestellt.
-
-\- B3: Consent Gate
-
-&nbsp; AC: Ohne AGB+DS kein Zugriff; Consent Version+Timestamp gespeichert.
-
-
-
-\## EPIC C — RBAC \& Audit (Pflicht)
-
-\- C1: RBAC Middleware/Dependency
-
-&nbsp; AC: deny-by-default; Rollen/Scopes serverseitig enforced; Tests vorhanden.
-
-\- C2: AuditLog Basis
-
-&nbsp; AC: Login/Verify/Consent/RoleChange/Transfer/Export werden als Events protokolliert.
-
-
-
-\## EPIC D — Service Heft Core
-
-\- D1: Vehicle Entity + QR-ID
-
-&nbsp; AC: Fahrzeug anlegen; QR-Token generiert; Zugriff nur berechtigt.
-
-\- D2: ServiceEntry + Evidence (T1/T2/T3)
-
-&nbsp; AC: Einträge + Nachweise verknüpfbar; Verifizierungsgrad speicherbar; kein Public-Leak.
-
-\- D3: VIP-Bilder (optional im MVP)
-
-&nbsp; AC: Nicht-VIP sieht keine Bildansicht/Downloads.
-
-
-
-\## EPIC E — Public-QR Trustscore (Pflicht)
-
-\- E1: Trustscore Engine (intern)
-
-&nbsp; AC: Ampel Rot/Orange/Gelb/Grün aus Kriterien; Unfalltrust Regel umgesetzt.
-
-\- E2: Public-Endpoint/View
-
-&nbsp; AC: Keine Metrics/Counts/Percentages/Zeiträume; Disclaimer Pflicht; keine PII.
-
-
-
-\## EPIC F — VIP/Dealer Transfer
-
-\- F1: Übergabe-QR / Transfer Flow
-
-&nbsp; AC: Nur VIP/DEALER; Audit Pflicht; Tokens TTL; Replays verhindert.
-
-\- F2: VIP-Gewerbe Staff (max 2)
-
-&nbsp; AC: Provisionierung nur admin; Limit enforced; Audit Pflicht.
-
-
-
-\## EPIC G — Blog/News + Newsletter
-
-\- G1: Blog/News CRUD
-
-&nbsp; AC: Admin write; Moderator write nur Blog/News; keine PII/Exports.
-
-\- G2: Newsletter Dispatch (Queue/Log)
-
-&nbsp; AC: Admin kann Dispatch auslösen; Log/Audit; später SMTP.
-
-
-
-\## EPIC H — Uploads/Exports/Hardening
-
-\- H1: Upload Pipeline
-
-&nbsp; AC: Allowlist + Quarantine; Scan/Approval; niemals public.
-
-\- H2: Export Policy
-
-&nbsp; AC: Redacted default; Full export nur admin + Audit + TTL/Limit + Encryption.
-
-\- H3: Security Baseline
-
-&nbsp; AC: Secrets nie im Log; HMAC Pseudonymisierung; Rate-Limits; Tests/Checkliste.
-
-
-
+# LifeTimeCircle – Service Heft 4.0
+**Product Backlog (Epics / Stories / Tasks)**  
+Stand: 2026-01-29
+
+Legende:
+- **Prio:** P0 (kritisch) / P1 / P2
+- **Status:** Idea / Planned / In Progress / Blocked / Done
+
+Definition of Done (kurz):
+- Feature ist rollenbasiert abgesichert (RBAC) + UI spiegelt Rechte korrekt.
+- Fehler-/Edge-Cases geprüft (mind. Happy Path + 2 Negativfälle).
+- Minimaler Audit-Log, wo es sicherheitsrelevant ist (Rollen, Übergaben, Verifizierung).
+- Public-QR zeigt **keine Metriken/Counts/Percentages/Zeiträume** und enthält **Disclaimer**.
+
+## EPIC-01 | Fundament: Projektstruktur & Branding
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] A1: Neuer Root-Pfad/Repo-Struktur für „LifeTimeCircle - ServiceHeft 4.0“ festlegen (Alt: Digitale-Fahrzeugzukunft obsolet)
+- [ ] A2: Branding-Texte vereinheitlichen (LifeTimeCircle / Service Heft 4.0) über UI/Docs
+- [ ] A3: Kontakt-E-Mail in Footer/Impressum/Contact integrieren: lifetimecircle@online.de
+
+**Akzeptanz:**
+- Alle Seiten/Module zeigen korrektes Naming, keine „2.0“-Reste.
+
+## EPIC-02 | Auth: Login + Verifizierung + Consent
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] B1: Registrierung/Login per E-Mail (Basis)
+- [ ] B2: Verifizierung (Code **oder** Magic-Link) implementieren
+- [ ] B3: Pflicht-Checkboxen: AGB + Datenschutz (ohne Zustimmung kein Account)
+- [ ] B4: Passwort-Reset / Account-Recovery (minimal, aber produktionsfähig)
+- [ ] B5: Session/Token-Handling + Logout
+- [ ] B6: Anti-Enumeration + Rate-Limits + TTL für Codes/Links
+
+**Akzeptanz:**
+- Ohne bestätigte AGB/Datenschutz keine Registrierung.
+- Konto ohne Verifizierung hat keinen produktiven Zugriff.
+
+## EPIC-03 | Rollen & Rechte (RBAC)
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] C1: Rollenmodell: public/user/vip/dealer/moderator/admin
+- [ ] C2: Rechte-Matrix technisch abbilden (serverseitige Policy; deny-by-default)
+- [ ] C3: Sonderregel: Verkauf/Übergabe-QR nur VIP+Dealer
+- [ ] C4: VIP-Gewerbe: 2 Mitarbeiterplätze + Admin-Freigabe-Workflow
+- [ ] C5: Moderator: nur News/Blog; Halterdaten strikt begrenzen
+- [ ] C6: SUPERADMIN-Claim für Hochrisiko-Operationen (Full Export, Freigaben)
+
+**Akzeptanz:**
+- Rechte sind technisch erzwungen (API), UI spiegelt Rechte.
+
+## EPIC-04 | Admin-Bereich (Minimal)
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] D1: Admin Dashboard (Userliste, Rollen setzen)
+- [ ] D2: Einladungs-/Akkreditierungsflow für Moderatoren
+- [ ] D3: Freigabe-Flow für VIP-Gewerbe Mitarbeiterplätze (2 Plätze)
+- [ ] D4: Audit-Log (wer hat welche Rolle wann gesetzt)
+- [ ] D5: Sperren/Entsperren (minimal, aber sicher)
+
+**Akzeptanz:**
+- Admin kann alle „Freischaltungen“ ohne Handarbeit im Code erledigen.
+
+## EPIC-05 | Service Heft 4.0 Kern: Fahrzeug & Einträge
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] E1: Fahrzeug anlegen/suchen (VIN/WID; Felddefinitionen festlegen)
+- [ ] E2: Fahrzeugprofil-Ansicht (Basisdaten, Timeline)
+- [ ] E3: Eintragsarten: Service/Wartung/Reparatur/Umbau/Unfall/Prüfung
+- [ ] E4: Dokumente/Nachweise (Upload, Metadaten, Sichtbarkeit)
+- [ ] E5: Verifizierungsstufen T1/T2/T3 definieren & speichern
+- [ ] E6: Änderungs-/Versionshistorie pro Eintrag (mind. wer/was/wann)
+- [ ] E7: Soft-Delete Strategie (Einträge/Dokumente) + Restore (Admin)
+
+**Akzeptanz:**
+- Einträge sind strukturiert, nachvollziehbar und versioniert.
+
+## EPIC-06 | Public-QR Mini-Check (Trust Ampel)
+**Prio:** P1 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] F1: Public-View via QR-Link (anonyme Ansicht)
+- [ ] F2: Trust-Level Ampel (Rot/Orange/Gelb/Grün) berechnen
+- [ ] F3: Kriterien implementieren:
+  - Historie vorhanden
+  - Verifizierungsgrad T1/T2/T3
+  - Aktualität/Regelmäßigkeit
+  - Unfalltrust: Grün nur bei Abschluss + Belegen
+- [ ] F4: „Disclaimer“: bewertet Dokumentationsqualität, **nicht** technischen Zustand
+- [ ] F5: Public Response ohne Metriken/Counts/Percentages/Zeiträume (nur Indikator-Codes)
+
+**Akzeptanz:**
+- Public sieht klar: „Dokumentations-Trust“ + Begründungsindikatoren + Disclaimer.
+
+## EPIC-07 | Blogbase (Admin) + Newsletter
+**Prio:** P1 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] G1: Blogbase aktivierbar auf Frontpage (Admin schreibt)
+- [ ] G2: Newsletter-Listenverwaltung (Opt-in/Opt-out)
+- [ ] G3: Versand-Workflow (z. B. Admin erstellt Post → optional Newsletter)
+- [ ] G4: Moderator UI: nur Blog/News verwalten
+
+**Akzeptanz:**
+- Admin kann News posten und optional als Newsletter versenden.
+
+## EPIC-08 | Security/Privacy Baseline (Logs/Audit/Export)
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] H1: Audit-Events für sicherheitsrelevante Aktionen (Rollen, Verifizierung, Übergabe/Verkauf, Exports)
+- [ ] H2: Pseudonymisierung via HMAC (keine Klartext-PII in Logs/Audit)
+- [ ] H3: Log-Sanitizer: Secrets/PII-Klassen blocken (deny-by-default)
+- [ ] H4: Export: Default **redacted** (Standard)
+- [ ] H5: Full Export: nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung
+- [ ] H6: Upload/Download: Zugriff via RBAC, niemals „public files“
+
+**Akzeptanz:**
+- Audit/Logs sind PII-sicher; Exports regelkonform.
+
+## EPIC-09 | Uploads: Allowlist + Limits + Quarantine-by-default
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] I1: Upload-Allowlist (PDF/JPG/PNG) + Größenlimits + Anzahllimits
+- [ ] I2: Quarantine-by-default + Scan/Approval Flag (Admin oder automatisiert)
+- [ ] I3: Metadaten (Typ, Datum, Quelle, T-Level) + Sichtbarkeitsregeln
+- [ ] I4: Secure Storage Pfadmodell (kein guessable public path)
+
+**Akzeptanz:**
+- Uploads sind standardmäßig quarantined und nicht öffentlich.
+
+## EPIC-10 | Export/Import (redacted & full)
+**Prio:** P1 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] J1: Redacted Export (PDF/JSON) für User/VIP/Dealer (ohne Klartext-PII)
+- [ ] J2: Full Export nur SUPERADMIN (Audit + TTL/Limit + Verschlüsselung)
+- [ ] J3: Export-Audit-Übersicht (Admin)
+- [ ] J4: Import (minimal) mit Identitäts-/Integritätscheck + Audit
+
+**Akzeptanz:**
+- Export/Import ist regelkonform und auditierbar.
+
+## EPIC-11 | Observability (minimal, produktionsfähig)
+**Prio:** P1 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] K1: Health-Checks (API/DB/Storage)
+- [ ] K2: Request-ID/Korrelation (ohne PII)
+- [ ] K3: Security Alerts (Rate-Limit Triggers, verdächtige Login-Versuche)
+
+**Akzeptanz:**
+- Betrieb ist nachvollziehbar ohne PII-Leak.
+
+## EPIC-12 | Tech-Stack & Deployment-Entscheidung
+**Prio:** P0 | **Status:** Planned
+
+### Stories / Tasks
+- [ ] L1: Tech-Stack festlegen (Frontend/Backend/DB/Hosting)
+- [ ] L2: Environments (dev/stage/prod) + Secrets-Management + Migrations
+- [ ] L3: CI Minimal (Lint/Build/Test)
+
+**Akzeptanz:**
+- Stack ist entschieden und reproduzierbar deploybar.

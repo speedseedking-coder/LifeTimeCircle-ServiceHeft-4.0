@@ -1,140 +1,79 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\01\_DECISIONS.md
-
-\# LifeTimeCircle – Service Heft 4.0
-
-Version: 2026-03 | Last-Update: YYYY-MM-DD
-
-
-
-\*\*Decisions Log (verbindliche Entscheidungen)\*\*
-
-
+# LifeTimeCircle – Service Heft 4.0
+**Decisions Log (verbindliche Entscheidungen)**  
+Stand: 2026-01-29
 
 > Regel: Nur Dinge, die wirklich entschieden sind, kommen hier rein.  
-
 > Alles andere gehört in Backlog/Offen.
 
-
-
-\## D-001 | Projektname/Überbegriff
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Projekt/Überbegriff lautet künftig: \*\*„LifeTimeCircle - ServiceHeft 4.0“\*\*.  
-
-\*\*Begründung:\*\* Einheitliche Kommunikation und klare Dachmarke.
-
-
-
-\## D-002 | Projekt-Titel / Produktname
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Produkt-Titel künftig: \*\*„Service Heft 4.0“\*\* (statt 2.0).  
-
-\*\*Begründung:\*\* Versionssprung und Rebranding.
-
-
-
-\## D-003 | Branding-Schreibweise
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Brand/Schreibweise: \*\*„LifeTimeCircle“\*\* (zusammengeschrieben, Life/Time/Circle groß).  
-
-\*\*Begründung:\*\* Konsistenz.
-
-
-
-\## D-004 | Anmeldung/Verifizierung
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Anmeldung erfolgt via \*\*E-Mail-Login mit Verifizierung\*\* (Code/Link).  
-
-\*\*Begründung:\*\* Sicherheit + einfache UX.
-
-
-
-\## D-005 | AGB/Datenschutz Pflicht
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Registrierung/Anmeldung nur gültig, wenn \*\*AGB \& Datenschutz\*\* bestätigt wurden.  
-
-\*\*Begründung:\*\* Compliance.
-
-
-
-\## D-006 | Kein Demo-Charakter
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Plattform ist \*\*produktionsreif\*\* zu planen/umzusetzen, keine Demo.  
-
-\*\*Begründung:\*\* Qualitäts- und Sicherheitsanspruch.
-
-
-
-\## D-007 | Verkauf/Übergabe Einschränkung
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Fahrzeugverkauf (Übergabe-QR/Code) \& interner Verkauf nur für \*\*VIP\*\* und \*\*Händler (gewerblich)\*\*.  
-
-\*\*Begründung:\*\* Missbrauchsschutz + Premium-Feature.
-
-
-
-\## D-008 | Public-QR Mini-Check: Trust-Ampel
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Public-QR Mini-Check hat \*\*Ampel mit 4 Stufen (Rot/Orange/Gelb/Grün)\*\* und bewertet \*\*nur Dokumentations-/Nachweisqualität\*\*, nicht technischen Zustand.  
-
-\*\*Kriterien:\*\* Historie vorhanden; Verifizierungsgrad (T3/T2/T1); Aktualität/Regelmäßigkeit; Unfalltrust (Grün bei Unfall nur bei Abschluss + Belegen).  
-
-\*\*Begründung:\*\* Klare Erwartungssteuerung, rechtssicherer Vertrauensindikator.
-
-
-
-\## D-009 | VIP-Gewerbe: Mitarbeiterplätze
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* VIP-Gewerbe: \*\*2 Mitarbeiterplätze\*\* möglich, müssen vom \*\*admin (SUPERADMIN)\*\* geprüft/freigegeben werden.  
-
-\*\*Begründung:\*\* Kontrolle \& Auditierbarkeit.
-
-
-
-\## D-010 | Moderatoren: Scope strikt begrenzt
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Moderatoren können akkreditiert und vom admin freigeschaltet werden; Zugriff strikt auf \*\*News/Blog\*\*; \*\*kein Zugriff auf Halterdaten\*\* (nur minimal notwendige Meta).  
-
-\*\*Begründung:\*\* Datenschutz/Need-to-know.
-
-
-
-\## D-011 | Frontpage/Blogbase/Newsletter
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Frontpage enthält Erklärtext + Zutritt/Login; Blogbase für News (admin) ist vorgesehen; Newsletter als Kontaktkanal berücksichtigen.  
-
-\*\*Begründung:\*\* Kommunikation + Produktupdates.
-
-
-
-\## D-012 | Projekt-Kontakt
-
-\*\*Datum:\*\* 2026-01-27  
-
-\*\*Entscheidung:\*\* Projekt-Kontakt-E-Mail: \*\*lifetimecircle@online.de\*\*.  
-
-\*\*Begründung:\*\* Einheitliche Kontaktadresse.
-
-
-
+## D-001 | Projektname/Überbegriff
+**Datum:** 2026-01-27  
+**Entscheidung:** Projekt/Überbegriff lautet künftig: **„LifeTimeCircle - ServiceHeft 4.0“**.  
+**Hinweis:** Alter Projektname/Pfad „Digitale-Fahrzeugzukunft“ ist obsolet; neuer Root-Pfad wird neu angelegt/definiert.
+
+## D-002 | Produkt-Titel
+**Datum:** 2026-01-27  
+**Entscheidung:** Produkt-Titel: **„Service Heft 4.0“** (statt Service Heft 2.0/ServiceF 2.0).
+
+## D-003 | Branding / Schreibweise
+**Datum:** 2026-01-27  
+**Entscheidung:** Hauptbegriff/Branding: **„LifeTimeCircle“** (zusammengeschrieben, Life/Time/Circle jeweils groß).
+
+## D-004 | Anmeldung / Verifizierung
+**Datum:** 2026-01-27  
+**Entscheidung:** Anmeldung via **E-Mail-Login** und **Verifizierung** (Code/Link) wird ergänzt/umgesetzt.
+
+## D-005 | AGB & Datenschutz Pflicht
+**Datum:** 2026-01-27  
+**Entscheidung:** Anmeldung nur möglich, wenn **AGB** und **Datenschutzrichtlinien** bestätigt wurden.
+
+## D-006 | Produktionsreife (keine Demo)
+**Datum:** 2026-01-27  
+**Entscheidung:** Oberste Prämisse: **benutzerfertig/produktionsreif** umsetzen, kein Demo-Charakter.
+
+## D-007 | Verkauf/Übergabe-QR & interner Verkauf eingeschränkt
+**Datum:** 2026-01-27  
+**Entscheidung:** Fahrzeugverkauf (Übergabe-QR/Code) und interner Verkauf sind **nur** für **VIP-Nutzer** und **Händler (gewerblich)** verfügbar.
+
+## D-008 | Public-QR Mini-Check: Ampelsystem & Bedeutung
+**Datum:** 2026-01-27  
+**Entscheidung:** Public-QR Mini-Check nutzt 4-stufige Ampel **Rot/Orange/Gelb/Grün** und bewertet **nur** Dokumentations-/Nachweisqualität, **nicht** den technischen Zustand.
+
+## D-009 | Public-QR Mini-Check: Kriterien
+**Datum:** 2026-01-27  
+**Entscheidung:** Kriterien für Trust-Level:
+- Historie vorhanden
+- Verifizierungsgrad (T3/T2/T1)
+- Aktualität/Regelmäßigkeit
+- Unfalltrust: Für **Grün** bei Unfall nur bei **Abschluss + Belegen**
+
+## D-010 | VIP-Gewerbe Mitarbeiterplätze
+**Datum:** 2026-01-27  
+**Entscheidung:** VIP-Gewerbe: **2 Mitarbeiterplätze** möglich, müssen vom **Haupt-Admin** geprüft & freigegeben werden.
+
+## D-011 | Moderatoren: Akkreditierung & Zugriff
+**Datum:** 2026-01-27  
+**Entscheidung:** Moderatoren können akkreditiert/eingeladen und von Admin freigeschaltet werden. Zugriff **nur** auf News-Blog/Blog-Bereich, stark eingeschränkter Zugriff auf Halterdaten.
+
+## D-012 | Landingpage Layout-Standard
+**Datum:** 2026-01-25  
+**Entscheidung:** Landingpage: Hauptseite mit Erklärtext, obere Headerbar mit Modulen/Tools, Login (E-Mail+Passwort) mit Verifizierung seitlich links/rechts anordbar. Standard: **links**.
+
+## D-013 | Blogbase + Newsletter
+**Datum:** 2026-01-27  
+**Entscheidung:** Frontpage hat aktivierbare **Blogbase** (Admin-News) und **Newsletter** zur wechselseitigen Kommunikation.
+
+## D-014 | Projekt-Kontakt-E-Mail
+**Datum:** 2026-01-27  
+**Entscheidung:** Kontakt-E-Mail: **lifetimecircle@online.de**
+
+## D-015 | Security-Baseline: deny-by-default + least-privilege + serverseitiges RBAC
+**Datum:** 2026-01-29  
+**Entscheidung:** Standard ist **deny-by-default** und **least privilege**. Rollen-/Rechte werden **serverseitig** erzwungen (RBAC), UI spiegelt nur wider.
+
+## D-016 | Logs/Audit/PII: Keine Secrets/keine Klartext-PII, Pseudonymisierung per HMAC
+**Datum:** 2026-01-29  
+**Entscheidung:** In Logs/Audit/Exports **keine Secrets** und **keine Klartext-PII**. Pseudonymisierung erfolgt via **HMAC** (kein unsalted SHA).
+
+## D-017 | Export-Regel: Standard redacted, Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung
+**Datum:** 2026-01-29  
+**Entscheidung:** Exports sind standardmäßig **redacted**. **Full Export** nur durch **SUPERADMIN** (Admin-Claim), mit **Audit**, **TTL/Limit** und **Verschlüsselung**.
