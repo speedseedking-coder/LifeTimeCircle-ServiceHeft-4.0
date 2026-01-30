@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 import json
 import sqlite3
 import uuid
@@ -17,7 +15,8 @@ from app.auth.settings import load_settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin"}
+# Wichtig: SUPERADMIN existiert als Rolle (für High-Risk-Gates)
+ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin", "superadmin"}
 
 
 def _utc_now_iso() -> str:
@@ -53,9 +52,7 @@ def _ensure_auth_audit_table(conn: sqlite3.Connection) -> None:
         );
         """
     )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_auth_audit_at ON auth_audit_events(at);"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_auth_audit_at ON auth_audit_events(at);")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_auth_audit_target ON auth_audit_events(target_user_id);"
     )
@@ -135,6 +132,78 @@ def _best_effort_insert_into_audit_events(conn: sqlite3.Connection, payload: Dic
     )
 
 
+def _audit(
+    conn: sqlite3.Connection,
+    *,
+    action: str,
+    actor_user_id: str,
+    target_user_id: str,
+    details: Dict[str, Any],
+) -> None:
+    """
+    Audit ohne Klartext-PII. Keine Secrets.
+    """
+    _ensure_auth_audit_table(conn)
+    payload = {
+        "event_id": str(uuid.uuid4()),
+        "at": _utc_now_iso(),
+        "action": action,
+        "result": "success",
+        "actor_user_id": actor_user_id,
+        "target_user_id": target_user_id,
+        "details_json": json.dumps(details, ensure_ascii=False, separators=(",", ":")),
+    }
+
+    conn.execute(
+        """
+        INSERT INTO auth_audit_events(event_id, at, action, result, actor_user_id, target_user_id, details_json)
+        VALUES(?, ?, ?, ?, ?, ?, ?);
+        """,
+        (
+            payload["event_id"],
+            payload["at"],
+            payload["action"],
+            payload["result"],
+            payload["actor_user_id"],
+            payload["target_user_id"],
+            payload["details_json"],
+        ),
+    )
+
+    try:
+        _best_effort_insert_into_audit_events(conn, payload)
+    except Exception:
+        # Audit darf Admin-Action nicht killen
+        pass
+
+
+def _ensure_vip_business_tables(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS vip_businesses (
+            business_id TEXT PRIMARY KEY,
+            owner_user_id TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            approved_at TEXT,
+            approved_by_user_id TEXT
+        );
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS vip_business_staff (
+            business_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (business_id, user_id),
+            FOREIGN KEY (business_id) REFERENCES vip_businesses(business_id) ON DELETE CASCADE
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_vip_business_owner ON vip_businesses(owner_user_id);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_vip_staff_business ON vip_business_staff(business_id);")
+
+
 class RoleSetRequest(BaseModel):
     role: str = Field(..., min_length=1, max_length=32)
     reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
@@ -142,6 +211,34 @@ class RoleSetRequest(BaseModel):
 
 class ModeratorAccreditRequest(BaseModel):
     reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
+
+
+class VipBusinessCreateRequest(BaseModel):
+    owner_user_id: str = Field(..., min_length=8, max_length=64)
+    # optional, falls du eine externe Business-ID hast
+    business_id: Optional[str] = Field(default=None, min_length=8, max_length=64)
+    reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
+
+
+class VipBusinessResponse(BaseModel):
+    ok: bool
+    business_id: str
+    owner_user_id: str
+    approved: bool
+    created_at: str
+    approved_at: Optional[str] = None
+    approved_by_user_id: Optional[str] = None
+
+
+class VipBusinessStaffAddRequest(BaseModel):
+    reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
+
+
+class VipBusinessStaffAddResponse(BaseModel):
+    ok: bool
+    business_id: str
+    user_id: str
+    at: str
 
 
 class RoleSetResponse(BaseModel):
@@ -187,46 +284,17 @@ def _apply_role_change(
         (new_role, user_id),
     )
 
-    # Audit (minimal + ohne PII / kein Freitext)
-    _ensure_auth_audit_table(conn)
-    event_id = str(uuid.uuid4())
-    details = {
-        "old_role": old_role,
-        "new_role": new_role,
-        "reason_provided": bool(reason_provided),
-    }
-    payload = {
-        "event_id": event_id,
-        "at": now_iso,
-        "action": action,
-        "result": "success",
-        "actor_user_id": actor.user_id,
-        "target_user_id": user_id,
-        "details_json": json.dumps(details, ensure_ascii=False, separators=(",", ":")),
-    }
-
-    conn.execute(
-        """
-        INSERT INTO auth_audit_events(event_id, at, action, result, actor_user_id, target_user_id, details_json)
-        VALUES(?, ?, ?, ?, ?, ?, ?);
-        """,
-        (
-            payload["event_id"],
-            payload["at"],
-            payload["action"],
-            payload["result"],
-            payload["actor_user_id"],
-            payload["target_user_id"],
-            payload["details_json"],
-        ),
+    _audit(
+        conn,
+        action=action,
+        actor_user_id=actor.user_id,
+        target_user_id=user_id,
+        details={
+            "old_role": old_role,
+            "new_role": new_role,
+            "reason_provided": bool(reason_provided),
+        },
     )
-
-    # Optional: best-effort in bestehendes audit_events Schema, falls vorhanden
-    try:
-        _best_effort_insert_into_audit_events(conn, payload)
-    except Exception:
-        # Audit darf Admin-Action nicht killen, aber auth_audit_events ist bereits geschrieben.
-        pass
 
     return RoleSetResponse(
         ok=True,
@@ -238,7 +306,7 @@ def _apply_role_change(
 
 
 @router.get("/users", response_model=List[AdminUserRow])
-def admin_list_users(_: AuthContext = Depends(require_roles("admin"))):
+def admin_list_users(_: AuthContext = Depends(require_roles("admin", "superadmin"))):
     """
     Minimaler Admin-Überblick: keine Klartext-PII, nur user_id/role/created_at.
     """
@@ -256,14 +324,15 @@ def admin_list_users(_: AuthContext = Depends(require_roles("admin"))):
 def admin_set_user_role(
     user_id: str,
     body: RoleSetRequest,
-    actor: AuthContext = Depends(require_roles("admin")),
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     new_role = (body.role or "").strip().lower()
     if new_role not in ALLOWED_ROLES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="invalid_role",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_role")
+
+    # SUPERADMIN darf nur von SUPERADMIN vergeben werden
+    if new_role == "superadmin" and actor.role != "superadmin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="superadmin_required")
 
     settings = load_settings()
     with _connect(settings.db_path) as conn:
@@ -281,12 +350,12 @@ def admin_set_user_role(
 def admin_accredit_moderator(
     user_id: str,
     body: ModeratorAccreditRequest,
-    actor: AuthContext = Depends(require_roles("admin")),
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     """
     Komfort-Endpoint: Moderator akkreditieren (setzt Rolle auf 'moderator').
 
-    - serverseitig RBAC: nur admin
+    - serverseitig RBAC: admin/superadmin
     - Audit ohne Freitext/PII (reason_provided bool)
     """
     settings = load_settings()
@@ -299,3 +368,188 @@ def admin_accredit_moderator(
             action="ADMIN_MODERATOR_ACCREDIT",
             reason_provided=bool(body.reason),
         )
+
+
+@router.post("/vip-businesses", response_model=VipBusinessResponse)
+def admin_create_vip_business(
+    body: VipBusinessCreateRequest,
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
+):
+    """
+    VIP-Gewerbe anlegen (Request). Freigabe (approve) nur SUPERADMIN.
+    """
+    settings = load_settings()
+    now = _utc_now_iso()
+    business_id = (body.business_id or str(uuid.uuid4())).strip()
+
+    with _connect(settings.db_path) as conn:
+        _ensure_vip_business_tables(conn)
+
+        # Insert (idempotent-ish): wenn exists, liefere bestehenden Zustand zurück
+        existing = conn.execute(
+            "SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id FROM vip_businesses WHERE business_id=? LIMIT 1;",
+            (business_id,),
+        ).fetchone()
+        if existing is None:
+            conn.execute(
+                """
+                INSERT INTO vip_businesses(business_id, owner_user_id, created_at, approved_at, approved_by_user_id)
+                VALUES(?, ?, ?, NULL, NULL);
+                """,
+                (business_id, body.owner_user_id, now),
+            )
+            _audit(
+                conn,
+                action="VIP_BUSINESS_CREATED",
+                actor_user_id=actor.user_id,
+                target_user_id=body.owner_user_id,
+                details={
+                    "business_id": business_id,
+                    "owner_user_id": body.owner_user_id,
+                    "reason_provided": bool(body.reason),
+                },
+            )
+            approved_at = None
+            approved_by = None
+            created_at = now
+            owner_user_id = body.owner_user_id
+        else:
+            owner_user_id = existing["owner_user_id"]
+            created_at = existing["created_at"]
+            approved_at = existing["approved_at"]
+            approved_by = existing["approved_by_user_id"]
+
+        return VipBusinessResponse(
+            ok=True,
+            business_id=business_id,
+            owner_user_id=owner_user_id,
+            approved=bool(approved_at),
+            created_at=created_at,
+            approved_at=approved_at,
+            approved_by_user_id=approved_by,
+        )
+
+
+@router.post("/vip-businesses/{business_id}/approve", response_model=VipBusinessResponse)
+def superadmin_approve_vip_business(
+    business_id: str,
+    actor: AuthContext = Depends(require_roles("superadmin")),
+):
+    """
+    Freigabe nur SUPERADMIN.
+    """
+    settings = load_settings()
+    now = _utc_now_iso()
+
+    with _connect(settings.db_path) as conn:
+        _ensure_vip_business_tables(conn)
+
+        row = conn.execute(
+            "SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id FROM vip_businesses WHERE business_id=? LIMIT 1;",
+            (business_id,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="business_not_found")
+
+        # Set approve (idempotent)
+        conn.execute(
+            """
+            UPDATE vip_businesses
+            SET approved_at=COALESCE(approved_at, ?),
+                approved_by_user_id=COALESCE(approved_by_user_id, ?)
+            WHERE business_id=?;
+            """,
+            (now, actor.user_id, business_id),
+        )
+
+        # Audit (minimal)
+        _audit(
+            conn,
+            action="VIP_BUSINESS_APPROVED",
+            actor_user_id=actor.user_id,
+            target_user_id=row["owner_user_id"],
+            details={"business_id": business_id},
+        )
+
+        row2 = conn.execute(
+            "SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id FROM vip_businesses WHERE business_id=? LIMIT 1;",
+            (business_id,),
+        ).fetchone()
+
+        return VipBusinessResponse(
+            ok=True,
+            business_id=row2["business_id"],
+            owner_user_id=row2["owner_user_id"],
+            approved=bool(row2["approved_at"]),
+            created_at=row2["created_at"],
+            approved_at=row2["approved_at"],
+            approved_by_user_id=row2["approved_by_user_id"],
+        )
+
+
+@router.post("/vip-businesses/{business_id}/staff/{user_id}", response_model=VipBusinessStaffAddResponse)
+def superadmin_add_vip_business_staff(
+    business_id: str,
+    user_id: str,
+    body: VipBusinessStaffAddRequest,
+    actor: AuthContext = Depends(require_roles("superadmin")),
+):
+    """
+    VIP-Gewerbe Staff hinzufügen:
+    - nur SUPERADMIN
+    - nur wenn Business freigegeben
+    - max. 2 Staff (hart enforced)
+    """
+    settings = load_settings()
+    now = _utc_now_iso()
+
+    with _connect(settings.db_path) as conn:
+        _ensure_vip_business_tables(conn)
+
+        biz = conn.execute(
+            "SELECT business_id, owner_user_id, approved_at FROM vip_businesses WHERE business_id=? LIMIT 1;",
+            (business_id,),
+        ).fetchone()
+        if biz is None:
+            raise HTTPException(status_code=404, detail="business_not_found")
+        if not biz["approved_at"]:
+            raise HTTPException(status_code=400, detail="business_not_approved")
+
+        # bereits Staff? -> idempotent OK
+        existing = conn.execute(
+            "SELECT 1 FROM vip_business_staff WHERE business_id=? AND user_id=? LIMIT 1;",
+            (business_id, user_id),
+        ).fetchone()
+        if existing is not None:
+            _audit(
+                conn,
+                action="VIP_BUSINESS_STAFF_ADD_NOOP",
+                actor_user_id=actor.user_id,
+                target_user_id=user_id,
+                details={"business_id": business_id, "reason_provided": bool(body.reason)},
+            )
+            return VipBusinessStaffAddResponse(ok=True, business_id=business_id, user_id=user_id, at=now)
+
+        # Limit prüfen (max 2 Staff)
+        cnt = conn.execute(
+            "SELECT COUNT(1) AS c FROM vip_business_staff WHERE business_id=?;",
+            (business_id,),
+        ).fetchone()["c"]
+        if int(cnt) >= 2:
+            # keine Zahlen in Fehltexten nötig
+            raise HTTPException(status_code=409, detail="staff_limit_reached")
+
+        conn.execute(
+            "INSERT INTO vip_business_staff(business_id, user_id, created_at) VALUES(?, ?, ?);",
+            (business_id, user_id, now),
+        )
+
+        _audit(
+            conn,
+            action="VIP_BUSINESS_STAFF_ADDED",
+            actor_user_id=actor.user_id,
+            target_user_id=user_id,
+            details={"business_id": business_id, "reason_provided": bool(body.reason)},
+        )
+
+        return VipBusinessStaffAddResponse(ok=True, business_id=business_id, user_id=user_id, at=now)
