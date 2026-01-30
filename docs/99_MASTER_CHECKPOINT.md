@@ -1,5 +1,15 @@
 # 99_MASTER_CHECKPOINT — LifeTimeCircle / Service Heft 4.0
 
+Datum/Zeit 2026-01-31 00:xx — Checkpoint: export_servicebook + multitable export_store (40/40 tests green)
+
+Headline „Checkpoint …“
+
+Kurzliste: Export Servicebook hinzugefügt, export_store multitable v2, Tests grün (40)
+
+
+
+
+
 Stand: 2026-01-30 (Europe/Berlin)  
 Ziel: produktionsreif (keine Demo), stabiler MVP → danach Ausbau  
 Kontakt: lifetimecircle@online.de  
