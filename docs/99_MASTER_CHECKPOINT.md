@@ -297,24 +297,34 @@ Typischer Fehler:
 Ziel (Policy-konform):
 
 - Default: **redacted**
-- Full: **nur SUPERADMIN** + **TTL/Limit** + **Verschlüsselung** + **Audit** (ohne Klartext-PII)
+- Full: **nur SUPERADMIN** + **TTL/Limit** + **Verschlüsselung** + **Audit** (ohne Klartext-PII, ohne Tokens)
 
-Implementiert:
+Implementiert: **Vehicle Export**
 
-- `GET /export/masterclipboard/{id}`
-  - Zugriff: `dealer/admin`
-  - Output: redacted
-- `POST /export/masterclipboard/{id}/grant`
+- `GET /export/vehicle/{id}`
+  - Zugriff: `user/vip/dealer/admin/superadmin` **im Scope** (Owner/Scope enforced)
+  - Output: redacted default (**keine Klartext-PII**, keine Secrets; z.B. VIN nur als `vin_hmac`)
+- `POST /export/vehicle/{id}/grant`
   - Zugriff: `superadmin`
-  - Output: one-time Export-Token + Ablaufzeit (TTL)
-- `GET /export/masterclipboard/{id}/full`
+  - Output: one-time Export-Token + Ablaufzeit (TTL), **Limit enforced**
+  - Audit: ohne Klartext-PII/Secrets, **Token wird nie geloggt**
+- `GET /export/vehicle/{id}/full`
   - Zugriff: `superadmin`
   - Header: `X-Export-Token`
-  - Output: Fernet-`ciphertext` (cryptography)
+  - Output: verschlüsselt (`ciphertext`, Fernet / cryptography)
 
-Doku:
+Code-SoT:
 
-- siehe `docs/06_EXPORTS.md` (Endpunkte + Regeln)
+- `server/app/routers/export_vehicle.py`
+- `server/app/services/export_store.py` (TTL/Limit + one-time token)
+- `server/app/services/export_crypto.py` (Encryption + JSON-safe)
+- `server/app/services/export_redaction.py` (Redaction/HMAC)
+- Tests: `server/tests/test_export_vehicle.py`
+
+RBAC-Hinweis:
+
+- `moderator`: **kein Export**, **kein Audit-Read**
+
 
 ---
 
@@ -372,6 +382,26 @@ Doku:
 
 - NestJS/Prisma/Postgres/Redis/BullMQ/S3/ClamAV als Stack ist **keine aktuelle IST-Basis** dieses Repos.
   Falls später entschieden: als eigene DECISION + Migrationsplan aufnehmen (und dann erst SoT umstellen).
+
+1) Doku-Update committen (99_MASTER_CHECKPOINT)
+
+Mach minimal in docs/99_MASTER_CHECKPOINT.md diesen Block rein (copy/paste):
+
+Export Vehicle
+
+GET /export/vehicle/{id}: redacted default, keine Klartext-PII, keine Secrets (z.B. vin → vin_hmac)
+
+POST /export/vehicle/{id}/grant: nur SUPERADMIN, one-time Token, TTL/Limit enforced, Audit ohne PII/Secrets, Token wird nicht geloggt
+
+GET /export/vehicle/{id}/full: nur SUPERADMIN, benötigt Header X-Export-Token, Response ist verschlüsselt (ciphertext)
+
+RBAC
+
+moderator: kein Export, kein Audit-Read
+
+Security/Privacy
+
+Logs/Audit: keine Tokens, keine Klartext-PII; Pseudonymisierung via HMAC
 
 ---
 
