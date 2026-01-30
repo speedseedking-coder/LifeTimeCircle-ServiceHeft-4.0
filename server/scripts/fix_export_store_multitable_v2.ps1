@@ -1,3 +1,9 @@
+$ErrorActionPreference = "Stop"
+
+$path = Join-Path (Get-Location) "app\services\export_store.py"
+if (!(Test-Path $path)) { throw "export_store.py nicht gefunden: $path (bitte im server\ Ordner ausführen)" }
+
+$content = @'
 import datetime as dt
 import hmac
 import os
@@ -172,3 +178,7 @@ def consume_one_time_token(
     db.commit()
 
     return dict(row)
+'@
+
+Set-Content -Path $path -Value $content -Encoding UTF8
+Write-Host "OK: export_store.py gefixt (no cache, conn.execute, ttl_seconds/uses kompatibel): $path"
