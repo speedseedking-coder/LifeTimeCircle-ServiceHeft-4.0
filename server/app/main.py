@@ -1,13 +1,22 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.db.session import init_db
 from app.routers.masterclipboard import router as masterclipboard_router
-
+from app.auth.routes import router as auth_router
+from app.admin.routes import router as admin_router
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # DB initialisieren (create_all – migrations folgen später)
+        init_db()
+        yield
 
     app = FastAPI(
         title="LifeTimeCircle – ServiceHeft 4.0",
@@ -15,19 +24,16 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.env != "prod" else None,
         redoc_url="/redoc" if settings.env != "prod" else None,
         openapi_url="/openapi.json" if settings.env != "prod" else None,
+        lifespan=lifespan,
     )
 
-    @app.on_event("startup")
-    def _startup() -> None:
-        # DB initialisieren (create_all – migrations folgen später)
-        init_db()
+    # Router
+    app.include_router(auth_router)
+    app.include_router(masterclipboard_router)
 
     @app.get("/health", include_in_schema=False)
     def health() -> dict:
         return {"ok": True}
-
-    # Module Router
-    app.include_router(masterclipboard_router)
 
     # Minimaler Exception-Fallback (keine Payload-Logs)
     @app.exception_handler(Exception)
@@ -36,8 +42,7 @@ def create_app() -> FastAPI:
         if settings.env == "dev":
             return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
         return JSONResponse(status_code=500, content={"error": "internal_error"})
-
+    app.include_router(admin_router)
     return app
-
-
 app = create_app()
+
