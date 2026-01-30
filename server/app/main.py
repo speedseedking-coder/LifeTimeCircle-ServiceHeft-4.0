@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.db.session import init_db
 from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.export import router as export_router
+from app.routers.export_vehicle import router as export_vehicle_router
 from app.auth.routes import router as auth_router
 from app.admin.routes import router as admin_router
 from app.public.routes import router as public_router
@@ -49,7 +50,13 @@ def create_app() -> FastAPI:
 
     app.include_router(admin_router)
     app.include_router(public_router)
+    app.include_router(export_vehicle_router)
     return app
 
 
 app = create_app()
+
+
+
+
+
