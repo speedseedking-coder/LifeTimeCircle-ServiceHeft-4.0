@@ -1,16 +1,17 @@
-# Normalize text files and enforce line endings per file type
+# Normalize text files to LF in repo (platform-independent)
+* text=auto eol=lf
 
-* text=auto
-
-# Code (prefer LF)
-*.py text eol=lf
-*.md text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.json text eol=lf
-*.toml text eol=lf
-
-# PowerShell / Windows scripts (prefer CRLF)
+# Keep Windows-friendly line endings where it matters
 *.ps1 text eol=crlf
 *.bat text eol=crlf
 *.cmd text eol=crlf
+
+# Common binary types
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.7z binary
