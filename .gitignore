@@ -12,3 +12,4 @@ server/data/*.db-journal
 
 node_modules/
 dist/
+*.bak.*
