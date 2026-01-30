@@ -630,3 +630,6 @@ git checkout <COMMIT_ID> -- docs\99_MASTER_CHECKPOINT.md
 ### Nächster Fokus
 - Exporte: Standard redacted; Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung.
 
+
+Repo-Struktur: siehe `docs/04_REPO_STRUCTURE.md`
+
