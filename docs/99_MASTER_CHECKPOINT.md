@@ -612,4 +612,21 @@ git log -- docs\99_MASTER_CHECKPOINT.md
 # dann eine Commit-ID nehmen und z.B.:
 git checkout <COMMIT_ID> -- docs\99_MASTER_CHECKPOINT.md
 
+## CHECKPOINT – Stand jetzt
+
+### Erledigt (Main)
+- Admin: `/admin/users/{user_id}/moderator` hinzugefügt (Komfort-Endpoint).
+  - Audit ohne Freitext-Reason (nur `reason_provided`), keine Klartext-PII.
+  - Tests vorhanden (Admin erlaubt, User 403, ohne Token 401).
+- VIP-Gewerbe: Freigabe nur SUPERADMIN, Staff-Limit serverseitig enforced (max. 2 Staff).
+  - Business-Request anlegbar, Approve nur SUPERADMIN, Staff nur nach Approve.
+  - Tests vorhanden (Approve-Gate + Staff-Limit).
+- Public-QR: `GET /public/qr/{vehicle_id}` minimal, ohne Metriken/Zahlen/Zeiträume, Disclaimer Pflicht.
+  - Test stellt Disclaimer + keine Zahlen sicher.
+
+### Status
+- Tests grün (pytest).
+
+### Nächster Fokus
+- Exporte: Standard redacted; Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung.
 
