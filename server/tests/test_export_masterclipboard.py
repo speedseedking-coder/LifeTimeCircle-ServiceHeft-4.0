@@ -160,7 +160,7 @@ def test_ttl_enforced_without_sleep(app, client):
     with SessionLocal() as s:
         engine = s.get_bind()
         md = MetaData()
-        grants = Table("export_grants_vehicle", md, autoload_with=engine)
+        grants = Table("export_grants_masterclipboard", md, autoload_with=engine)
 
         row = (
             s.execute(
@@ -180,3 +180,4 @@ def test_ttl_enforced_without_sleep(app, client):
 
     f = client.get("/export/masterclipboard/mc_1/full", headers={"X-Export-Token": tok})
     assert f.status_code == 403
+
