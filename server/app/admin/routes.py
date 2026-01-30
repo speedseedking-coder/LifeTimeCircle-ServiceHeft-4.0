@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from __future__ import annotations
+
 import json
 import sqlite3
 import uuid
@@ -135,7 +137,11 @@ def _best_effort_insert_into_audit_events(conn: sqlite3.Connection, payload: Dic
 
 class RoleSetRequest(BaseModel):
     role: str = Field(..., min_length=1, max_length=32)
-    reason: Optional[str] = Field(default=None, max_length=200)
+    reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
+
+
+class ModeratorAccreditRequest(BaseModel):
+    reason: Optional[str] = Field(default=None, max_length=200)  # wird NICHT als Text auditiert
 
 
 class RoleSetResponse(BaseModel):
@@ -150,6 +156,85 @@ class AdminUserRow(BaseModel):
     user_id: str
     role: str
     created_at: str
+
+
+def _apply_role_change(
+    *,
+    conn: sqlite3.Connection,
+    user_id: str,
+    new_role: str,
+    actor: AuthContext,
+    action: str,
+    reason_provided: bool,
+) -> RoleSetResponse:
+    now_iso = _utc_now_iso()
+
+    if not _table_exists(conn, "auth_users"):
+        raise HTTPException(status_code=404, detail="user_not_found")
+
+    row = conn.execute(
+        "SELECT role FROM auth_users WHERE user_id=? LIMIT 1;",
+        (user_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="user_not_found")
+
+    old_role = (row["role"] or "").strip().lower()
+
+    # no-op ist erlaubt, aber wir auditieren trotzdem
+    conn.execute(
+        "UPDATE auth_users SET role=? WHERE user_id=?;",
+        (new_role, user_id),
+    )
+
+    # Audit (minimal + ohne PII / kein Freitext)
+    _ensure_auth_audit_table(conn)
+    event_id = str(uuid.uuid4())
+    details = {
+        "old_role": old_role,
+        "new_role": new_role,
+        "reason_provided": bool(reason_provided),
+    }
+    payload = {
+        "event_id": event_id,
+        "at": now_iso,
+        "action": action,
+        "result": "success",
+        "actor_user_id": actor.user_id,
+        "target_user_id": user_id,
+        "details_json": json.dumps(details, ensure_ascii=False, separators=(",", ":")),
+    }
+
+    conn.execute(
+        """
+        INSERT INTO auth_audit_events(event_id, at, action, result, actor_user_id, target_user_id, details_json)
+        VALUES(?, ?, ?, ?, ?, ?, ?);
+        """,
+        (
+            payload["event_id"],
+            payload["at"],
+            payload["action"],
+            payload["result"],
+            payload["actor_user_id"],
+            payload["target_user_id"],
+            payload["details_json"],
+        ),
+    )
+
+    # Optional: best-effort in bestehendes audit_events Schema, falls vorhanden
+    try:
+        _best_effort_insert_into_audit_events(conn, payload)
+    except Exception:
+        # Audit darf Admin-Action nicht killen, aber auth_audit_events ist bereits geschrieben.
+        pass
+
+    return RoleSetResponse(
+        ok=True,
+        user_id=user_id,
+        old_role=old_role,
+        new_role=new_role,
+        at=now_iso,
+    )
 
 
 @router.get("/users", response_model=List[AdminUserRow])
@@ -181,72 +266,36 @@ def admin_set_user_role(
         )
 
     settings = load_settings()
-    now_iso = _utc_now_iso()
-
     with _connect(settings.db_path) as conn:
-        if not _table_exists(conn, "auth_users"):
-            raise HTTPException(status_code=404, detail="user_not_found")
-
-        row = conn.execute(
-            "SELECT role FROM auth_users WHERE user_id=? LIMIT 1;",
-            (user_id,),
-        ).fetchone()
-        if row is None:
-            raise HTTPException(status_code=404, detail="user_not_found")
-
-        old_role = (row["role"] or "").strip().lower()
-
-        # no-op ist erlaubt, aber wir auditieren trotzdem
-        conn.execute(
-            "UPDATE auth_users SET role=? WHERE user_id=?;",
-            (new_role, user_id),
-        )
-
-        # Audit (minimal + ohne PII)
-        _ensure_auth_audit_table(conn)
-        event_id = str(uuid.uuid4())
-        details = {
-            "old_role": old_role,
-            "new_role": new_role,
-            "reason": body.reason or "",
-        }
-        payload = {
-            "event_id": event_id,
-            "at": now_iso,
-            "action": "ADMIN_ROLE_SET",
-            "result": "success",
-            "actor_user_id": actor.user_id,
-            "target_user_id": user_id,
-            "details_json": json.dumps(details, ensure_ascii=False, separators=(",", ":")),
-        }
-
-        conn.execute(
-            """
-            INSERT INTO auth_audit_events(event_id, at, action, result, actor_user_id, target_user_id, details_json)
-            VALUES(?, ?, ?, ?, ?, ?, ?);
-            """,
-            (
-                payload["event_id"],
-                payload["at"],
-                payload["action"],
-                payload["result"],
-                payload["actor_user_id"],
-                payload["target_user_id"],
-                payload["details_json"],
-            ),
-        )
-
-        # Optional: best-effort in bestehendes audit_events Schema, falls vorhanden
-        try:
-            _best_effort_insert_into_audit_events(conn, payload)
-        except Exception:
-            # Audit darf Admin-Action nicht killen, aber auth_audit_events ist bereits geschrieben.
-            pass
-
-        return RoleSetResponse(
-            ok=True,
+        return _apply_role_change(
+            conn=conn,
             user_id=user_id,
-            old_role=old_role,
             new_role=new_role,
-            at=now_iso,
+            actor=actor,
+            action="ADMIN_ROLE_SET",
+            reason_provided=bool(body.reason),
+        )
+
+
+@router.post("/users/{user_id}/moderator", response_model=RoleSetResponse)
+def admin_accredit_moderator(
+    user_id: str,
+    body: ModeratorAccreditRequest,
+    actor: AuthContext = Depends(require_roles("admin")),
+):
+    """
+    Komfort-Endpoint: Moderator akkreditieren (setzt Rolle auf 'moderator').
+
+    - serverseitig RBAC: nur admin
+    - Audit ohne Freitext/PII (reason_provided bool)
+    """
+    settings = load_settings()
+    with _connect(settings.db_path) as conn:
+        return _apply_role_change(
+            conn=conn,
+            user_id=user_id,
+            new_role="moderator",
+            actor=actor,
+            action="ADMIN_MODERATOR_ACCREDIT",
+            reason_provided=bool(body.reason),
         )
