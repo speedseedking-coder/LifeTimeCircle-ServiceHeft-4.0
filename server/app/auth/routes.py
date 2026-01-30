@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import uuid
+from fastapi import APIRouter, Request, HTTPException, status, Depends
+
+from .schemas import AuthRequestIn, AuthRequestOut, AuthVerifyIn, AuthVerifyOut, MeOut, LogoutOut
+from .service import request_challenge, verify_challenge_and_create_session, logout
+from .settings import load_settings
+from .deps import require_user
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _request_id(request: Request) -> str:
+    rid = request.headers.get("x-request-id") or request.headers.get("x-correlation-id")
+    return rid.strip() if rid and rid.strip() else str(uuid.uuid4())
+
+
+def _client_ip(request: Request) -> str:
+    # reverse proxy später: X-Forwarded-For sauber verarbeiten
+    return request.client.host if request.client else "0.0.0.0"
+
+
+@router.post("/request", response_model=AuthRequestOut)
+def auth_request(body: AuthRequestIn, request: Request) -> AuthRequestOut:
+    settings = load_settings()
+    rid = _request_id(request)
+
+    challenge_id, dev_otp = request_challenge(
+        settings,
+        email=body.email,
+        ip=_client_ip(request),
+        user_agent=request.headers.get("user-agent", ""),
+        request_id=rid,
+    )
+
+    # Anti-Enumeration: immer gleich
+    msg = "Wenn die E-Mail-Adresse gültig ist, wurde ein Code gesendet."
+
+    return AuthRequestOut(ok=True, challenge_id=challenge_id, message=msg, dev_otp=dev_otp)
+
+
+@router.post("/verify", response_model=AuthVerifyOut)
+def auth_verify(body: AuthVerifyIn, request: Request) -> AuthVerifyOut:
+    settings = load_settings()
+    rid = _request_id(request)
+
+    try:
+        token, expires_at = verify_challenge_and_create_session(
+            settings,
+            email=body.email,
+            challenge_id=body.challenge_id,
+            otp=body.otp,
+            consents=[c.model_dump() for c in body.consents],
+            ip=_client_ip(request),
+            user_agent=request.headers.get("user-agent", ""),
+            request_id=rid,
+        )
+        return AuthVerifyOut(access_token=token, expires_at=expires_at)
+    except ValueError as e:
+        code = str(e)
+
+        if code == "CONSENT_REQUIRED":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CONSENT_REQUIRED")
+        if code == "RATE_LIMIT":
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="RATE_LIMIT")
+        if code == "EXPIRED":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="EXPIRED")
+        if code == "LOCKED":
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LOCKED")
+
+        # default: INVALID (keine Details)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="INVALID")
+
+
+@router.get("/me", response_model=MeOut)
+def me(user=Depends(require_user)) -> MeOut:
+    return MeOut(user_id=user["user_id"], role=user["role"])
+
+
+@router.post("/logout", response_model=LogoutOut)
+def do_logout(request: Request, user=Depends(require_user)) -> LogoutOut:
+    settings = load_settings()
+    rid = _request_id(request)
+    logout(settings, user["token"], request_id=rid)
+    return LogoutOut(ok=True)

@@ -1,6 +1,5 @@
 import uuid
-from datetime import datetime
-
+from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, Text, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +14,7 @@ class MasterClipboardSession(Base):
     vehicle_public_id: Mapped[str] = mapped_column(String(64), index=True)
 
     is_closed: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     speech_chunks = relationship("MasterClipboardSpeechChunk", back_populates="session", cascade="all,delete-orphan")
@@ -31,7 +30,7 @@ class MasterClipboardSpeechChunk(Base):
     source: Mapped[str] = mapped_column(String(16))
     content_redacted: Mapped[str] = mapped_column(Text)  # redacted input
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
 
     session = relationship("MasterClipboardSession", back_populates="speech_chunks")
 
@@ -51,8 +50,8 @@ class MasterClipboardTriageItem(Base):
 
     evidence_refs_json: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list[str]
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
 
     session = relationship("MasterClipboardSession", back_populates="triage_items")
 
@@ -66,6 +65,7 @@ class MasterClipboardBoardSnapshot(Base):
     ordered_item_ids_json: Mapped[str] = mapped_column(Text)  # JSON list[str]
     notes_redacted: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
 
     session = relationship("MasterClipboardSession", back_populates="board_snapshots")
+

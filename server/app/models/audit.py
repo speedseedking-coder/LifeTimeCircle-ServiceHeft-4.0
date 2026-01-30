@@ -1,7 +1,6 @@
 import json
 import uuid
-from datetime import datetime
-
+from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,7 +23,7 @@ class AuditEvent(Base):
     actor_scope_ref: Mapped[str] = mapped_column(String(64))
 
     payload_json: Mapped[str] = mapped_column(Text)  # redacted-by-default; KEINE PII
-    emitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    emitted_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
 
     __table_args__ = (
         UniqueConstraint("correlation_id", "idempotency_key", "event_name", name="uq_audit_idem"),
@@ -43,4 +42,5 @@ class IdempotencyRecord(Base):
 
     status_code: Mapped[int] = mapped_column()
     response_json: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=(lambda: datetime.now(timezone.utc)), index=True)
+

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -183,7 +183,7 @@ def patch_triage_item(db: Session, actor: Actor, session_id: str, item_id: str, 
     if patch.get("status") is not None:
         tri.status = patch["status"]
 
-    tri.updated_at = datetime.utcnow()
+    tri.updated_at = datetime.now(timezone.utc)
 
     emit_event(
         db,
@@ -245,7 +245,7 @@ def close_session(db: Session, actor: Actor, session_id: str, idempotency_key: s
 
     if not s.is_closed:
         s.is_closed = True
-        s.closed_at = datetime.utcnow()
+        s.closed_at = datetime.now(timezone.utc)
 
     emit_event(
         db,
@@ -259,3 +259,4 @@ def close_session(db: Session, actor: Actor, session_id: str, idempotency_key: s
     resp = {"ok": True}
     _store_idempotency(db, f"{session_id}.close", idempotency_key, 200, resp)
     return 200, resp
+
