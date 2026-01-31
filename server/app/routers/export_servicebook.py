@@ -76,7 +76,7 @@ def _servicebook_entries_table(db: Session) -> Table:
         if insp.has_table(name):
             return Table(name, MetaData(), autoload_with=conn)
 
-    raise HTTPException(status_code=500, detail="servicebook_table_missing")
+    raise HTTPException(status_code=404, detail="servicebook_table_missing")
 
 
 def _fetch_servicebook_entries(db: Session, servicebook_id: str) -> List[Dict[str, Any]]:

@@ -21,6 +21,16 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "0.0.0.0"
 
 
+def _bearer_token_from_header(request: Request) -> str:
+    auth = request.headers.get("authorization") or request.headers.get("Authorization")
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    parts = auth.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    return parts[1].strip()
+
+
 @router.post("/request", response_model=AuthRequestOut)
 def auth_request(body: AuthRequestIn, request: Request) -> AuthRequestOut:
     settings = load_settings()
@@ -36,7 +46,6 @@ def auth_request(body: AuthRequestIn, request: Request) -> AuthRequestOut:
 
     # Anti-Enumeration: immer gleich
     msg = "Wenn die E-Mail-Adresse gültig ist, wurde ein Code gesendet."
-
     return AuthRequestOut(ok=True, challenge_id=challenge_id, message=msg, dev_otp=dev_otp)
 
 
@@ -57,6 +66,7 @@ def auth_verify(body: AuthVerifyIn, request: Request) -> AuthVerifyOut:
             request_id=rid,
         )
         return AuthVerifyOut(access_token=token, expires_at=expires_at)
+
     except ValueError as e:
         code = str(e)
 
@@ -82,5 +92,14 @@ def me(user=Depends(require_user)) -> MeOut:
 def do_logout(request: Request, user=Depends(require_user)) -> LogoutOut:
     settings = load_settings()
     rid = _request_id(request)
-    logout(settings, user["token"], request_id=rid)
+
+    # robust: token entweder aus require_user oder aus Authorization Header
+    raw_token = None
+    if isinstance(user, dict):
+        raw_token = user.get("token")
+
+    if not raw_token:
+        raw_token = _bearer_token_from_header(request)
+
+    logout(settings, raw_token, request_id=rid)
     return LogoutOut(ok=True)

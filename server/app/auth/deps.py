@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from fastapi import Depends
@@ -36,4 +35,3 @@ def require_moderator(user: AuthContext = Depends(get_current_user)) -> AuthCont
 
 def require_admin(user: AuthContext = Depends(get_current_user)) -> AuthContext:
     return require_roles("admin")(user=user)  # type: ignore[arg-type]
-

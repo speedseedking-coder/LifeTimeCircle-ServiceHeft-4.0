@@ -62,7 +62,7 @@ def _vehicle_table(db: Session) -> Table:
         if insp.has_table(name):
             return Table(name, md, autoload_with=conn)
 
-    raise HTTPException(status_code=500, detail="vehicle_table_missing")
+    raise HTTPException(status_code=404, detail="vehicle_table_missing")
 
 
 def _fetch_vehicle_row(db: Session, vehicle_id: str) -> Dict[str, Any]:
