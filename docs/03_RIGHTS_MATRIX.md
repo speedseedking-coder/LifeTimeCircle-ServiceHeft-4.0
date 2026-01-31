@@ -1,48 +1,89 @@
 # LifeTimeCircle – Service Heft 4.0
-**Rechte-Matrix (RBAC) – Entwurf (arbeitsfähig)**  
-Stand: 2026-01-29
+**Rechte-Matrix (RBAC) – implementierbar (SoT)**  
+Stand: 2026-02-01
+
+> Zweck: Diese Matrix ist die **serverseitig** umzusetzende Rechtebasis (deny-by-default + least privilege).
+> Grundregel: Wenn etwas hier nicht explizit erlaubt ist → **verweigern**.
 
 Legende:
 - ✅ erlaubt
-- 🔒 nur eingeschränkt / nur eigener Scope / nur berechtigt (grant)
+- 🔒 nur eingeschränkt / nur eigener Scope / nur wenn berechtigt
 - ❌ nicht erlaubt
 
 ## Rollen
 - public
 - user
 - vip
-- dealer
+- dealer (gewerblich)
 - moderator
-- admin (SUPERADMIN-Claim für Hochrisiko)
+- admin
+- superadmin
 
-### 1) Public-QR Mini-Check
-| Funktion | public | user | vip | dealer | moderator | admin |
-|---|---:|---:|---:|---:|---:|---:|
-| QR-Link öffnen / Trust-Ampel sehen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Indicators (keine Halterdaten, keine Metriken) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+## Grundregeln (FIX)
+- **Scope**: `user/vip/dealer` arbeiten grundsätzlich im **eigenen** Fahrzeug-/Account-Scope; „fremd“ nur wenn **explizit berechtigt**.
+- **moderator**: strikt **nur Blog/News**; keine Vehicles/Entries/Documents/Verification; **kein Export**, **kein Audit-Read**, **keine PII**.
+- **superadmin**: High-Risk-Gates (z.B. Full-Exports, VIP-Gewerbe-Staff-Freigaben). Provisioning **out-of-band** (nicht über normale Admin-Rollen-Setter).
 
-### 2) Service Heft – Fahrzeuge/Einträge
-| Funktion | public | user | vip | dealer | moderator | admin |
-|---|---:|---:|---:|---:|---:|---:|
-| Fahrzeug anlegen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Eigenes Fahrzeug lesen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Fremde Fahrzeuge lesen (voll) | ❌ | ❌ | 🔒 | 🔒 | ❌ | ✅ |
-| Einträge erstellen/bearbeiten (own) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
+## Funktionsbereiche
 
-### 3) Verkauf/Übergabe
-| Funktion | public | user | vip | dealer | moderator | admin |
-|---|---:|---:|---:|---:|---:|---:|
-| Übergabe-QR erzeugen | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ |
-| Interner Verkauf | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ |
+### 1) Public-QR Mini-Check (anonyme Ansicht)
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| QR-Link öffnen / Trust-Ampel sehen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Details zur Trust-Berechnung (Indicators, **keine Halterdaten**) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Technische Zustandsbewertung | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-### 4) Blog/News
-| Funktion | public | user | vip | dealer | moderator | admin |
-|---|---:|---:|---:|---:|---:|---:|
-| Lesen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Schreiben | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+### 2) Service Heft – Fahrzeug & Einträge
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Fahrzeug anlegen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Eigenes Fahrzeugprofil ansehen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Fremde Fahrzeuge ansehen (voll) | ❌ | ❌ | 🔒 (wenn berechtigt) | 🔒 (wenn berechtigt) | ❌ | ✅ | ✅ |
+| Einträge erstellen/bearbeiten (eigene Fahrzeuge) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Einträge löschen | ❌ | 🔒 (nur eigener, optional soft-delete) | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Dokumente hochladen (Rechnung/Prüfbericht etc.) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 
-### 5) Exports
-| Funktion | public | user | vip | dealer | moderator | admin |
-|---|---:|---:|---:|---:|---:|---:|
-| Export redacted (Standard) | ❌ | ✅ (own) | ✅ (own/grant) | ✅ (own/grant) | ❌ | ✅ |
-| Export full (nur SUPERADMIN) | ❌ | ❌ | ❌ | ❌ | ❌ | 🔒 (SUPERADMIN) |
+### 3) Bilder/Dokumente – Sichtbarkeit (Tiefe)
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Dokument-Metadaten (Titel/Datum/Typ) sehen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Dokument-Inhalt ansehen/downloaden | ❌ | 🔒 (eigen) | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Bildansicht „VIP only“ | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
+
+### 4) Verkauf/Übergabe-QR & interner Verkauf (Business-Gating)
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Übergabe-QR erzeugen | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Interner Verkauf starten/abwickeln | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Audit/Protokoll einsehen | ❌ | ❌ | 🔒 (eigene Vorgänge) | 🔒 (eigene Vorgänge) | ❌ | ✅ | ✅ |
+
+### 5) Blogbase / News
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| News lesen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| News erstellen/bearbeiten | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| News löschen | ❌ | ❌ | ❌ | ❌ | 🔒 (nur eigene Posts, optional) | ✅ | ✅ |
+
+### 6) Newsletter
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Opt-in / Opt-out (Abo verwalten) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Versand auslösen | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+
+### 7) Admin / Governance
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Rollen vergeben / User sperren (ohne SUPERADMIN-Setzen) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Moderatoren akkreditieren | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| VIP-Gewerbe: 2 Mitarbeiterplätze freigeben | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Halterdaten einsehen | ❌ | ❌ | ❌ | 🔒 (wenn berechtigt & notwendig) | ❌ | ✅ | ✅ |
+| Audit lesen (ohne PII/Secrets) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| SUPERADMIN-Provisioning (Bootstrap/out-of-band) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+### 8) Exports (Security/Privacy)
+| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Redacted Export (Default) | ❌ | 🔒 (eigener Scope) | 🔒 (eigener Scope) | 🔒 (berechtigt) | ❌ | ✅ | ✅ |
+| Full Export: Grant (one-time Token, TTL/Limit) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Full Export: Abruf (X-Export-Token, Response verschlüsselt) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+
