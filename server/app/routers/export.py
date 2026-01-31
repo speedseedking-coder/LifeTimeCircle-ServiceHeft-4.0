@@ -6,6 +6,7 @@ import importlib
 import inspect as pyinspect
 import json
 import uuid
+import hmac
 from hashlib import sha256
 from typing import Any, Dict, Optional, Tuple, Type
 
@@ -296,7 +297,7 @@ def _redact_dict(d: Dict[str, Any]) -> Dict[str, Any]:
 # ---------------------------
 
 def _derive_fernet_key(secret_key: str) -> bytes:
-    digest = sha256((secret_key + "|export|full").encode("utf-8")).digest()
+    digest = hmac.new(secret_key.encode("utf-8"), b"export|full", sha256).digest()
     return base64.urlsafe_b64encode(digest)
 
 
@@ -324,7 +325,7 @@ def _encrypt_full_payload(secret_key: str, payload: Dict[str, Any]) -> str:
 def export_masterclipboard_redacted(
     masterclipboard_id: str,
     db: Session = Depends(get_db),
-    actor: Actor = Depends(require_roles("dealer", "admin")),
+    actor: Actor = Depends(require_roles("dealer", "admin", "superadmin")),
 ) -> Dict[str, Any]:
     """
     Redacted Export: nur dealer/admin (wie Masterclipboard-API).

@@ -238,7 +238,7 @@ def _apply_role_change(
 
 
 @router.get("/users", response_model=List[AdminUserRow])
-def admin_list_users(_: AuthContext = Depends(require_roles("admin"))):
+def admin_list_users(_: AuthContext = Depends(require_roles("admin", "superadmin"))):
     """
     Minimaler Admin-Überblick: keine Klartext-PII, nur user_id/role/created_at.
     """
@@ -256,7 +256,7 @@ def admin_list_users(_: AuthContext = Depends(require_roles("admin"))):
 def admin_set_user_role(
     user_id: str,
     body: RoleSetRequest,
-    actor: AuthContext = Depends(require_roles("admin")),
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     new_role = (body.role or "").strip().lower()
     if new_role not in ALLOWED_ROLES:
@@ -281,7 +281,7 @@ def admin_set_user_role(
 def admin_accredit_moderator(
     user_id: str,
     body: ModeratorAccreditRequest,
-    actor: AuthContext = Depends(require_roles("admin")),
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     """
     Komfort-Endpoint: Moderator akkreditieren (setzt Rolle auf 'moderator').

@@ -24,9 +24,9 @@ def require_user(user: Actor | None = Depends(get_current_user)) -> Actor:
 
 def require_vip_or_dealer(user: Actor | None = Depends(get_current_user)) -> Actor:
     """
-    Für Funktionen wie Verkauf/Übergabe-QR etc. (VIP/Dealer/Admin/Superadmin).
+    Für Funktionen wie Verkauf/Übergabe-QR etc. (VIP/Dealer).
     """
-    return _enforce(user, {"vip", "dealer", "admin", "superadmin"})
+    return _enforce(user, {"vip", "dealer"})
 
 
 def require_dealer(user: Actor | None = Depends(get_current_user)) -> Actor:

@@ -40,7 +40,7 @@ def _require_idempotency_key(idempotency_key: str | None) -> str:
 def create_session(
     req: SessionCreateRequest,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -63,7 +63,7 @@ def add_speech(
     session_id: str,
     req: SpeechChunkCreateRequest,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -88,7 +88,7 @@ def create_triage_items(
     session_id: str,
     req: TriageItemsCreateRequest,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -115,7 +115,7 @@ def patch_triage_item(
     item_id: str,
     req: TriageItemPatchRequest,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -141,7 +141,7 @@ def board_snapshot(
     session_id: str,
     req: BoardSnapshotCreateRequest,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -165,7 +165,7 @@ def board_snapshot(
 def close_session(
     session_id: str,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("dealer", "admin"))],
+    actor: Annotated[Actor, Depends(require_roles("dealer", "admin", "superadmin"))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
