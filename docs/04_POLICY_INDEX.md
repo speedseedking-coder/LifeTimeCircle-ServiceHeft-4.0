@@ -94,7 +94,7 @@ Stand: 2026-01-29 (Europe/Berlin)
 
 ## 5) Service Heft Kern Policies (P-SH-*)
 ### P-SH-001 | Fahrzeug anlegen/suchen (VIN/WID)
-**Regel:** Fahrzeuge können von user/vip/dealer/admin/superadmin angelegt werden; public/moderator nicht.  
+**Regel:** Fahrzeuge können von user/vip/dealer angelegt werden; public/moderator nicht.  
 **Validierung:** VIN/WID Eingabe strikt validieren; Fehlertexte ohne Datenleak.
 
 ### P-SH-002 | Einträge & Verifizierungslevel (T1/T2/T3)
@@ -148,7 +148,7 @@ Audit-Events mindestens für:
 - Consent Pflicht, Version+Timestamp
 
 ### Modul M-03 | Service Heft 4.0 Kern (Fahrzeug/Timeline/Dokumente)
-- user/vip/dealer/admin/superadmin: ja
+- user/vip/dealer: ja
 - public/moderator: nein
 - Rechte gemäß Matrix
 
@@ -184,6 +184,7 @@ Audit-Events mindestens für:
 
 
 > Hinweis: Es werden keine Kennzahlen/Counts/Prozente/Zeiträume ausgewiesen.
+
 
 
 
