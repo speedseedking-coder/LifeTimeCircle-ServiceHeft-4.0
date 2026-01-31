@@ -1,13 +1,27 @@
-# scripts/patch_docs_consistency2.ps1
+# scripts/patch_docs_consistency.ps1
 $ErrorActionPreference = "Stop"
 
 function Write-Ok($msg) { Write-Host "OK: $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "WARN: $msg" -ForegroundColor Yellow }
 
-function Patch-FileRaw([string]$path, [ScriptBlock]$patchFn) {
+function Ensure-Dir([string]$path) {
+  if (-not (Test-Path $path)) { New-Item -ItemType Directory -Path $path | Out-Null }
+}
+
+function Move-FolderOutOfDocs([string]$src, [string]$dst) {
+  if (-not (Test-Path $src)) { return }
+  Ensure-Dir (Split-Path $dst -Parent)
+  if (Test-Path $dst) {
+    throw "Ziel existiert bereits: $dst (bitte manuell prüfen/umbenennen)."
+  }
+  Move-Item -Force $src $dst
+  Write-Ok "Verschoben: $src -> $dst"
+}
+
+function Replace-InFile([string]$path, [string]$pattern, [string]$replacement) {
   if (-not (Test-Path $path)) { return $false }
   $before = Get-Content -Raw -Encoding UTF8 $path
-  $after  = & $patchFn $before
+  $after  = [regex]::Replace($before, $pattern, $replacement)
   if ($before -ne $after) {
     Set-Content -Encoding UTF8 -NoNewline -Path $path -Value $after
     return $true
@@ -15,91 +29,64 @@ function Patch-FileRaw([string]$path, [ScriptBlock]$patchFn) {
   return $false
 }
 
-function Patch-FileLines([string]$path, [ScriptBlock]$patchLineFn) {
-  if (-not (Test-Path $path)) { return $false }
-  $lines = Get-Content -Encoding UTF8 $path
-  $changed = $false
-  for ($i=0; $i -lt $lines.Count; $i++) {
-    $orig = $lines[$i]
-    $new  = & $patchLineFn $orig
-    if ($new -ne $orig) { $lines[$i] = $new; $changed = $true }
-  }
-  if ($changed) {
-    Set-Content -Encoding UTF8 -Path $path -Value $lines
-  }
-  return $changed
-}
-
-# Repo-Root check
+# Repo-Root check (muss aus Root laufen)
 if (-not (Test-Path ".git")) {
   throw "Bitte aus dem Repo-Root ausführen (da wo .git liegt)."
 }
 
-$changed = New-Object System.Collections.Generic.List[string]
+# 1) Altpfade/Altversionen aus docs/ herausziehen (nicht löschen, nur archivieren)
+Ensure-Dir "tools/archive"
+Move-FolderOutOfDocs "docs/routine" "tools/archive/docs_routine"
+Move-FolderOutOfDocs "docs/policies/KI_Agenten_Only_LTC_2026-3" "tools/archive/KI_Agenten_Only_LTC_2026-3"
 
-# 1) SUPERADMIN-Claim -> Rolle superadmin (kein Claim-Konzept)
-$claimTargets = @(
-  "docs/00_PROJECT_BRIEF.md",
-  "docs/02_BACKLOG.md"
+# 2) Kanonische Docs an Checkpoint-FIX anpassen (gezielt, nicht global)
+$changed = @()
+
+# Transfer-Regel: vip/dealer/admin -> vip/dealer (nur in den bekannten Problemdateien)
+$transferFiles = @(
+  "docs/06_TERMS_GLOSSARY.md",
+  "docs/07_CONTEXT_PACK.md",
+  "docs/policies/AGENT_BRIEF.md"
 )
-foreach ($f in $claimTargets) {
-  if (Patch-FileRaw $f {
-    param($t)
-    $t = $t -replace "SUPERADMIN-Claim", "Rolle superadmin"
-    $t = $t -replace "(?i)admin\s*\+\s*Rolle\s*superadmin", "admin + superadmin"
-    $t
-  }) { $changed.Add($f) }
+foreach ($f in $transferFiles) {
+  if (Replace-InFile $f "(?i)\bvip/dealer/admin\b" "vip/dealer") { $changed += $f }
 }
 
-# 2) Core-Rollenlisten überall auf superadmin erweitern (gezielt bekannte Stellen)
-$coreRoleTargets = @(
-  "docs/05_MODULE_SPEC_SCHEMA.md",
-  "docs/06_TERMS_GLOSSARY.md"
+# VIP-Gewerbe Freigabe: admin -> SUPERADMIN (gezielt)
+$staffFiles = @(
+  "docs/04_MODULE_CATALOG.md",
+  "docs/07_CONTEXT_PACK.md",
+  "docs/policies/AGENT_BRIEF.md",
+  "docs/policies/POLICY_INDEX.md"
 )
-foreach ($f in $coreRoleTargets) {
-  if (Patch-FileRaw $f {
-    param($t)
-    # Slash-Listen
-    $t = $t -replace "\bpublic/user/vip/dealer/moderator/admin\b", "public/user/vip/dealer/moderator/admin/superadmin"
-    # Komma-Listen
-    $t = $t -replace "\bpublic,\s*user,\s*vip,\s*dealer,\s*moderator,\s*admin\b", "public, user, vip, dealer, moderator, admin, superadmin"
-    $t
-  }) { $changed.Add($f) }
+foreach ($f in $staffFiles) {
+  if (Replace-InFile $f "(?i)Freigabe\s+nur\s+admin" "Freigabe nur SUPERADMIN") { $changed += $f }
+  if (Replace-InFile $f "(?i)Freigabe\s+\*\*nur\s+admin\*\*" "Freigabe **nur SUPERADMIN**") { $changed += $f }
 }
 
-# 3) Transfer/Übergabe-Regel: vip/dealer/admin -> vip/dealer (nur dort, wo es um Transfer/Übergabe geht)
-# 3a) docs/04_POLICY_INDEX.md: nur "Sichtbar/Sichtbar-nutzbar" Zeilen anpassen (nicht Vehicle/Create Zeilen)
-if (Patch-FileLines "docs/04_POLICY_INDEX.md" {
-  param($line)
-  if ($line -match "^\s*-\s*Sichtbar" -and $line -match "vip/dealer/admin") {
-    return ($line -replace "vip/dealer/admin", "vip/dealer")
-  }
-  return $line
-}) { $changed.Add("docs/04_POLICY_INDEX.md") }
+# Admin-Security-Baseline: Admin darf Transfer nicht erzeugen/widerrufen
+if (Replace-InFile "docs/policies/ADMIN_SECURITY_BASELINE.md" "(?m)^\s*-\s*Übergabe-QR erstellen/widerrufen.*$" "- Übergabe-QR erstellen/widerrufen: **nur VIP/DEALER** (kein Admin-Write)") {
+  $changed += "docs/policies/ADMIN_SECURITY_BASELINE.md"
+}
 
-# 3b) docs/policies/ROLES_AND_PERMISSIONS.md: nur Zeilen, die Transfer/Übergabe/Verkauf enthalten
-if (Patch-FileLines "docs/policies/ROLES_AND_PERMISSIONS.md" {
-  param($line)
-  if ($line -match "vip/dealer/admin" -and $line -match "(?i)(transfer|übergabe|verkauf|interner)") {
-    return ($line -replace "vip/dealer/admin", "vip/dealer")
-  }
-  return $line
-}) { $changed.Add("docs/policies/ROLES_AND_PERMISSIONS.md") }
+# Audit Enums: actor_role um superadmin erweitern
+if (Replace-InFile "docs/policies/AUDIT_SCOPE_AND_ENUMS.md" "actor_role\s*\(public\|user\|vip\|dealer\|moderator\|admin\)" "actor_role (public|user|vip|dealer|moderator|admin|superadmin)") {
+  $changed += "docs/policies/AUDIT_SCOPE_AND_ENUMS.md"
+}
 
-# 4) Audit Enum: actor_role muss superadmin enthalten (falls vorhanden)
-if (Patch-FileRaw "docs/policies/AUDIT_SCOPE_AND_ENUMS.md" {
-  param($t)
-  $t -replace "actor_role\s*\(public\|user\|vip\|dealer\|moderator\|admin\)", "actor_role (public|user|vip|dealer|moderator|admin|superadmin)"
-}) { $changed.Add("docs/policies/AUDIT_SCOPE_AND_ENUMS.md") }
+# Module Spec Schema: Core-Rollenliste inkl. superadmin
+if (Replace-InFile "docs/05_MODULE_SPEC_SCHEMA.md" "(?i)public/user/vip/dealer/moderator/admin\b" "public/user/vip/dealer/moderator/admin/superadmin") {
+  $changed += "docs/05_MODULE_SPEC_SCHEMA.md"
+}
 
-# Output
-$uniq = $changed | Sort-Object -Unique
-if ($uniq.Count -gt 0) {
+# 3) Ergebnis
+$changed = $changed | Sort-Object -Unique
+if ($changed.Count -gt 0) {
   Write-Ok "Geänderte Dateien:"
-  $uniq | ForEach-Object { Write-Host " - $_" }
+  $changed | ForEach-Object { Write-Host " - $_" }
 } else {
-  Write-Warn "Keine Änderungen (evtl. schon korrekt)."
+  Write-Warn "Keine Text-Patches angewendet (entweder schon korrekt oder Dateien fehlen)."
 }
 
 Write-Host ""
-Write-Ok "Next: rg-Checks + git add -A + commit"
+Write-Ok "Next: git add -A + rg-Checks + commit"

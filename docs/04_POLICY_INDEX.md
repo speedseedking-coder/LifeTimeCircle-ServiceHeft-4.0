@@ -17,12 +17,8 @@ Stand: 2026-01-29 (Europe/Berlin)
 - **vip**: erweiterte Features (inkl. Verkauf/Übergabe-QR)
 - **dealer**: gewerblich (VIP-nah), Übergabe/Verkauf, ggf. Multi-User
 - **moderator**: nur Blog/News (keine PII, kein Export, kein Audit)
-- **admin (SUPERADMIN)**: Vollzugriff + Freigaben + Governance (hochrisiko)
-
-Hinweis: „admin“ wird im System als **SUPERADMIN** behandelt (hochrisiko-Aktionen nur dort).
-
+- **admin**: Vollzugriff + Freigaben + Governance (hochrisiko)
 ---
-
 ## 1) Datenklassen & Grundschutz
 ### Datenklassen
 - **Public-Daten:** Public-QR Anzeige (Trust-Ampel + textliche Indikatoren, keine Halterdaten)
@@ -167,7 +163,7 @@ Audit-Events mindestens für:
 - Newsletter Versand: nur admin
 
 ### Modul M-06 | Verkauf/Übergabe-QR & Interner Verkauf (VIP/Dealer)
-- Sichtbar/nutzbar: vip/dealer/admin
+- Sichtbar/nutzbar: vip/dealer
 - Audit: Pflicht
 - Versteckt für user/public/moderator
 
@@ -188,4 +184,6 @@ Audit-Events mindestens für:
 
 
 > Hinweis: Es werden keine Kennzahlen/Counts/Prozente/Zeiträume ausgewiesen.
+
+
 
