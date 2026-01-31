@@ -168,7 +168,7 @@ Audit-Events mindestens für:
 - Versteckt für user/public/moderator
 
 ### Modul M-07 | VIP-Bereich: Checklisten & Ankauf privat (PDF/Papier only)
-- Sichtbar: vip/dealer/admin/superadmin
+- Sichtbar: vip/dealer
 - Ausgabe: nur PDF-Download/Print-Ansicht (keine editierbaren Online-Checklisten für Free)
 - Moderator/public: nie
 
@@ -184,6 +184,7 @@ Audit-Events mindestens für:
 
 
 > Hinweis: Es werden keine Kennzahlen/Counts/Prozente/Zeiträume ausgewiesen.
+
 
 
 
