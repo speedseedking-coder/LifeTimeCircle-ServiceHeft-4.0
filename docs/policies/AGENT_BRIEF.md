@@ -29,8 +29,8 @@ Service Heft 4.0 ist ein digitales, verifizierbares Service-/Historienheft für 
 - Public Output hat **pflichtigen Disclaimer**.
 
 ### 2.3 Rollen / Governance
-- Verkauf/Übergabe-QR & interner Verkauf: **nur vip/dealer/admin**.
-- VIP-Gewerbe: max 2 Staff; Freigabe **nur admin**.
+- Verkauf/Übergabe-QR & interner Verkauf: **nur vip/dealer**.
+- VIP-Gewerbe: max 2 Staff; Freigabe **nur SUPERADMIN**.
 - moderator: nur Blog/News; keine PII; kein Export; kein Audit.
 
 ### 2.4 Upload/Export

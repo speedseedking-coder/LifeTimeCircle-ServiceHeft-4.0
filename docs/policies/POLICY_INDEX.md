@@ -36,7 +36,7 @@ Grundsatz: **deny-by-default** + **least privilege**. **RBAC wird serverseitig e
 
 Sonderregeln (Reminder):
 - Übergabe/Verkauf-QR & interner Verkauf: nur VIP/Dealer.
-- VIP-Gewerbe: max. 2 Mitarbeiterplätze; Freigabe nur admin.
+- VIP-Gewerbe: max. 2 Mitarbeiterplätze; Freigabe nur SUPERADMIN.
 - Moderator: nur Blog/News; keine PII; kein Export; kein Audit.
 
 ---

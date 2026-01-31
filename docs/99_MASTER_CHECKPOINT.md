@@ -1,9 +1,51 @@
+# docs/99_MASTER_CHECKPOINT.md
 # 99_MASTER_CHECKPOINT — LifeTimeCircle / Service Heft 4.0
 
 Stand: 2026-02-01 (Europe/Berlin)  
 Brand: LifeTimeCircle — Modul: Service Heft 4.0  
 Ziel: produktionsreif (keine Demo), stabiler MVP → danach Ausbau  
 Source of Truth: `.\docs\` (keine Altpfade/Altversionen)
+
+---
+
+## 0) Update-Marker (Pflicht-Check bei Doku-Änderungen)
+
+Wenn du **eine** dieser Dateien änderst:
+- `docs/01_DECISIONS.md`
+- `docs/03_RIGHTS_MATRIX.md`
+- `docs/04_REPO_STRUCTURE.md`
+
+…dann MUSS dieser Checkpoint prüfen/mitziehen, ob die folgenden FIX-Punkte weiterhin korrekt abgebildet sind:
+
+### 0.1 RBAC-/Business-Gating Marker (FIX)
+- Verkauf/Übergabe-QR & interner Verkauf: **nur VIP & DEALER**
+- VIP-Gewerbe: **max. 2 Staff**, Freigabe **nur SUPERADMIN**
+- moderator: **nur Blog/News**, **kein Export**, **kein Audit-Read**, **keine PII**
+- superadmin Provisioning: **out-of-band** (nicht über normale Admin-Endpunkte)
+
+### 0.2 Export Marker (FIX)
+- Export default **redacted**
+- Full Export nur **SUPERADMIN** + **Audit** + **TTL/Limit** + **Verschlüsselung**
+- Token/Secrets niemals in Logs (auch nicht masked im Debug)
+
+### 0.3 Public-QR Marker (FIX)
+- bewertet ausschließlich Dokumentations-/Nachweisqualität, nie technischen Zustand
+- Public Response: keine Metrics/Counts/Percentages/Zeiträume
+- Pflicht-Disclaimer (exakt, ohne Abwandlung):
+  „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+
+### 0.4 Repo-/Nachweis Marker (FIX)
+- `docs/04_REPO_STRUCTURE.md` existiert und ist aktuell (nicht löschen)
+- ZIP/Git: NICHT rein: `server\data\app.db`, `storage\*` Inhalte, venv/caches/logs/build
+- docs sind SoT: keine Altpfade/Altversionen parallel
+
+### 0.5 Lizenzkontrolle Marker (NEU, FIX)
+- Default deny, wenn Lizenz fehlt/ungültig/abgelaufen/gesperrt
+- Lizenzdaten/Keys niemals im Klartext loggen
+- Artefakte vorhanden/geplant:
+  - `docs/legal/*`
+  - `scripts/legal_check.ps1`
+  - `tools/license_asset_audit.py`
 
 ---
 
@@ -173,4 +215,3 @@ EPIC-09 Verkauf/Übergabe
 - Upload-Quarantäne & Allowlist aktiv
 - Keine Pfad-/Altversion-Konflikte (Docs SoT = `.\docs`)
 - Lizenzkontrolle: serverseitig enforced + Tests + keine Leaks
-

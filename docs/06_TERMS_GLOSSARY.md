@@ -44,7 +44,7 @@ Stand: 2026-01-29
 
 \- \*\*Unfalltrust\*\*: Bei Unfall nur Grün, wenn Abschluss + Belege dokumentiert sind.
 
-\- \*\*Transfer / Übergabe-QR\*\*: Besitz-/Übergabe-Flow; nur vip/dealer/admin; Auditpflicht.
+\- \*\*Transfer / Übergabe-QR\*\*: Besitz-/Übergabe-Flow; nur vip/dealer; Auditpflicht.
 
 \- \*\*AuditEvent\*\*: Sicherheits-/Governance-Event (redacted, keine PII/Secrets).
 

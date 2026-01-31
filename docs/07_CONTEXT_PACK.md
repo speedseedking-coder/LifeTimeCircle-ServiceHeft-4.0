@@ -44,9 +44,9 @@ Policies: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\pol
 
 \- Moderator: nur Blog/News; keine PII; kein Export; kein Audit; kein Zugriff auf Vehicles/Entries/Documents/Verification.
 
-\- Verkauf/Übergabe-QR \& interner Verkauf: nur vip/dealer/admin.
+\- Verkauf/Übergabe-QR \& interner Verkauf: nur vip/dealer.
 
-\- VIP-Gewerbe: max 2 Staff; Freigabe nur admin.
+\- VIP-Gewerbe: max 2 Staff; Freigabe nur SUPERADMIN.
 
 
 

@@ -27,7 +27,7 @@ Re-Auth Pflicht bei:
 - Rollen vergeben/entziehen
 - VIP_BIZ Staff Slots freigeben/ablehnen
 - Export generieren / Full Export genehmigen
-- Übergabe-QR erstellen/widerrufen (wenn Admin-unterstützt)
+- Übergabe-QR erstellen/widerrufen: **nur VIP/DEALER** (kein Admin-Write)
 - Policy/Incident Overrides
 
 Re-Auth Fenster: 10 Minuten oder bis Logout (was zuerst eintritt)
