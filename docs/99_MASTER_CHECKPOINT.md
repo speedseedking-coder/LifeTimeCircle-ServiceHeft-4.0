@@ -1,7 +1,7 @@
 # docs/99_MASTER_CHECKPOINT.md
 # 99_MASTER_CHECKPOINT — LifeTimeCircle / Service Heft 4.0
 
-Stand: 2026-02-01 (Europe/Berlin)  
+Stand: 2026-01-31 (Europe/Berlin)  
 Brand: LifeTimeCircle — Modul: Service Heft 4.0  
 Ziel: produktionsreif (keine Demo), stabiler MVP → danach Ausbau  
 Source of Truth: `.\docs\` (keine Altpfade/Altversionen)
@@ -93,8 +93,12 @@ Wenn du **eine** dieser Dateien änderst:
 Rollen: public, user, vip, dealer, moderator, admin, superadmin
 
 Sonderregeln:
-- moderator: nur Blog/News, keine PII, kein Export, kein Audit-Read
+- moderator: **nur Blog/News**; **kein Export**, **kein Audit-Read**, **keine PII**, keine Vehicles/Entries/Documents/Verification
 - superadmin Provisioning: out-of-band (nicht über normale Admin-Endpunkte)
+
+Hinweis (praktisch notwendig):
+- Auth/Session-Endpunkte bleiben nutzbar, damit Moderator sich anmelden/abmelden kann.
+- Alles außerhalb Blog/News ist für Moderator serverseitig zu sperren.
 
 ---
 
@@ -173,12 +177,35 @@ DEV:
 ---
 
 ## 9) Backend IST-Stand (FastAPI/Poetry/SQLite)
+
+### 9.1 Core (IST)
 - Auth Request/Verify ok (DEV OTP optional)
 - Sessions/Token-Check ok
 - Audit vorhanden (ohne Klartext-PII)
 - RBAC-Guards integriert (401/403 sauber)
 - UTC/tz-aware Timestamps gepatcht
 - Smoke ok: logout funktioniert, Export-Missing-Tables = 404 statt 500
+
+### 9.2 P1 Moderator: strikt nur Blog/News (IST, FIX)
+Ziel: Moderator darf serverseitig **ausschließlich Blog/News** (plus notwendige Auth/Session).  
+Umsetzung: deny-by-default für Moderator per `forbid_moderator`-Dependency an allen Nicht-Allow-Routen.
+
+Nachweis/Ankerpunkte (Code):
+- `server/app/guards.py`: `forbid_moderator` (403: `role_not_allowed`)
+- `server/app/main.py`:
+  - `/health` ist deny und trägt `dependencies=[Depends(forbid_moderator)]`
+  - Admin-Router wird eingebunden; Admin-Users sind deny für Moderator
+- deny Router-Level Guards:
+  - `server/app/routers/export.py`
+  - `server/app/routers/export_vehicle.py`
+  - `server/app/routers/export_servicebook.py`
+  - `server/app/routers/export_masterclipboard.py`
+  - `server/app/routers/masterclipboard.py`
+- Admin-Users Guard (deny für Moderator):
+  - `server/app/admin/routes.py` (Router-/Include-Level Dependency für Users-Bereich)
+
+Tests:
+- RBAC Test für Moderator-Allowlist/deny-by-default vorhanden und grün (`poetry run pytest`).
 
 ---
 
@@ -198,20 +225,3 @@ Vehicle Export (Referenz):
 EPIC-02 Auth/Consent  
 EPIC-03 RBAC  
 EPIC-04 Admin-Minimum  
-EPIC-10 Betrieb/Qualität/Produktion  
-EPIC-05 Service Heft Kern  
-EPIC-06 Public-QR Mini-Check  
-EPIC-08 Landingpage/Navigation  
-EPIC-07 Blog/Newsletter  
-EPIC-09 Verkauf/Übergabe  
-
----
-
-## 12) DoD Gate vor Abgabe (MUSS)
-- Navigation/Buttons/Empty States ok
-- RBAC serverseitig, keine UI-only Security
-- Public-QR: ohne Metrics + Disclaimer exakt
-- Logs/Audit/Export konform (keine PII/Secrets, HMAC)
-- Upload-Quarantäne & Allowlist aktiv
-- Keine Pfad-/Altversion-Konflikte (Docs SoT = `.\docs`)
-- Lizenzkontrolle: serverseitig enforced + Tests + keine Leaks
