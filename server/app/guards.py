@@ -4,10 +4,7 @@ from __future__ import annotations
 from typing import Iterable, Set
 
 from fastapi import Depends, HTTPException
-
-from app.deps import get_current_user
-
-
+from app.rbac import get_current_user
 def _norm_roles(roles: Iterable[str]) -> Set[str]:
     return {str(r).strip().lower() for r in roles if str(r).strip()}
 
