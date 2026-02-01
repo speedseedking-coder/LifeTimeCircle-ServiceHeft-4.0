@@ -1,3 +1,4 @@
+from app.guards import forbid_moderator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Response
@@ -21,7 +22,7 @@ from app.schemas.masterclipboard import (
 from app.services import masterclipboard as svc
 
 
-router = APIRouter(prefix="/api/masterclipboard", tags=["masterclipboard"])
+router = APIRouter(prefix="/api/masterclipboard", tags=["masterclipboard"], dependencies=[Depends(forbid_moderator)])
 
 
 def _require_idempotency_key(idempotency_key: str | None) -> str:
@@ -178,3 +179,4 @@ def close_session(
     if status != 200:
         return Response(status_code=status, content=str(body).replace("'", '"'), media_type="application/json")
     return Response(status_code=status, content=OkResponse(**body).model_dump_json(), media_type="application/json")
+

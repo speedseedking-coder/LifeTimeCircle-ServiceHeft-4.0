@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.guards import forbid_moderator
 
 from typing import Any, Dict, Optional
 
@@ -13,7 +14,7 @@ from app.services.export_crypto import encrypt_json
 from app.services.export_audit import write_export_audit
 
 
-router = APIRouter(prefix="/export/vehicle", tags=["export"])
+router = APIRouter(prefix="/export/vehicle", tags=["export"], dependencies=[Depends(forbid_moderator)])
 
 
 # --- Dependencies (bestehende App-Deps nutzen, falls vorhanden) ---
@@ -216,3 +217,4 @@ def export_vehicle_full_encrypted(
     )
 
     return {"ciphertext": ciphertext}
+

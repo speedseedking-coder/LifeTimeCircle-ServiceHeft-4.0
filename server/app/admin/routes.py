@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from app.guards import forbid_moderator
 
 import json
 import sqlite3
@@ -15,7 +16,7 @@ from app.auth.rbac import AuthContext, require_roles
 from app.auth.settings import load_settings
 
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(dependencies=[Depends(forbid_moderator)], prefix="/admin", tags=["admin"])
 
 ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin"}
 

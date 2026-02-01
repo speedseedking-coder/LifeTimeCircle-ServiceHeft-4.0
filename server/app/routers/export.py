@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.guards import forbid_moderator
 
 import base64
 import datetime as dt
@@ -23,7 +24,7 @@ from app.core.security import Actor, require_roles
 from app.db.session import get_db
 from app.models.audit import IdempotencyRecord
 
-router = APIRouter(prefix="/export", tags=["export"])
+router = APIRouter(prefix="/export", tags=["export"], dependencies=[Depends(forbid_moderator)])
 
 
 # ---------------------------
@@ -454,3 +455,4 @@ def export_masterclipboard_full_encrypted(
         },
         "ciphertext": ciphertext,
     }
+

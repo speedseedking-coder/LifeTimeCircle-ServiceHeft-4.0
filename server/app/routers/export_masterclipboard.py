@@ -1,3 +1,4 @@
+from app.guards import forbid_moderator
 import datetime as dt
 from typing import Any, Dict, Optional
 
@@ -14,7 +15,7 @@ from app.services.export_audit import write_export_audit
 from app.routers.export_vehicle import get_db, get_actor  # type: ignore
 
 
-router = APIRouter(prefix="/export/masterclipboard", tags=["export"])
+router = APIRouter(prefix="/export/masterclipboard", tags=["export"], dependencies=[Depends(forbid_moderator)])
 
 
 def _actor_role(actor: Any) -> str:
@@ -200,3 +201,4 @@ def export_masterclipboard_full_encrypted(
     )
 
     return {"target": "masterclipboard", "id": masterclipboard_id, "ciphertext": ciphertext}
+

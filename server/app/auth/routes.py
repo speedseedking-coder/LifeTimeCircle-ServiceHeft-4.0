@@ -103,3 +103,48 @@ def do_logout(request: Request, user=Depends(require_user)) -> LogoutOut:
 
     logout(settings, raw_token, request_id=rid)
     return LogoutOut(ok=True)
+
+
+# --- Consent endpoints: AGB + Datenschutz Pflicht (Version + Timestamp) ---
+# Speichert Version + Timestamp auditierbar. Keine PII / Tokens im Klartext loggen.
+from fastapi import Body, Depends, HTTPException
+from app.consent_store import record_consent, get_consent_status, env_consent_version, env_db_path
+from app.rbac import get_current_user
+
+def _ltc_uid(u):
+    if u is None:
+        return None
+    if isinstance(u, dict):
+        return u.get("user_id") or u.get("id") or u.get("uid")
+    return getattr(u, "user_id", None) or getattr(u, "id", None) or getattr(u, "uid", None)
+
+@router.get("/consent")
+def consent_status(user = Depends(get_current_user)):
+    uid = _ltc_uid(user)
+    if uid is None:
+        raise HTTPException(status_code=401, detail={"code": "unauthenticated"})
+    required_version = env_consent_version()
+    st = get_consent_status(env_db_path(), str(uid), required_version)
+    return {
+        "required_version": st.required_version,
+        "has_required": st.has_required,
+        "latest_version": st.latest_version,
+        "latest_accepted_at": st.latest_accepted_at,
+        "latest_source": st.latest_source,
+    }
+
+@router.post("/consent")
+def accept_consent(payload: dict = Body(...), user = Depends(get_current_user)):
+    uid = _ltc_uid(user)
+    if uid is None:
+        raise HTTPException(status_code=401, detail={"code": "unauthenticated"})
+
+    agb = bool(payload.get("agb"))
+    ds = bool(payload.get("datenschutz"))
+    if not (agb and ds):
+        raise HTTPException(status_code=400, detail={"code": "consent_required", "consent_version": env_consent_version()})
+
+    source = payload.get("source", "web")
+    version = env_consent_version()
+    accepted_at = record_consent(env_db_path(), str(uid), version, str(source))
+    return {"ok": True, "consent_version": version, "accepted_at": accepted_at}

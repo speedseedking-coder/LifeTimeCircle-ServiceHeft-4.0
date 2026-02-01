@@ -1,3 +1,4 @@
+from app.guards import forbid_moderator
 import datetime as dt
 from typing import Any, Dict, List, Optional
 
@@ -14,7 +15,7 @@ from app.services.export_servicebook_redaction import redact_servicebook_entry_r
 from app.routers.export_vehicle import get_db, get_actor  # type: ignore
 
 
-router = APIRouter(prefix="/export/servicebook", tags=["export"])
+router = APIRouter(prefix="/export/servicebook", tags=["export"], dependencies=[Depends(forbid_moderator)])
 
 
 # ---------------------------
@@ -263,3 +264,4 @@ def export_servicebook_full_encrypted(
     )
 
     return {"target": "servicebook", "id": servicebook_id, "ciphertext": ciphertext}
+

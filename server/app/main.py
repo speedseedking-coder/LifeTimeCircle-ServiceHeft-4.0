@@ -1,6 +1,7 @@
+from app.guards import forbid_moderator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
@@ -37,7 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
 
-    @app.get("/health", include_in_schema=False)
+    @app.get("/health", include_in_schema=False, dependencies=[Depends(forbid_moderator)])
     def health() -> dict:
         return {"ok": True}
 
