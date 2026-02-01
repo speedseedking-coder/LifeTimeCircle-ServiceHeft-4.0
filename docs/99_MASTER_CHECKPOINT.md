@@ -1,227 +1,90 @@
-# docs/99_MASTER_CHECKPOINT.md
-# 99_MASTER_CHECKPOINT — LifeTimeCircle / Service Heft 4.0
+# 99_MASTER_CHECKPOINT
 
-Stand: 2026-01-31 (Europe/Berlin)  
-Brand: LifeTimeCircle — Modul: Service Heft 4.0  
-Ziel: produktionsreif (keine Demo), stabiler MVP → danach Ausbau  
-Source of Truth: `.\docs\` (keine Altpfade/Altversionen)
+Stand: 2026-02-01 (Europe/Berlin)
+Ziel: produktionsreif (keine Demo), deny-by-default + least privilege, RBAC serverseitig enforced
+Kontakt: lifetimecircle@online.de
 
----
-
-## 0) Update-Marker (Pflicht-Check bei Doku-Änderungen)
-
-Wenn du **eine** dieser Dateien änderst:
-- `docs/01_DECISIONS.md`
-- `docs/03_RIGHTS_MATRIX.md`
-- `docs/04_REPO_STRUCTURE.md`
-
-…dann MUSS dieser Checkpoint prüfen/mitziehen, ob die folgenden FIX-Punkte weiterhin korrekt abgebildet sind:
-
-### 0.1 RBAC-/Business-Gating Marker (FIX)
-- Verkauf/Übergabe-QR & interner Verkauf: **nur VIP & DEALER**
-- VIP-Gewerbe: **max. 2 Staff**, Freigabe **nur SUPERADMIN**
-- moderator: **nur Blog/News**, **kein Export**, **kein Audit-Read**, **keine PII**
-- superadmin Provisioning: **out-of-band** (nicht über normale Admin-Endpunkte)
-
-### 0.2 Export Marker (FIX)
-- Export default **redacted**
-- Full Export nur **SUPERADMIN** + **Audit** + **TTL/Limit** + **Verschlüsselung**
-- Token/Secrets niemals in Logs (auch nicht masked im Debug)
-
-### 0.3 Public-QR Marker (FIX)
-- bewertet ausschließlich Dokumentations-/Nachweisqualität, nie technischen Zustand
-- Public Response: keine Metrics/Counts/Percentages/Zeiträume
-- Pflicht-Disclaimer (exakt, ohne Abwandlung):
-  „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
-### 0.4 Repo-/Nachweis Marker (FIX)
-- `docs/04_REPO_STRUCTURE.md` existiert und ist aktuell (nicht löschen)
-- ZIP/Git: NICHT rein: `server\data\app.db`, `storage\*` Inhalte, venv/caches/logs/build
-- docs sind SoT: keine Altpfade/Altversionen parallel
-
-### 0.5 Lizenzkontrolle Marker (NEU, FIX)
-- Default deny, wenn Lizenz fehlt/ungültig/abgelaufen/gesperrt
-- Lizenzdaten/Keys niemals im Klartext loggen
-- Artefakte vorhanden/geplant:
-  - `docs/legal/*`
-  - `scripts/legal_check.ps1`
-  - `tools/license_asset_audit.py`
+## 0) Produktkern (Worum geht’s)
+Vom Gebrauchtwagen zum dokumentierten Vertrauensgut.  
+**Service Heft 4.0** ist das Kernmodul; **Public-QR** bewertet ausschließlich Nachweis-/Dokumentationsqualität (nie technischen Zustand).
 
 ---
 
-## 1) Projekt-Identität (FIX)
-- Brand: LifeTimeCircle, Modul: Service Heft 4.0
-- Ziel: produktionsreifer, stabiler MVP → danach Ausbau
-- Design-Regel: Look nicht „wild“ ändern, Fokus auf Module/Komponenten & Aktualität
-- Docs sind SoT: alles Relevante muss in `.\docs\` stehen
+## 1) Rollenmodell (RBAC)
+
+Rollen:
+- `public` (nur Public-QR Mini-Check)
+- `user` (eigene Fahrzeuge + eigene Einträge)
+- `vip` (erweiterte Sicht/Features)
+- `dealer` (gewerblich) (VIP-nah; Verkauf/Übergabe; ggf. Multi-User)
+- `moderator` (nur Blog/News, keine/kaum Halterdaten, kein Export, kein Audit)
+- `admin` / `superadmin` (vollständig, Freigaben, Governance)
+
+Sonderregel:
+- VIP-Gewerbe: max. 2 Mitarbeiterplätze, Freigabe nur SUPERADMIN.
 
 ---
 
-## 2) Nicht verhandelbare Leitplanken (FIX)
+## 2) Auth (E-Mail OTP) & Sessions
 
-### 2.1 Security/Privacy (serverseitig, zwingend)
-- deny-by-default + least privilege
-- RBAC serverseitig enforced (UI ist nie Sicherheitsinstanz)
-- keine Secrets in Logs, keine Klartext-PII in Logs/Audit/Exports
-- Pseudonymisierung via HMAC (kein unsalted SHA)
-- Tokens/Codes/Links niemals im Klartext loggen
+✅ OTP Flow:
+- `/auth/request` erstellt Challenge (dev-only liefert `dev_otp`)
+- `/auth/verify` prüft OTP, vergibt Token
+- `/auth/me` liefert `user_id` + `role`
+- `/auth/logout` revoket Session
 
-### 2.2 Uploads (FIX)
-- Allowlist + Limits
-- Quarantine by default
-- Freigabe nach Scan/Admin-Approval
-- keine öffentlichen Uploads
-
-### 2.3 Exports (FIX)
-- redacted default
-- Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung
-- Token/Secrets niemals in Logs
-
-### 2.4 Public-QR (öffentlich) (FIX)
-- bewertet ausschließlich Dokumentations-/Nachweisqualität, nie technischen Zustand
-- Public Response: keine Metrics/Counts/Percentages/Zeiträume
-- Pflicht-Disclaimer (exakt, ohne Abwandlung):
-  „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
-### 2.5 Business-Gating (FIX)
-- Verkauf/Übergabe-QR & interner Verkauf: nur VIP & DEALER
-- VIP-Gewerbe: max. 2 Staff, Freigabe nur SUPERADMIN
+Sicherheit:
+- Rate Limits (geplant/teilweise)
+- TTL für Challenges/Sessions (teilweise)
+- Audit Events ohne PII (Policy)
 
 ---
 
-## 3) Rollenmodell (RBAC) (FIX)
-Rollen: public, user, vip, dealer, moderator, admin, superadmin
+## 3) Audit & Governance
 
-Sonderregeln:
-- moderator: **nur Blog/News**; **kein Export**, **kein Audit-Read**, **keine PII**, keine Vehicles/Entries/Documents/Verification
-- superadmin Provisioning: out-of-band (nicht über normale Admin-Endpunkte)
-
-Hinweis (praktisch notwendig):
-- Auth/Session-Endpunkte bleiben nutzbar, damit Moderator sich anmelden/abmelden kann.
-- Alles außerhalb Blog/News ist für Moderator serverseitig zu sperren.
+- Audit-Log ohne Klartext-PII
+- Exporte/Quarantäne/Redaction als Policy festgelegt (Umsetzung folgt)
+- Admin-Governance serverseitig enforced
 
 ---
 
 ## 4) Auth & Consent (FIX)
-- E-Mail Login + Verifizierung (OTP/Magic-Link)
-- One-time + TTL + Rate-Limits + Anti-Enumeration
-- Consent-Gate Pflicht (AGB + Datenschutz)
-- Speicherung: Version + Timestamp (auditierbar)
 
----
+Consent-Gate Pflicht: AGB + Datenschutz müssen serverseitig akzeptiert sein, bevor „voller Zugang“ erfolgt.
 
-## 5) Lizenzkontrolle / Legal (NEU, FIX)
-Ziel: Lizenzprüfung als zusätzliche Policy-Schicht (RBAC bleibt Pflicht).
+Status (01.02.2026):
+- Smoke-Test (PowerShell) läuft stabil: `/auth/request` → `/auth/verify` → `/auth/me` = 200 OK.
+- Consent-Contract ist serverseitig strikt:
+  - `consents[]` verlangt `accepted_at` (ISO 8601) und `source` ∈ `{ui, api}` (nicht `web`)
+  - `doc_type` ∈ `{terms, privacy}`, `doc_version` aktuell: `v1`
+- Hinweis: `source="web"` bleibt beim *Request* ok; für *Consent* ist `ui/api` Pflicht.
 
-Regeln:
-- Default deny, wenn Lizenz fehlt/ungültig/abgelaufen/gesperrt
-- Lizenzdaten/Keys niemals im Klartext loggen
+PowerShell Smoke-Test (ohne Platzhalter):
+```powershell
+$base  = "http://127.0.0.1:8000"
+$email = "test@example.com"
 
-Artefakte:
-- `docs/legal/*`
-- `scripts/legal_check.ps1`
-- `tools/license_asset_audit.py`
+# 1) Request
+$req = Invoke-RestMethod -Method Post -Uri "$base/auth/request" -ContentType "application/json" `
+  -Body (@{ email=$email; source="web" } | ConvertTo-Json)
 
-Offen:
-- Feature → Tier/Flag Mapping
-- Wer darf Lizenz setzen/ändern (vermutlich SUPERADMIN)
-- Testfälle (allowed/denied) + Logging-No-Leak Checks
+$challengeId = [string]$req.challenge_id
+$otp = $req.dev_otp
+if ($otp -is [int] -or $otp -is [long]) { $otp = "{0:D6}" -f $otp } else { $otp = [string]$otp }
 
----
+# 2) Verify (+ Consent-Contract)
+$acceptedAt = (Get-Date).ToUniversalTime().ToString("o")
+$verifyPayload = @{
+  email=$email; challenge_id=$challengeId; otp=$otp;
+  consents=@(
+    @{ doc_type="terms";   doc_version="v1"; accepted_at=$acceptedAt; source="ui" }
+    @{ doc_type="privacy"; doc_version="v1"; accepted_at=$acceptedAt; source="ui" }
+  )
+}
+$verify = Invoke-RestMethod -Method Post -Uri "$base/auth/verify" -ContentType "application/json" `
+  -Body ($verifyPayload | ConvertTo-Json -Depth 10)
 
-## 6) MVP-Scope (Produktkern)
-
-MVP-Kern:
-- Service Heft 4.0: Profil (VIN/WID + QR/ID), Timeline/Einträge, Dokumente/Uploads
-- Trust-Level je Eintrag/Quelle (T1/T2/T3)
-- Public-QR Mini-Check: Ampel Rot/Orange/Gelb/Grün (ohne Metrics, mit Disclaimer)
-- Frontpage/Hub + Login
-- Blog/News (Admin erstellt; Moderator verwaltet strikt Blog/News)
-- Admin-Minimum (Governance):
-  - Userliste redacted
-  - Rolle setzen
-  - Moderatoren akkreditieren
-  - VIP-Gewerbe-2-Staff-Freigabe (SUPERADMIN)
-  - Audit (ohne PII)
-
-Zusatzmodule (später, VIP/Dealer):
-- Verkauf/Übergabe-QR, interner Verkauf
-- Gewerbe: Direktannahme, MasterClipboard, OBD/GPS, etc.
-
----
-
-## 7) Trustscore / T-Level (Status)
-- Ampel bewertet nur Dokumentation/Verifizierungsgrad, nicht Technik
-- Kriterien high-level (ohne Metriken): Historie, T-Level, Aktualität/Regelmäßigkeit, Unfalltrust
-- Unfallregel: „Grün trotz Unfall“ nur bei Abschluss + Belegen
-
-P0-Entscheidungen offen:
-- Definition T1/T2/T3 (Belegarten/Prüfer/Regeln)
-- Ampel-Mindestbedingungen je Stufe (deterministisch, ohne Metrics)
-- Definition „Unfall abgeschlossen“ + Pflichtbelege
-
----
-
-## 8) Repo/Setup (IST)
-Repo: `.\LifeTimeCircle-ServiceHeft-4.0`  
-Top-Level: `docs/ server/ static/ storage/ tools/ scripts/`
-
-ZIP-Regel:
-- NICHT rein: `server\data\app.db`, venv, caches, Logs, Build-Artefakte
-
-DEV:
-- env vars: `LTC_SECRET_KEY`, `LTC_DB_PATH`, `LTC_DEV_EXPOSE_OTP`
-- Start: uvicorn via poetry
-- Tests: `poetry run pytest`
-
----
-
-## 9) Backend IST-Stand (FastAPI/Poetry/SQLite)
-
-### 9.1 Core (IST)
-- Auth Request/Verify ok (DEV OTP optional)
-- Sessions/Token-Check ok
-- Audit vorhanden (ohne Klartext-PII)
-- RBAC-Guards integriert (401/403 sauber)
-- UTC/tz-aware Timestamps gepatcht
-- Smoke ok: logout funktioniert, Export-Missing-Tables = 404 statt 500
-
-### 9.2 P1 Moderator: strikt nur Blog/News (IST, FIX)
-Ziel: Moderator darf serverseitig **ausschließlich Blog/News** (plus notwendige Auth/Session).  
-Umsetzung: deny-by-default für Moderator per `forbid_moderator`-Dependency an allen Nicht-Allow-Routen.
-
-Nachweis/Ankerpunkte (Code):
-- `server/app/guards.py`: `forbid_moderator` (403: `role_not_allowed`)
-- `server/app/main.py`:
-  - `/health` ist deny und trägt `dependencies=[Depends(forbid_moderator)]`
-  - Admin-Router wird eingebunden; Admin-Users sind deny für Moderator
-- deny Router-Level Guards:
-  - `server/app/routers/export.py`
-  - `server/app/routers/export_vehicle.py`
-  - `server/app/routers/export_servicebook.py`
-  - `server/app/routers/export_masterclipboard.py`
-  - `server/app/routers/masterclipboard.py`
-- Admin-Users Guard (deny für Moderator):
-  - `server/app/admin/routes.py` (Router-/Include-Level Dependency für Users-Bereich)
-
-Tests:
-- RBAC Test für Moderator-Allowlist/deny-by-default vorhanden und grün (`poetry run pytest`).
-
----
-
-## 10) Exports (P0)
-- Missing Tables werden als 404 gemeldet (kein 500):
-  - `vehicle_table_missing`
-  - `servicebook_table_missing`
-
-Vehicle Export (Referenz):
-- GET `/export/vehicle/{id}`: redacted default, scope enforced
-- POST `/export/vehicle/{id}/grant`: superadmin, one-time Token + TTL/Limit
-- GET `/export/vehicle/{id}/full`: superadmin + X-Export-Token, Response encrypted
-
----
-
-## 11) Backlog-Reihenfolge (Epics)
-EPIC-02 Auth/Consent  
-EPIC-03 RBAC  
-EPIC-04 Admin-Minimum  
+# 3) Me
+$token = [string]$verify.access_token
+Invoke-RestMethod -Method Get -Uri "$base/auth/me" -Headers @{ Authorization="Bearer $token" } |
+  ConvertTo-Json -Depth 10
