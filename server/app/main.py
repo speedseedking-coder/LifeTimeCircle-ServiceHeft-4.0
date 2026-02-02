@@ -10,6 +10,7 @@ from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.export import router as export_router
 from app.routers.export_vehicle import router as export_vehicle_router
 from app.routers.export_servicebook import router as export_servicebook_router
+from app.routers.consent import router as consent_router
 from app.auth.routes import router as auth_router
 from app.admin.routes import router as admin_router
 from app.public.routes import router as public_router
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(public_router)
     app.include_router(export_vehicle_router)
     app.include_router(export_servicebook_router)
+    app.include_router(consent_router)
     return app
 
 

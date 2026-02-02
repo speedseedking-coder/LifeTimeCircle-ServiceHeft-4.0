@@ -1,139 +1,144 @@
-# server/app/consent_store.py
 from __future__ import annotations
 
 import os
-import sqlite3
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import Any, Optional, Tuple
+
+from sqlalchemy.orm import Session as SASession
+
+from app.consent.policy import required_consents
+from app.deps import get_db
+from app.services.consent_store import (
+    ConsentContractError,
+    ensure_required_consents,
+    get_user_consents,
+    record_consents,
+    validate_and_normalize_consents,
+)
+
+# --------------------------------------------------------------------
+# COMPAT LAYER
+# auth/routes.py importiert historisch:
+#   from app.consent_store import record_consent, get_consent_status, env_consent_version, env_db_path
+#
+# Source of Truth bleibt:
+#   - app/consent/policy.py
+#   - app/services/consent_store.py
+# --------------------------------------------------------------------
 
 
-_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS user_consent (
-  user_id TEXT NOT NULL,
-  consent_version TEXT NOT NULL,
-  accepted_at TEXT NOT NULL,
-  source TEXT NOT NULL,
-  PRIMARY KEY (user_id, consent_version)
-);
-"""
+def env_consent_version() -> str:
+    # historisch: eine globale Consent-Version
+    # aktuell v1 (pro doc weiterhin in policy.py)
+    return "v1"
 
 
-_ALLOWED_SOURCES = {"web", "app", "api", "unknown"}
+def env_db_path() -> str:
+    # historisch: DB-Pfad aus Env oder Default server/data/app.db
+    p = os.getenv("LTC_DB_PATH")
+    if p:
+        return p
+    server_root = Path(__file__).resolve().parents[1]  # .../server
+    return str(server_root / "data" / "app.db")
 
 
-def _utc_iso_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _coerce_consents(consents: Any) -> list[dict[str, Any]]:
+    if consents is None:
+        return []
+    if not isinstance(consents, list):
+        raise ConsentContractError("consents muss eine Liste sein")
+
+    out: list[dict[str, Any]] = []
+    for item in consents:
+        if isinstance(item, dict):
+            out.append(item)
+        elif hasattr(item, "model_dump"):
+            out.append(item.model_dump())
+        elif hasattr(item, "dict"):
+            out.append(item.dict())
+        else:
+            raise ConsentContractError("consents[] enthält ungültige Elemente")
+    return out
 
 
-def _norm_source(source: Optional[str]) -> str:
-    if not source:
-        return "unknown"
-    s = str(source).strip().lower()
-    return s if s in _ALLOWED_SOURCES else "unknown"
+def _open_db_if_needed(db: Optional[SASession]) -> Tuple[SASession, Optional[Any]]:
+    if db is not None:
+        return db, None
+    gen = get_db()
+    db2 = next(gen)
+    return db2, gen
 
 
-def ensure_consent_table(db_path: str) -> None:
-    os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
-    with sqlite3.connect(db_path) as con:
-        con.execute("PRAGMA journal_mode=WAL;")
-        con.execute("PRAGMA foreign_keys=ON;")
-        con.executescript(_TABLE_SQL)
-        con.commit()
+def _close_db_gen(gen: Optional[Any]) -> None:
+    if gen is None:
+        return
+    try:
+        gen.close()
+    except Exception:
+        pass
 
 
-def record_consent(db_path: str, user_id: str, consent_version: str, source: str = "web") -> str:
+def record_consent(*args: Any, **kwargs: Any) -> dict[str, Any]:
     """
-    Speichert Consent pro (user_id, consent_version).
-    - idempotent: erneutes Accept derselben Version überschreibt NICHT den ersten Timestamp
-    - auditierbar: Version + accepted_at (UTC) + source
+    Unterstützt Call-Patterns:
+      - record_consent(user_id, consents)
+      - record_consent(db, user_id, consents)
+      - record_consent(user_id=<>, consents=<>, db=<>)
     """
-    ensure_consent_table(db_path)
+    db = kwargs.get("db")
+    user_id = kwargs.get("user_id")
+    consents = kwargs.get("consents")
 
-    src = _norm_source(source)
-    ts = _utc_iso_now()
+    if len(args) == 2 and user_id is None and consents is None:
+        user_id, consents = args
+    elif len(args) == 3 and db is None and user_id is None and consents is None:
+        db, user_id, consents = args
 
-    with sqlite3.connect(db_path) as con:
-        con.row_factory = sqlite3.Row
-        con.execute("PRAGMA foreign_keys=ON;")
+    if db is not None and not isinstance(db, SASession):
+        db = None
 
-        con.execute(
-            """
-            INSERT OR IGNORE INTO user_consent (user_id, consent_version, accepted_at, source)
-            VALUES (?, ?, ?, ?)
-            """,
-            (str(user_id), str(consent_version), ts, src),
-        )
+    if not user_id:
+        raise ConsentContractError("user_id fehlt")
 
-        row = con.execute(
-            """
-            SELECT accepted_at
-            FROM user_consent
-            WHERE user_id = ? AND consent_version = ?
-            """,
-            (str(user_id), str(consent_version)),
-        ).fetchone()
-        con.commit()
+    raw = _coerce_consents(consents)
+    normalized = validate_and_normalize_consents(raw)
+    ensure_required_consents(normalized)
 
-    return str(row["accepted_at"]) if row else ts
+    db2, gen = _open_db_if_needed(db)
+    try:
+        record_consents(db2, str(user_id), normalized)
+        return {"ok": True}
+    finally:
+        _close_db_gen(gen)
 
 
-def has_consent(db_path: str, user_id: str, consent_version: str) -> bool:
-    ensure_consent_table(db_path)
-    with sqlite3.connect(db_path) as con:
-        row = con.execute(
-            """
-            SELECT 1
-            FROM user_consent
-            WHERE user_id = ? AND consent_version = ?
-            LIMIT 1
-            """,
-            (str(user_id), str(consent_version)),
-        ).fetchone()
-        return row is not None
+def get_consent_status(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """
+    Unterstützt Call-Patterns:
+      - get_consent_status(user_id)
+      - get_consent_status(db, user_id)
+      - get_consent_status(user_id=<>, db=<>)
+    """
+    db = kwargs.get("db")
+    user_id = kwargs.get("user_id")
 
+    if len(args) == 1 and user_id is None:
+        user_id = args[0]
+    elif len(args) == 2 and user_id is None and db is None:
+        db, user_id = args
 
-@dataclass(frozen=True)
-class ConsentStatus:
-    required_version: str
-    has_required: bool
-    latest_version: Optional[str]
-    latest_accepted_at: Optional[str]
-    latest_source: Optional[str]
+    if db is not None and not isinstance(db, SASession):
+        db = None
 
+    if not user_id:
+        raise ConsentContractError("user_id fehlt")
 
-def get_consent_status(db_path: str, user_id: str, required_version: str) -> ConsentStatus:
-    ensure_consent_table(db_path)
-
-    with sqlite3.connect(db_path) as con:
-        con.row_factory = sqlite3.Row
-        latest = con.execute(
-            """
-            SELECT consent_version, accepted_at, source
-            FROM user_consent
-            WHERE user_id = ?
-            ORDER BY accepted_at DESC
-            LIMIT 1
-            """,
-            (str(user_id),),
-        ).fetchone()
-
-    latest_version = str(latest["consent_version"]) if latest else None
-    latest_accepted_at = str(latest["accepted_at"]) if latest else None
-    latest_source = str(latest["source"]) if latest else None
-
-    return ConsentStatus(
-        required_version=str(required_version),
-        has_required=has_consent(db_path, str(user_id), str(required_version)),
-        latest_version=latest_version,
-        latest_accepted_at=latest_accepted_at,
-        latest_source=latest_source,
-    )
-
-
-def env_db_path(default: str = "./data/app.db") -> str:
-    return os.getenv("LTC_DB_PATH", default)
-
-
-def env_consent_version(default: str = "2026-01-27") -> str:
-    return os.getenv("LTC_CONSENT_VERSION", default)
+    db2, gen = _open_db_if_needed(db)
+    try:
+        accepted = get_user_consents(db2, str(user_id))
+        required = required_consents()
+        have = {(a["doc_type"], a["doc_version"]) for a in accepted}
+        is_complete = all((r["doc_type"], r["doc_version"]) in have for r in required)
+        return {"required": required, "accepted": accepted, "is_complete": is_complete}
+    finally:
+        _close_db_gen(gen)
