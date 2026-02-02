@@ -15,3 +15,14 @@
 *.pdf binary
 *.zip binary
 *.7z binary
+
+# normalize line endings
+* text=auto
+
+# python / shell
+*.py  text eol=lf
+*.ps1 text eol=crlf
+*.md  text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
