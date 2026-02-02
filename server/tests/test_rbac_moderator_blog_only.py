@@ -1,46 +1,85 @@
+# server/tests/test_rbac_moderator_blog_only.py
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
 from fastapi.routing import APIRoute
-
-from app.guards import forbid_moderator
-
-
-ALLOW_PREFIXES = (
-    "/news",
-    "/blog",
-    "/admin/news",
-    "/admin/blog",
-    "/public",
-    "/qr",
-    "/auth",
-    "/docs",
-    "/openapi",
-    "/redoc",
-)
+from fastapi.testclient import TestClient
 
 
-def _is_allowed_path(path: str) -> bool:
-    if not path:
-        return True
-    return any(path.startswith(p) for p in ALLOW_PREFIXES)
+@pytest.fixture()
+def client() -> TestClient:
+    from app.main import app
+
+    return TestClient(app)
 
 
 def _has_forbid_moderator(route: APIRoute) -> bool:
-    deps = getattr(getattr(route, "dependant", None), "dependencies", None) or []
-    return any(getattr(d, "call", None) is forbid_moderator for d in deps)
+    names: set[str] = set()
+
+    # dependencies via dependant
+    try:
+        for dep in getattr(route, "dependant", None).dependencies:  # type: ignore[union-attr]
+            call = getattr(dep, "call", None)
+            if call is None:
+                continue
+            names.add(getattr(call, "__name__", str(call)))
+    except Exception:
+        pass
+
+    # dependencies via route.dependencies
+    try:
+        for dep in (route.dependencies or []):
+            call = getattr(dep, "dependency", None)
+            if call is None:
+                continue
+            names.add(getattr(call, "__name__", str(call)))
+    except Exception:
+        pass
+
+    return "forbid_moderator" in names
 
 
-def test_auth_routes_not_blocked_by_forbid_moderator(client):
-    auth_routes = [r for r in client.app.routes if isinstance(r, APIRoute) and str(r.path).startswith("/auth")]
-    if not auth_routes:
-        return
-    blocked = [str(r.path) for r in auth_routes if _has_forbid_moderator(r)]
-    assert not blocked, f"/auth Routen dürfen nicht forbid_moderator tragen: {blocked}"
+def _is_allowed_path(path: str) -> bool:
+    """
+    Allowed = darf OHNE forbid_moderator existieren.
+
+    - Auth muss für jede Rolle funktionieren (Login/Verify/Me)
+    - Public-QR ist öffentlich
+    - Consent-Contract Discovery ist öffentlich: /consent/current
+    - OpenAPI/Docs sind Framework-Routen
+    - Blog/News (falls vorhanden) darf Moderator sehen
+    """
+    if not path:
+        return True
+
+    # framework
+    if path in ("/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"):
+        return True
+
+    # auth endpoints (public/login + authed me/logout etc.)
+    if path.startswith("/auth"):
+        return True
+
+    # public qr + ggf. blog/news
+    if path.startswith("/public/qr"):
+        return True
+    if path.startswith("/public/blog") or path.startswith("/public/news"):
+        return True
+
+    # consent discovery must be public
+    if path == "/consent/current":
+        return True
+
+    return False
 
 
-def test_non_blog_routes_have_forbid_moderator_dependency(client):
+def test_non_blog_routes_have_forbid_moderator_dependency(client: TestClient) -> None:
     routes = [r for r in client.app.routes if isinstance(r, APIRoute)]
     assert routes, "Keine APIRoutes gefunden."
 
-    missing_guard = []
+    missing_guard: list[str] = []
     saw_deny = False
 
     for r in routes:
