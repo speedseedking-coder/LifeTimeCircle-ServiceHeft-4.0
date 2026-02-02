@@ -1,90 +1,167 @@
-# 99_MASTER_CHECKPOINT
+C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\99_MASTER_CHECKPOINT.md
+# LifeTimeCircle – Service Heft 4.0 · 99_MASTER_CHECKPOINT
 
-Stand: 2026-02-01 (Europe/Berlin)
-Ziel: produktionsreif (keine Demo), deny-by-default + least privilege, RBAC serverseitig enforced
+Stand: 01.02.2026 (Europe/Berlin)
 Kontakt: lifetimecircle@online.de
 
-## 0) Produktkern (Worum geht’s)
-Vom Gebrauchtwagen zum dokumentierten Vertrauensgut.  
-**Service Heft 4.0** ist das Kernmodul; **Public-QR** bewertet ausschließlich Nachweis-/Dokumentationsqualität (nie technischen Zustand).
+Ziel: produktionsreif (keine Demo)
+Security Default: deny-by-default + least privilege
+RBAC: serverseitig enforced (keine Client-Trusts)
+Source of Truth (Docs): C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs
 
 ---
 
-## 1) Rollenmodell (RBAC)
+## 0) Quick-Status (grün/gelb/rot)
 
-Rollen:
-- `public` (nur Public-QR Mini-Check)
-- `user` (eigene Fahrzeuge + eigene Einträge)
-- `vip` (erweiterte Sicht/Features)
-- `dealer` (gewerblich) (VIP-nah; Verkauf/Übergabe; ggf. Multi-User)
-- `moderator` (nur Blog/News, keine/kaum Halterdaten, kein Export, kein Audit)
-- `admin` / `superadmin` (vollständig, Freigaben, Governance)
+✅ Server bootet (uvicorn --reload)  
+✅ OpenAPI erreichbar: GET /openapi.json = 200  
+✅ Auth-Flow DEV: POST /auth/request + POST /auth/verify = 200 (mit DEV-OTP, wenn aktiviert)  
+✅ Consent-Module vorhanden + Router gemountet  
+✅ Consent-Persistenz bestätigt: POST /consent/accept + GET /consent/status => is_complete=true  
 
-Sonderregel:
-- VIP-Gewerbe: max. 2 Mitarbeiterplätze, Freigabe nur SUPERADMIN.
+### DoD Consent (reproduzierbar)
 
----
-
-## 2) Auth (E-Mail OTP) & Sessions
-
-✅ OTP Flow:
-- `/auth/request` erstellt Challenge (dev-only liefert `dev_otp`)
-- `/auth/verify` prüft OTP, vergibt Token
-- `/auth/me` liefert `user_id` + `role`
-- `/auth/logout` revoket Session
-
-Sicherheit:
-- Rate Limits (geplant/teilweise)
-- TTL für Challenges/Sessions (teilweise)
-- Audit Events ohne PII (Policy)
+- Server neu gestartet (dev_start_server.ps1)
+- Smoke #1: /auth/request + /auth/verify + /auth/me + /consent/accept + /consent/status → OK
+- Server neu gestartet
+- Smoke #2: /consent/status zeigt accepted: terms v1 + privacy v1; is_complete=true
 
 ---
 
-## 3) Audit & Governance
+## 1) Neu / Fixes (Consent P0)
 
-- Audit-Log ohne Klartext-PII
-- Exporte/Quarantäne/Redaction als Policy festgelegt (Umsetzung folgt)
-- Admin-Governance serverseitig enforced
+### 1.1 Consent: neue Komponenten (angelegt)
+- app/consent/policy.py
+- app/models/consent.py
+- app/services/consent_store.py
+- app/routers/consent.py
+- tests/test_consent_contract.py
+
+### 1.2 Main: Router-Mount
+- app/main.py importiert und mountet consent_router (include_router)
+
+### 1.3 Kompatibilität / Auth-Import-Fix
+Problem: ImportError in app/auth/routes.py (erwartet app.consent_store: record_consent, get_consent_status, env_consent_version, env_db_path)
+
+Fix: compat wrapper
+- app/consent_store.py (Wrapper v1) stellt die erwarteten Funktionen bereit.
+
+### 1.4 Guard-Härtung (dict-User vs Objekt-User)
+Problem: Consent-Endpoints liefen in "NoneType/dict has no attribute id" weil get_current_user teils dict liefert.
+
+Fix:
+- app/routers/consent.py angepasst: user_id robust aus dict/Objekt ermitteln
+- forbid_moderator robust (dict/Objekt)
 
 ---
 
-## 4) Auth & Consent (FIX)
+## 2) Consent Contract (aktuell)
 
-Consent-Gate Pflicht: AGB + Datenschutz müssen serverseitig akzeptiert sein, bevor „voller Zugang“ erfolgt.
+Required Consents:
+- terms v1
+- privacy v1
 
-Status (01.02.2026):
-- Smoke-Test (PowerShell) läuft stabil: `/auth/request` → `/auth/verify` → `/auth/me` = 200 OK.
-- Consent-Contract ist serverseitig strikt:
-  - `consents[]` verlangt `accepted_at` (ISO 8601) und `source` ∈ `{ui, api}` (nicht `web`)
-  - `doc_type` ∈ `{terms, privacy}`, `doc_version` aktuell: `v1`
-- Hinweis: `source="web"` bleibt beim *Request* ok; für *Consent* ist `ui/api` Pflicht.
+Endpoints:
+- GET  /consent/current
+  - public discovery (keine Auth)
+  - liefert required doc_type/doc_version
+- GET  /consent/status
+  - Auth erforderlich (Bearer)
+  - forbid_moderator
+  - liefert required + accepted + is_complete
+- POST /consent/accept
+  - Auth erforderlich (Bearer)
+  - forbid_moderator
+  - speichert Acceptances in DB (idempotent möglich)
+  - danach muss /consent/status is_complete=true liefern, wenn required erfüllt
 
-PowerShell Smoke-Test (ohne Platzhalter):
-```powershell
-$base  = "http://127.0.0.1:8000"
-$email = "test@example.com"
+Wichtig:
+- Auth/verify akzeptiert consents als Payload (Contract-Check), Persistenz wird über /consent/accept geprüft/gesetzt.
 
-# 1) Request
-$req = Invoke-RestMethod -Method Post -Uri "$base/auth/request" -ContentType "application/json" `
-  -Body (@{ email=$email; source="web" } | ConvertTo-Json)
+---
 
-$challengeId = [string]$req.challenge_id
-$otp = $req.dev_otp
-if ($otp -is [int] -or $otp -is [long]) { $otp = "{0:D6}" -f $otp } else { $otp = [string]$otp }
+## 3) DEV-ENV (lokal)
 
-# 2) Verify (+ Consent-Contract)
-$acceptedAt = (Get-Date).ToUniversalTime().ToString("o")
-$verifyPayload = @{
-  email=$email; challenge_id=$challengeId; otp=$otp;
-  consents=@(
-    @{ doc_type="terms";   doc_version="v1"; accepted_at=$acceptedAt; source="ui" }
-    @{ doc_type="privacy"; doc_version="v1"; accepted_at=$acceptedAt; source="ui" }
-  )
-}
-$verify = Invoke-RestMethod -Method Post -Uri "$base/auth/verify" -ContentType "application/json" `
-  -Body ($verifyPayload | ConvertTo-Json -Depth 10)
+Minimal:
+- LTC_SECRET_KEY (>= 32 Zeichen, sonst RuntimeError)
+Optional/Dev:
+- LTC_DEV_EXPOSE_OTP = "1"   → /auth/request liefert dev_otp (nur lokal)
+- LTC_MAILER_MODE    = "null" (kein SMTP Versand; DEV-OTP nutzen)
+- LTC_DB_PATH        = ".\data\app.db" (optional; default ist ./data/app.db)
 
-# 3) Me
-$token = [string]$verify.access_token
-Invoke-RestMethod -Method Get -Uri "$base/auth/me" -Headers @{ Authorization="Bearer $token" } |
-  ConvertTo-Json -Depth 10
+Typische Stolperfallen:
+- Poetry muss im server-Ordner laufen (sonst: "pyproject.toml nicht gefunden").
+- Env setzen in PowerShell immer mit `$env:NAME="value"` (nicht als plain text).
+
+---
+
+## 4) DEV Start & Smoke
+
+### 4.1 Server Start (Fenster A)
+Empfohlenes Script:
+- server\scripts\dev_start_server.ps1
+
+Inhalt/Verhalten:
+- setzt ENV (SECRET_KEY, DEV_EXPOSE_OTP, MAILER_MODE)
+- räumt Port 8000 frei
+- py_compile app/main.py (fail-fast)
+- startet uvicorn --reload
+
+Start:
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev_start_server.ps1
+
+Erwartung (Log):
+- "Application startup complete."
+- Requests werden als 200 geloggt
+
+### 4.2 Smoke: Auth + Consent (Fenster B)
+Script:
+- server\scripts\smoke_auth_consent.ps1
+
+Ziel:
+- Auth: request → verify → me
+- Consent: accept → status (is_complete=true)
+
+Start:
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke_auth_consent.ps1
+
+Erwartung:
+- AUTH ME zeigt user_id + role
+- CONSENT STATUS zeigt accepted (terms+privacy) und is_complete=true
+
+---
+
+## 5) Aktuelle Artefakte (Scripts)
+
+Neu/Ergänzt:
+- server\scripts\dev_start_server.ps1
+- server\scripts\smoke_auth_consent.ps1
+
+Vorhanden (Auszug):
+- patch_consent_p0_add_files_and_mount.ps1
+- patch_consent_router_user_dict_fix.ps1
+- patch_consent_store_wrapper_v1.ps1
+- patch_mount_consent_router.ps1
+- smoke_http.ps1
+- auth_test.ps1
+
+---
+
+## 6) Nächste Schritte (konkret)
+
+P0 Stabilität:
+1) Smoke-Script so halten, dass es immer:
+   - /auth/request → /auth/verify → /auth/me → /consent/accept → /consent/status
+2) Persistenz-Check:
+   - Server restart → Smoke erneut → muss wieder is_complete=true liefern
+
+P1 Policy/Prod:
+3) Sicherstellen: LTC_DEV_EXPOSE_OTP default OFF (Prod)
+4) Mailer-Mode für Prod (SMTP) sauber konfigurieren (separat, später)
+
+---
+
+## 7) Ergebnis: aktueller Stand
+
+Consent-Discovery + Consent-Persistenz + Auth-Flow (DEV) sind funktional.
+Server läuft stabil mit den aktuellen Patches; Consent ist über Status verifizierbar (is_complete=true nach accept).
