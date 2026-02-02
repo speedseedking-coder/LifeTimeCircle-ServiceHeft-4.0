@@ -13,3 +13,7 @@ server/data/*.db-journal
 node_modules/
 dist/
 *.bak.*
+
+# backup files
+*.bak
+
