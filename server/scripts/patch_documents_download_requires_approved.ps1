@@ -1,111 +1,117 @@
-# server/scripts/patch_documents_download_requires_approved.ps1
-param()
+param(
+  [string]$RouterPath = (Join-Path $PSScriptRoot "..\app\routers\documents.py")
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$target = Resolve-Path (Join-Path $PSScriptRoot "..\app\routers\documents.py")
-if (-not (Test-Path $target)) { throw "Target file not found: $target" }
+if (-not (Test-Path $RouterPath)) {
+  throw "Router file not found: $RouterPath"
+}
 
-$src = Get-Content -Raw -Path $target
+$marker = "# Quarantine-by-default: Download für non-admin nur bei Status APPROVED (deny-by-default)"
 
-$marker = "LTC_PATCH: download requires approved for non-admin"
-if ($src -match [regex]::Escape($marker)) {
-  Write-Host "OK: Patch already present in $target"
+$src = Get-Content -Raw -Encoding UTF8 $RouterPath
+
+if ($src -like "*$marker*") {
+  Write-Host "OK: already patched -> $RouterPath"
   exit 0
 }
 
-# 1) Ensure HTTPException import exists
-$fastapiImportPattern = '(?m)^from\s+fastapi\s+import\s+(.+)$'
-$m = [regex]::Match($src, $fastapiImportPattern)
-if ($m.Success) {
-  $imports = $m.Groups[1].Value
-  if ($imports -notmatch '\bHTTPException\b') {
-    $newImports = ($imports.TrimEnd() + ", HTTPException")
-    $src = [regex]::Replace(
-      $src,
-      $fastapiImportPattern,
-      ("from fastapi import " + $newImports),
-      1
-    )
-    Write-Host "OK: Added HTTPException to fastapi imports"
-  }
-} else {
-  $src = "from fastapi import HTTPException`n" + $src
-  Write-Host "OK: Added standalone HTTPException import (fallback)"
+$decor = '@router.get("/{doc_id}/download")'
+$decorIdx = $src.IndexOf($decor)
+if ($decorIdx -lt 0) {
+  throw "Could not find download route decorator: $decor"
 }
 
-# 2) Locate download route block
-$downloadDecorator = [regex]::Match($src, '(?m)^\s*@router\.get\(\s*["'']/?\{doc_id\}/download["''].*$')
-if (-not $downloadDecorator.Success) {
-  throw "Could not find download route decorator (@router.get('/{doc_id}/download')) in $target"
+$tail = $src.Substring($decorIdx)
+
+# Insert directly before: path = get_document_path_for_download(doc_id)
+$pathMatch = [regex]::Match(
+  $tail,
+  '(?m)^(?<indent>[ \t]*)path\s*=\s*get_document_path_for_download\s*\(\s*doc_id\s*\)\s*$'
+)
+if (-not $pathMatch.Success) {
+  throw "Could not find line: path = get_document_path_for_download(doc_id) inside download handler."
 }
 
-# Define a slice starting from the decorator
-$tail = $src.Substring($downloadDecorator.Index)
+$indent = $pathMatch.Groups['indent'].Value
+$prefix = $tail.Substring(0, $pathMatch.Index)
 
-# Find end of this handler block (next @router.* at column 0-ish OR EOF)
-$nextRoute = [regex]::Match($tail, '(?m)^\s*@router\.', $downloadDecorator.Length)
-$handlerText = if ($nextRoute.Success) { $tail.Substring(0, $nextRoute.Index) } else { $tail }
+# Detect actor/current-user variable (role or user_id usage)
+$roleVar = $null
 
-# 3) Find which variable holds status in this handler (something.get("status") or ["status"])
-$statusVarMatch = [regex]::Match($handlerText, '(?m)(\w+)\s*(?:\.get\(\s*["'']status["'']|\[\s*["'']status["'']\s*\])')
-if (-not $statusVarMatch.Success) {
-  throw "Could not detect status variable in download handler. Expected something like X.get('status') or X['status']."
+$rm = [regex]::Match($prefix, "(?m)(?<v>[A-Za-z_]\w*)\s*\[\s*['""]role['""]\s*\]")
+if ($rm.Success) { $roleVar = $rm.Groups['v'].Value }
+
+if (-not $roleVar) {
+  $rm = [regex]::Match($prefix, "(?m)(?<v>[A-Za-z_]\w*)\.get\(\s*['""]role['""]\s*\)")
+  if ($rm.Success) { $roleVar = $rm.Groups['v'].Value }
 }
-$statusVar = $statusVarMatch.Groups[1].Value
 
-# 4) Find the first assignment to that status var in this handler, capture indentation
-$assignPattern = "(?m)^(?<indent>\s+)$statusVar\s*=\s*.*$"
-$assignMatch = [regex]::Match($handlerText, $assignPattern)
-if (-not $assignMatch.Success) {
-  throw "Detected status var '$statusVar' but could not find its assignment line in download handler."
+if (-not $roleVar) {
+  $rm = [regex]::Match($prefix, "(?m)(?<v>[A-Za-z_]\w*)\s*\[\s*['""]user_id['""]\s*\]")
+  if ($rm.Success) { $roleVar = $rm.Groups['v'].Value }
 }
-$indent = $assignMatch.Groups["indent"].Value
 
-# 5) Detect actor variable used for role checks (something['role'] or something.get('role'))
-$roleVarMatch = [regex]::Match($handlerText, '(?m)(\w+)\s*(?:\.get\(\s*["'']role["'']|\[\s*["'']role["'']\s*\])')
-$actorVar = if ($roleVarMatch.Success) { $roleVarMatch.Groups[1].Value } else { "actor" }
+if (-not $roleVar) {
+  throw "Could not detect current-user variable in download handler. Ensure handler uses something like X['role'] or X['user_id']."
+}
 
-# 6) Insert guard directly after the assignment line
-$inject = @"
-$indent# $marker (SoT: docs/03_RIGHTS_MATRIX.md 3/3b)
-$indent# user/vip/dealer dürfen Content nur bei Status APPROVED abrufen.
-$indent# admin/superadmin dürfen in Quarantäne zum Review zugreifen.
-$indent`$_role = ""
-$indentif (`$null -ne $actorVar) {
-$indent    if ($actorVar -is [hashtable] -or $actorVar -is [System.Collections.IDictionary]) {
-$indent        `$_role = [string]($actorVar["role"] ?? "")
-$indent    } else {
-$indent        `$_role = [string]($actorVar.role ?? "")
-$indent    }
-$indent}
-$indent`$_role = `$_role.ToLowerInvariant()
+# Detect document/meta variable (used for filename/media_type OR owner_user_id)
+$metaVar = $null
 
-$indent`$_status = ""
-$indentif (`$null -ne $statusVar) {
-$indent    if ($statusVar -is [hashtable] -or $statusVar -is [System.Collections.IDictionary]) {
-$indent        `$_status = [string]($statusVar["status"] ?? "")
-$indent    } else {
-$indent        `$_status = [string]($statusVar.status ?? "")
-$indent    }
-$indent}
-$indent`$_status = `$_status.ToLowerInvariant()
+$mm = [regex]::Match($prefix, "(?m)(?<v>[A-Za-z_]\w*)\s*\[\s*['""]owner_user_id['""]\s*\]")
+if ($mm.Success) { $metaVar = $mm.Groups['v'].Value }
 
-$indentif (`$_role -notin @("admin","superadmin") -and `$_status -ne "approved") {
-$indent    raise HTTPException(status_code=403, detail="document not approved")
-$indent}
-"@
+if (-not $metaVar) {
+  $mm = [regex]::Match($prefix, "(?m)(?<v>[A-Za-z_]\w*)\.get\(\s*['""]owner_user_id['""]\s*\)")
+  if ($mm.Success) { $metaVar = $mm.Groups['v'].Value }
+}
 
-# Insert after the assignment line (end of line)
-$insertPosInHandler = $assignMatch.Index + $assignMatch.Length
-$patchedHandler = $handlerText.Insert($insertPosInHandler, "`n$inject")
+if (-not $metaVar) {
+  $mm = [regex]::Match($prefix, "(?m)(?:filename|media_type)\s*=\s*(?<v>[A-Za-z_]\w*)\s*(?:\.|\[)")
+  if ($mm.Success) { $metaVar = $mm.Groups['v'].Value }
+}
 
-# Replace original handlerText inside $tail, then splice back into full source
-$tailPatched = $tail.Replace($handlerText, $patchedHandler)
+if (-not $metaVar) {
+  # last resort: assignment pattern: X = something(doc_id)
+  $mm = [regex]::Match($prefix, "(?m)^\s*(?<v>[A-Za-z_]\w*)\s*=\s*[A-Za-z_]\w*\(\s*doc_id\s*\)\s*$")
+  if ($mm.Success) { $metaVar = $mm.Groups['v'].Value }
+}
 
-# Splice back
-$src = $src.Substring(0, $downloadDecorator.Index) + $tailPatched
+if (-not $metaVar) {
+  throw "Could not detect meta/document variable in download handler. Ensure handler has meta/doc dict in scope."
+}
 
-Set-Content -Path $target -Value $src -Encoding UTF8
-Write-Host "OK: Patched download guard in $target (status-var=$statusVar, actor-var=$actorVar)"
+$i0 = $indent
+$i1 = $indent + "    "
+$i2 = $indent + "        "
+
+$injectLines = @()
+$injectLines += $i0 + $marker
+$injectLines += $i0 + "__doc = $metaVar"
+$injectLines += $i0 + "if isinstance(__doc, dict) and isinstance(__doc.get('doc'), dict):"
+$injectLines += $i1 + "__doc = __doc['doc']"
+$injectLines += $i0 + "__st = str((__doc.get('status') or '')).strip().lower() if isinstance(__doc, dict) else ''"
+$injectLines += $i0 + "__role = ''"
+$injectLines += $i0 + "try:"
+$injectLines += $i1 + "if isinstance($roleVar, dict):"
+$injectLines += $i2 + "__role = str(($roleVar.get('role') or '')).strip().lower()"
+$injectLines += $i1 + "else:"
+$injectLines += $i2 + "__role = str(getattr($roleVar, 'role', '')).strip().lower()"
+$injectLines += $i0 + "except Exception:"
+$injectLines += $i1 + "__role = ''"
+$injectLines += $i0 + "if __role not in ('admin', 'superadmin') and __st != 'approved':"
+$injectLines += $i1 + "raise HTTPException(status_code=404, detail='not_found')"
+$injectLines += ""
+
+$inject = ($injectLines -join "`n")
+
+$insertPos = $decorIdx + $pathMatch.Index
+$new = $src.Insert($insertPos, $inject)
+
+Set-Content -Path $RouterPath -Encoding UTF8 -Value $new
+
+Write-Host "OK: patched $RouterPath"
+Write-Host " - non-admin download now requires status=approved (404 otherwise)."

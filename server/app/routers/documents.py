@@ -70,6 +70,21 @@ def download_document(
         raise HTTPException(status_code=403, detail="forbidden")
 
     try:
+        # Quarantine-by-default: Download für non-admin nur bei Status APPROVED (deny-by-default)
+        __doc = meta
+        if isinstance(__doc, dict) and isinstance(__doc.get('doc'), dict):
+            __doc = __doc['doc']
+        __st = str((__doc.get('status') or '')).strip().lower() if isinstance(__doc, dict) else ''
+        __role = ''
+        try:
+            if isinstance(user, dict):
+                __role = str((user.get('role') or '')).strip().lower()
+            else:
+                __role = str(getattr(user, 'role', '')).strip().lower()
+        except Exception:
+            __role = ''
+        if __role not in ('admin', 'superadmin') and __st != 'approved':
+            raise HTTPException(status_code=404, detail='not_found')
         path = get_document_path_for_download(doc_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="file_missing")
@@ -113,3 +128,4 @@ def admin_reject(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"doc": meta}
+
