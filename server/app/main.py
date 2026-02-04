@@ -1,19 +1,19 @@
-server/app/main.py
+# server/app/main.py
 from app.guards import forbid_moderator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.db.session import init_db
-from app.routers.masterclipboard import router as masterclipboard_router
-from app.routers.export import router as export_router
-from app.routers.export_vehicle import router as export_vehicle_router
-from app.routers.export_servicebook import router as export_servicebook_router
 from app.routers.consent import router as consent_router
-from app.routers.sale_transfer import router as sale_transfer_router
 from app.routers.documents import router as documents_router
+from app.routers.export import router as export_router
+from app.routers.export_servicebook import router as export_servicebook_router
+from app.routers.export_vehicle import router as export_vehicle_router
+from app.routers.masterclipboard import router as masterclipboard_router
+from app.routers.sale_transfer import router as sale_transfer_router
 from app.auth.routes import router as auth_router
 from app.admin.routes import router as admin_router
 from app.public.routes import router as public_router
@@ -65,4 +65,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
