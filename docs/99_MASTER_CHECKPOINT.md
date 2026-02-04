@@ -163,3 +163,40 @@ cd .\server
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 
 poetry run pytest -q
+---
+
+## 2026-02-04 – CI + Branch Protection finalisiert
+
+### Merged PRs
+- #5 Tests: RBAC deny für Documents-Quarantäne-Admin-Endpunkte (Non-Admin => 403, Unauth => 401, Moderator auch Read => 403)
+- #6 Docs: Master Checkpoint CI/Actions Update
+- #7 chore: branch protection smoke (Smoke-Test)
+- #8 chore: remove bp smoke artifact (Cleanup)
+
+### CI
+- GitHub Actions Workflow: **CI** mit Job **pytest** aktiv.
+- Required Status Check final **robust** gesetzt über *required_status_checks.checks* (Check-Run):
+  - context: **pytest**
+  - app_id: **15368** (GitHub Actions)
+  -> vermeidet String-/Space-Mismatch ("CI/..." vs "CI / ...") und PR vs push Context-Fallen.
+
+### Branch Protection (main)
+- PR-only enforced (kein Direct Push).
+- strict: **true** (up-to-date required)
+- linear history: **true**
+- enforce admins: **true**
+- force pushes: **false**
+- deletions: **false**
+- require conversation resolution: **true**
+
+### Learnings / Pitfalls (damit wir nicht wieder reinlaufen)
+- Branch-Protection REST: allow_force_pushes/allow_deletions im PUT-Body als **BOOLEAN** (nicht {enabled:...}).
+- required_conversation_resolution kann nicht per separatem Endpoint gepatcht werden -> im **PUT-Body** setzen.
+- Required Check Name muss **exakt** matchen; am stabilsten über **checks + app_id** statt contexts-Strings.
+
+### Aktueller main Stand (letzte Commits)
+def0e40 chore: remove bp smoke artifact (#8)
+2718dea chore: branch protection smoke (#7)
+001dc66 Docs: Master Checkpoint CI/Actions Update (#6)
+099cc49 Tests: RBAC deny for documents quarantine admin endpoints (#5)
+
