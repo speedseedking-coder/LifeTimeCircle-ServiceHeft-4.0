@@ -6,7 +6,6 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from uuid import uuid4
 
 
 def _utc_now_iso() -> str:
@@ -86,15 +85,14 @@ class Document:
 
 def create_quarantine_document(
     *,
+    doc_id: str,
     owner_user_id: str,
     original_filename: str,
     stored_name: str,
     content_type: str,
     size_bytes: int,
 ) -> Document:
-    doc_id = f"doc_{uuid4().hex}"
     now = _utc_now_iso()
-
     with _connect() as conn:
         _ensure_tables(conn)
         conn.execute(
@@ -104,7 +102,7 @@ def create_quarantine_document(
                 content_type, size_bytes, status, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
             """,
-            (doc_id, owner_user_id, original_filename, stored_name, content_type, size_bytes, "quarantine", now),
+            (doc_id, owner_user_id, original_filename, stored_name, content_type, int(size_bytes), "quarantine", now),
         )
         row = conn.execute("SELECT * FROM documents WHERE doc_id = ? LIMIT 1;", (doc_id,)).fetchone()
         assert row is not None

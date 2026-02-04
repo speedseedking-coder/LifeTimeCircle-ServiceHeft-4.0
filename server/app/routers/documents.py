@@ -4,13 +4,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.deps import require_admin, require_user
 from app.rbac import Actor
-
 from app.services.documents_store import (
     create_quarantine_document,
     get_document,
@@ -71,11 +71,9 @@ def _is_admin(actor: Actor) -> bool:
 async def upload_document(
     user: Actor = Depends(require_user),
     file: UploadFile = File(...),
-    # optional: später für UI/Metadaten (noch nicht persisted extra)
     title: Optional[str] = Form(default=None),
 ) -> dict:
-    # moderator/public sind durch require_user schon ausgeschlossen
-
+    # moderator/public sind durch require_user ausgeschlossen
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="missing_filename")
 
@@ -92,14 +90,12 @@ async def upload_document(
     if not _sniff_ok(ct, head):
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="content_signature_mismatch")
 
-    # speichern in Quarantine (chunked, size-limited)
-    stored_name = "pending"  # wird gleich ersetzt (doc_id bekannt nach DB insert)
-    # wir erzeugen doc_id erst nach Speicherung? -> besser: doc_id vorab:
-    # workaround: doc_id ist Teil stored_name; wir erzeugen mit uuid im Store nach Speicherung.
-    # Daher: temporär in quarantine, dann rename nach doc_id.
+    doc_id = f"doc_{uuid4().hex}"
+    stored_name = f"{doc_id}{ext}"
 
     qdir = _quarantine_dir()
-    tmp_path = qdir / f"tmp_{os.urandom(8).hex()}{ext}"
+    tmp_path = qdir / f"tmp_{doc_id}{ext}"
+    final_path = qdir / stored_name
 
     max_b = _max_bytes()
     size = 0
@@ -119,27 +115,16 @@ async def upload_document(
 
     # DB-Eintrag anlegen (Quarantine)
     doc = create_quarantine_document(
+        doc_id=doc_id,
         owner_user_id=user["user_id"],
         original_filename=file.filename,
-        stored_name="",
+        stored_name=stored_name,
         content_type=ct,
         size_bytes=size,
     )
 
-    stored_name = f"{doc.doc_id}{ext}"
-    final_path = qdir / stored_name
     tmp_path.replace(final_path)
 
-    # stored_name nachtragen (kleiner Update ohne extra Funktion: direkt via sqlite)
-    # -> Minimal invasive: wir schreiben direkt, weil Store sonst extra API bräuchte.
-    import sqlite3
-    from app.services.documents_store import _connect, _ensure_tables  # type: ignore
-
-    with _connect() as conn:  # type: ignore
-        _ensure_tables(conn)  # type: ignore
-        conn.execute("UPDATE documents SET stored_name = ? WHERE doc_id = ?;", (stored_name, doc.doc_id))
-
-    # Response ohne Pfade (keine Local-Paths leaken)
     return {
         "doc_id": doc.doc_id,
         "status": "quarantine",
@@ -158,12 +143,10 @@ def get_document_meta(doc_id: str, user: Actor = Depends(require_user)) -> dict:
 
     # deny-by-default: user/vip/dealer nur eigene Dokumente; admin/superadmin alles
     if not _is_admin(user) and doc.owner_user_id != user["user_id"]:
-        # nicht 403, sondern 404 gegen Enumeration
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
 
     d = doc.to_dict()
-    # keine internen Pfade nach außen
-    d.pop("stored_name", None)
+    d.pop("stored_name", None)  # keine internen Dateinamen raus
     return d
 
 
@@ -176,7 +159,7 @@ def download_document(doc_id: str, user: Actor = Depends(require_user)):
     if not _is_admin(user) and doc.owner_user_id != user["user_id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
 
-    # Quarantine ist *nicht* downloadbar für normale User (nur admin/superadmin)
+    # Quarantine ist nicht downloadbar für normale User (nur admin/superadmin)
     if doc.status != "approved" and not _is_admin(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not_approved")
 
@@ -200,7 +183,6 @@ def download_document(doc_id: str, user: Actor = Depends(require_user)):
 @router.get("/admin/quarantine")
 def admin_list_quarantine(limit: int = 50, user: Actor = Depends(require_admin)) -> dict:
     items = [d.to_dict() for d in list_quarantine(limit=limit)]
-    # stored_name ist intern → raus
     for it in items:
         it.pop("stored_name", None)
     return {"items": items}
@@ -258,7 +240,6 @@ def admin_reject(
         if p.exists():
             p.unlink()
     except Exception:
-        # best-effort: DB-Status trotzdem setzen
         pass
 
     updated = mark_rejected(doc_id, rejected_by=user["user_id"], reason=reason)
