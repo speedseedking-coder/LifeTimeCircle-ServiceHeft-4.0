@@ -1,4 +1,5 @@
 from app.routers import servicebook
+from app.routers import documents
 # server/app/main.py
 from app.guards import forbid_moderator
 from contextlib import asynccontextmanager
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(sale_transfer_router)
     app.include_router(documents_router)
     app.include_router(servicebook.router)
+app.include_router(documents.router)
     return app
 
 
