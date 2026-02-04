@@ -5,9 +5,8 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from app.services.documents_store import DocumentStatus, DocumentsStore
+from app.services.documents_store import DocumentStatus, DocumentsStore, ScanStatus
 
-# Auth-Compat: SoT-Layout (neu) vs. älteres Layout
 try:
     from app.deps import get_current_user  # type: ignore
 except ImportError:  # pragma: no cover
@@ -29,21 +28,12 @@ def _actor_id(actor: Any) -> str:
 
 
 def require_actor(actor: Any = Depends(get_current_user)) -> Any:
-    """
-    Erzwingt echte Auth (401), nicht "anonymer Actor" (der sonst 403 auslöst).
-    Tests erwarten: unauthenticated -> 401.
-    """
-    if actor is None:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not _actor_id(actor):
+    if actor is None or not _actor_id(actor):
         raise HTTPException(status_code=401, detail="unauthorized")
     return actor
 
 
 def forbid_moderator(actor: Any = Depends(require_actor)) -> None:
-    """
-    Moderator ist strikt nur Blog/News -> documents immer 403.
-    """
     role = (_actor_role(actor) or "").lower()
     if role == "moderator":
         raise HTTPException(status_code=403, detail="forbidden")
@@ -57,14 +47,12 @@ def require_admin(actor: Any = Depends(require_actor)) -> Any:
 
 
 def get_documents_store() -> DocumentsStore:
-    # Kein globaler Cache: Tests setzen tmp/env pro Test.
     return DocumentsStore.from_env()
 
 
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
-    # Reihenfolge wichtig: erst 401 erzwingen, dann Moderator 403
     dependencies=[Depends(require_actor), Depends(forbid_moderator)],
 )
 
@@ -76,8 +64,6 @@ def upload_document(
     store: DocumentsStore = Depends(get_documents_store),
 ) -> Dict[str, Any]:
     owner_id = _actor_id(actor)
-    if not owner_id:
-        raise HTTPException(status_code=401, detail="unauthorized")
 
     try:
         row = store.ingest_upload(
@@ -93,12 +79,15 @@ def upload_document(
             raise HTTPException(status_code=415, detail=msg)
         raise HTTPException(status_code=400, detail="upload_rejected")
 
+    # scan_status exposed to owner (no PII), useful UX
     return {
         "id": row.id,
         "status": row.status,
+        "scan_status": row.scan_status,
         "content_type": row.content_type,
         "size_bytes": row.size_bytes,
         "created_at": row.created_at,
+        "scanned_at": row.scanned_at,
     }
 
 
@@ -118,18 +107,23 @@ def get_document_metadata(
     if role not in {"admin", "superadmin"} and row.owner_id != actor_id:
         raise HTTPException(status_code=403, detail="forbidden")
 
+    is_admin = role in {"admin", "superadmin"}
     return {
         "id": row.id,
-        "owner_id": row.owner_id if role in {"admin", "superadmin"} else None,
+        "owner_id": row.owner_id if is_admin else None,
         "status": row.status,
+        "scan_status": row.scan_status,
+        "scanned_at": row.scanned_at,
+        "scan_engine": row.scan_engine if is_admin else None,
+        "scan_error": row.scan_error if is_admin else None,
         "original_filename": row.original_filename,
         "content_type": row.content_type,
         "size_bytes": row.size_bytes,
-        "sha256": row.sha256 if role in {"admin", "superadmin"} else None,
+        "sha256": row.sha256 if is_admin else None,
         "created_at": row.created_at,
         "reviewed_at": row.reviewed_at,
-        "reviewed_by": row.reviewed_by if role in {"admin", "superadmin"} else None,
-        "rejected_reason": row.rejected_reason if role in {"admin", "superadmin"} else None,
+        "reviewed_by": row.reviewed_by if is_admin else None,
+        "rejected_reason": row.rejected_reason if is_admin else None,
     }
 
 
@@ -176,6 +170,8 @@ def admin_list_quarantine(
                 "id": r.id,
                 "owner_id": r.owner_id,
                 "status": r.status,
+                "scan_status": r.scan_status,
+                "scanned_at": r.scanned_at,
                 "original_filename": r.original_filename,
                 "content_type": r.content_type,
                 "size_bytes": r.size_bytes,
@@ -186,6 +182,29 @@ def admin_list_quarantine(
     }
 
 
+@router.post("/{doc_id}/scan")
+def admin_rescan_document(
+    doc_id: str,
+    actor: Any = Depends(require_admin),
+    store: DocumentsStore = Depends(get_documents_store),
+) -> Dict[str, Any]:
+    try:
+        row = store.rescan(doc_id=doc_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="not_found")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="file_missing")
+
+    return {
+        "id": row.id,
+        "status": row.status,
+        "scan_status": row.scan_status,
+        "scanned_at": row.scanned_at,
+        "scan_engine": row.scan_engine,
+        "scan_error": row.scan_error,
+    }
+
+
 @router.post("/{doc_id}/approve")
 def admin_approve_document(
     doc_id: str,
@@ -193,13 +212,25 @@ def admin_approve_document(
     store: DocumentsStore = Depends(get_documents_store),
 ) -> Dict[str, Any]:
     reviewer = _actor_id(actor) or "admin"
-    try:
-        row = store.approve(doc_id=doc_id, reviewed_by=reviewer)
-    except KeyError:
+
+    row = store.get(doc_id)
+    if row is None:
         raise HTTPException(status_code=404, detail="not_found")
+
+    if row.scan_status != ScanStatus.CLEAN.value:
+        # Scan muss CLEAN sein, sonst keine Freigabe
+        raise HTTPException(status_code=409, detail="not_scanned_clean")
+
+    try:
+        row2 = store.approve(doc_id=doc_id, reviewed_by=reviewer)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="file_missing")
-    return {"id": row.id, "status": row.status, "reviewed_at": row.reviewed_at}
+    except ValueError as e:
+        if str(e) == "not_scanned_clean":
+            raise HTTPException(status_code=409, detail="not_scanned_clean")
+        raise HTTPException(status_code=400, detail="approve_failed")
+
+    return {"id": row2.id, "status": row2.status, "reviewed_at": row2.reviewed_at}
 
 
 @router.post("/{doc_id}/reject")
