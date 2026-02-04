@@ -48,7 +48,7 @@ Merge-Gates:
     if ($origin -match "^git@github\.com:(.+?)/(.+?)(\.git)?$") {
       $owner = $Matches[1]
       $repo  = $Matches[2]
-      $url = "https://github.com/$owner/$repo/compare/$BaseBranch...$HeadBranch?expand=1"
+      $url = "https://github.com/$owner/$repo/compare/${BaseBranch}...${HeadBranch}?expand=1"
       Write-Host ""
       Write-Host "Öffne Browser (Compare/PR):" $url
       Start-Process $url | Out-Null
@@ -59,7 +59,7 @@ Merge-Gates:
     if ($origin -match "^https://github\.com/(.+?)/(.+?)(\.git)?$") {
       $owner = $Matches[1]
       $repo  = $Matches[2]
-      $url = "https://github.com/$owner/$repo/compare/$BaseBranch...$HeadBranch?expand=1"
+      $url = "https://github.com/$owner/$repo/compare/${BaseBranch}...${HeadBranch}?expand=1"
       Write-Host ""
       Write-Host "Öffne Browser (Compare/PR):" $url
       Start-Process $url | Out-Null
