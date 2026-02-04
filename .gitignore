@@ -1,8 +1,13 @@
+.gitignore
 __pycache__/
 .pytest_cache/
 server/data/*.db
 server/data/*.db-*
 server/data/*.db-journal
+
+# local-only uploads/quarantine (niemals in Git)
+server/storage/
+server/storage/**
 
 *.zip
 
@@ -16,4 +21,3 @@ dist/
 
 # backup files
 *.bak
-

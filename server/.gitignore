@@ -1,1 +1,9 @@
+server/.gitignore
 dev.db
+
+# local-only artifacts (wenn jemand nur im server/ arbeitet)
+data/*.db
+data/*.db-*
+storage/
+storage/**
+
