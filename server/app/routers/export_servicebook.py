@@ -1,6 +1,10 @@
+# server/app/routers/export_servicebook.py
+from __future__ import annotations
+
 from app.guards import forbid_moderator
 import datetime as dt
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any, Dict, List, Optional, Set
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import MetaData, Table, select, inspect as sa_inspect
@@ -80,13 +84,128 @@ def _servicebook_entries_table(db: Session) -> Table:
     raise HTTPException(status_code=404, detail="servicebook_table_missing")
 
 
+def _documents_table(db: Session) -> Optional[Table]:
+    conn = db.connection()
+    insp = sa_inspect(conn)
+
+    candidates = (
+        "documents",
+        "document",
+        "uploads",
+        "upload",
+        "document_uploads",
+        "upload_documents",
+    )
+    for name in candidates:
+        if insp.has_table(name):
+            return Table(name, MetaData(), autoload_with=conn)
+    return None
+
+
+def _pick_col(t: Table, names: tuple[str, ...]) -> Optional[str]:
+    for n in names:
+        if n in t.c:
+            return n
+    return None
+
+
+def _normalize_doc_ids(raw: Any) -> List[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(x) for x in raw if x]
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        # JSON list?
+        if s.startswith("[") and s.endswith("]"):
+            try:
+                parsed = json.loads(s)
+                if isinstance(parsed, list):
+                    return [str(x) for x in parsed if x]
+            except Exception:
+                pass
+        return [s]
+    return [str(raw)]
+
+
+def _extract_doc_fields(row: Dict[str, Any]) -> List[tuple[str, Any]]:
+    keys = (
+        "document_ids",
+        "doc_ids",
+        "documents",
+        "attachments",
+        "attachment_ids",
+        "upload_ids",
+        "document_refs",
+        "document_id",
+        "doc_id",
+        "upload_id",
+    )
+    out = []
+    for k in keys:
+        if k in row and row[k] is not None:
+            out.append((k, row[k]))
+    return out
+
+
+def _approved_doc_ids(db: Session, ids: List[str]) -> Set[str]:
+    if not ids:
+        return set()
+
+    t = _documents_table(db)
+    if t is None:
+        return set()
+
+    id_col = _pick_col(t, ("id", "document_id", "upload_id"))
+    status_col = _pick_col(t, ("status", "state", "review_status", "quarantine_status"))
+    if id_col is None or status_col is None:
+        return set()
+
+    ok_values = {"approved", "APPROVED", "ok", "OK"}
+    rows = db.execute(select(t.c[id_col], t.c[status_col]).where(t.c[id_col].in_(ids))).mappings().all()
+
+    approved: Set[str] = set()
+    for r in rows:
+        st = r.get(status_col)
+        if st is None:
+            continue
+        if str(st) in ok_values:
+            approved.add(str(r[id_col]))
+    return approved
+
+
+def _filter_row_docs_to_approved(db: Session, row: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Konservativ: wenn wir doc-status nicht auflösen können, liefern wir KEINE docs aus.
+    Das entspricht Quarantine-by-default.
+    """
+    doc_fields = _extract_doc_fields(row)
+    if not doc_fields:
+        return row
+
+    all_ids: List[str] = []
+    for _, v in doc_fields:
+        all_ids.extend(_normalize_doc_ids(v))
+
+    approved = _approved_doc_ids(db, list(set(all_ids)))
+
+    out = dict(row)
+    for k, v in doc_fields:
+        ids = _normalize_doc_ids(v)
+        keep = [x for x in ids if x in approved]
+
+        if k in {"document_id", "doc_id", "upload_id"}:
+            out[k] = keep[0] if keep else None
+        else:
+            out[k] = json.dumps(keep, ensure_ascii=False, separators=(",", ":"))
+    return out
+
+
 def _fetch_servicebook_entries(db: Session, servicebook_id: str) -> List[Dict[str, Any]]:
     t = _servicebook_entries_table(db)
 
-    # Wir akzeptieren diese Key-Varianten:
-    # - servicebook_id (bevorzugt)
-    # - vehicle_id (falls Servicebook == Vehicle-Buch)
-    # - id (falls Servicebook als Record statt Entries geführt wird)
     if "servicebook_id" in t.c:
         where_col = t.c.servicebook_id
     elif "vehicle_id" in t.c:
@@ -96,9 +215,7 @@ def _fetch_servicebook_entries(db: Session, servicebook_id: str) -> List[Dict[st
     else:
         raise HTTPException(status_code=500, detail="servicebook_id_column_missing")
 
-    rows = db.execute(
-        select(t).where(where_col == servicebook_id)
-    ).mappings().all()
+    rows = db.execute(select(t).where(where_col == servicebook_id)).mappings().all()
 
     if not rows:
         raise HTTPException(status_code=404, detail="not_found")
@@ -107,12 +224,6 @@ def _fetch_servicebook_entries(db: Session, servicebook_id: str) -> List[Dict[st
 
 
 def _enforce_scope_or_admin(actor: Any, rows: List[Dict[str, Any]]) -> None:
-    """
-    Rollen:
-    - user/vip/dealer: nur eigener Scope (Owner)
-    - admin/superadmin: ok
-    - moderator/public: nie
-    """
     role = _actor_role(actor)
 
     if role in {"admin", "superadmin"}:
@@ -125,7 +236,6 @@ def _enforce_scope_or_admin(actor: Any, rows: List[Dict[str, Any]]) -> None:
     if not actor_uid:
         raise HTTPException(status_code=403, detail="forbidden")
 
-    # Owner-Spalte finden (best effort)
     owner_keys = (
         "owner_id",
         "user_id",
@@ -140,7 +250,6 @@ def _enforce_scope_or_admin(actor: Any, rows: List[Dict[str, Any]]) -> None:
                 if str(row[k]) == str(actor_uid):
                     return
 
-    # Kein Owner-Match => forbidden
     raise HTTPException(status_code=403, detail="forbidden")
 
 
@@ -155,6 +264,9 @@ def export_servicebook_redacted(
 ):
     rows = _fetch_servicebook_entries(db, servicebook_id)
     _enforce_scope_or_admin(actor, rows)
+
+    # Quarantine-by-default: only approved doc refs in redacted export
+    rows = [_filter_row_docs_to_approved(db, r) for r in rows]
 
     redacted = [redact_servicebook_entry_row(r) for r in rows]
 
@@ -180,7 +292,6 @@ def export_servicebook_full_grant(
 ):
     _require_roles(actor, {"superadmin"})
 
-    # existence check
     _ = _fetch_servicebook_entries(db, servicebook_id)
 
     token, expires_at = issue_one_time_token(
@@ -264,4 +375,3 @@ def export_servicebook_full_encrypted(
     )
 
     return {"target": "servicebook", "id": servicebook_id, "ciphertext": ciphertext}
-

@@ -1,194 +1,122 @@
-docs/99_MASTER_CHECKPOINT.md
-# LifeTimeCircle – Service Heft 4.0 · 99_MASTER_CHECKPOINT
+# docs/99_MASTER_CHECKPOINT.md
+# LifeTimeCircle – Service Heft 4.0
+**MASTER CHECKPOINT (SoT)**  
+Stand: **2026-02-04**
 
-Stand: 04.02.2026 (Europe/Berlin)  
-Kontakt: lifetimecircle@online.de
-
-Ziel: produktionsreif (keine Demo)  
-Security Default: deny-by-default + least privilege  
-RBAC: serverseitig enforced (keine Client-Trusts)  
-Source of Truth (Docs): C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs
-
----
-
-## 0) Quick-Status (grün/gelb/rot)
-
-✅ Server bootet (uvicorn --reload)  
-✅ OpenAPI erreichbar: GET /openapi.json = 200  
-✅ Auth-Flow DEV: POST /auth/request + POST /auth/verify = 200 (DEV-OTP, wenn aktiviert)  
-✅ Consent-Module vorhanden + Router gemountet  
-✅ Consent-Persistenz bestätigt: POST /consent/accept + GET /consent/status => is_complete=true  
-
-✅ **Sale/Transfer P0** vorhanden + Router gemountet  
-✅ **Sale/Transfer Tests**: `poetry run pytest -q` **grün** (letzter Lauf 04.02.2026)  
-✅ Audit für Sale/Transfer: **best-effort**, darf Business-Flow nicht killen
+Projekt:
+- Brand: **LifeTimeCircle**
+- Hauptmodul (Core): **Service Heft / Servicebook 4.0**
+- Ziel: **produktionsreif (keine Demo)**
+- Sicherheits-Prämisse: **deny-by-default + least privilege**, RBAC **serverseitig** enforced
+- Source of Truth: **/docs** (keine Altpfade/Altversionen)
 
 ---
 
-## 1) Zwischen-Check: Änderungen seit 01.02.2026
+## Status (Hauptmodul zuerst)
+✅ Tests grün: `poetry run pytest -q`  
+✅ Branch: **feat/uploads-quarantine-p0**
 
-### 1.1 Sale/Transfer P0 (neu)
-Ziel: Eigentumsübergabe/Übergabeprozess über Token (VIP/Dealer) mit Audit.
+### Servicebook (Core / System of Record)
+✅ Core Servicebook: **Inspection Events + Cases + Remediation** (als Servicebook-Entries/Logs)  
+✅ Router sicher über `create_app()` eingebunden (keine unsicheren Patch-Scripts)
 
-Neu angelegt:
-- `server/app/routers/sale_transfer.py`
-- `server/app/services/sale_transfer_store.py`
-- `server/app/services/sale_transfer_audit.py`
-- `server/tests/test_sale_transfer_api.py`
-- `server/scripts/patch_sale_transfer_router.ps1`
-- `server/scripts/smoke_sale_transfer.ps1`
-
-Git-Referenzen (harte Fakten):
-- Commit: `ec47d77` — `P0: Sale/Transfer API (vip/dealer) + audit + tests` (Initial)
-- Commit: `2629b67` — `P0: Sale/Transfer stabilisiert + Audit best-effort + Smoke + Master Checkpoint` (Stabilisierung)
-
-Änderungen in `2629b67` (harte Fakten):
-- `docs/99_MASTER_CHECKPOINT.md`
-- `server/app/services/sale_transfer_store.py`
-- `server/app/services/sale_transfer_audit.py`
-- `server/scripts/smoke_sale_transfer.ps1`
-- `server/.gitignore` (neu)
-
-### 1.2 Wichtige Fixes im Verlauf (Sale/Transfer)
-- Audit Insert konnte wegen `audit_events.module_id NOT NULL` crashen → Audit wurde so gebaut, dass `module_id` gesetzt wird (wenn Spalte existiert) und ansonsten auf Fallback ausweicht.
-- SQLite DateTimes: naive/aware Vergleich führte zu `TypeError` → Vergleich/Handling so angepasst, dass keine tz-Mismatch-Exceptions mehr entstehen.
-- Redeem mehrfach: zweites Redeem darf **nicht** erneut erfolgreich sein → Status/Conflict-Handling korrigiert.
-- Intermittent `transfer_not_found`: Persistenz/Lookup/Transaktionsverhalten stabilisiert (Commit/Query-Flow bereinigt).
-
-### 1.3 Repo Hygiene: LF Enforcement (neu)
-Neu:
-- `.gitattributes` mit `eol=lf` Regeln für `*.md`, `*.py`, `*.ps1`
-
-Git-Referenz (harte Fakten):
-- Commit: `18c809f` — `Chore: enforce LF via gitattributes`
+### Core-Querschnitt: Documents/Uploads/Export
+✅ P0 Uploads: **Documents Router + Store** (**Quarantine-by-default**)  
+✅ `python-multipart` als Dependency ergänzt (FastAPI FormData Uploads)  
+✅ Repo-Hygiene: `.gitignore`/Cleanup für Runtime/Cache/DB/Storage
 
 ---
 
-## 2) Consent P0 (bestehend, reproduzierbar)
-
-### 2.1 Consent: Komponenten (angelegt)
-- `app/consent/policy.py`
-- `app/models/consent.py`
-- `app/services/consent_store.py`
-- `app/routers/consent.py`
-- `tests/test_consent_contract.py`
-
-### 2.2 Main: Router-Mount
-- `app/main.py` importiert und mountet `consent_router` (include_router)
-
-### 2.3 Kompatibilität / Auth-Import-Fix
-Problem: ImportError in `app/auth/routes.py` (erwartet `app.consent_store: record_consent, get_consent_status, env_consent_version, env_db_path`)
-
-Lösung:
-- Konsolidierung auf `app/services/consent_store.py` + kompatible Imports
-- Router `/consent/*` stabil erreichbar
+## Core-Prinzip (Wichtig)
+**Servicebook ist das Core-Modul / System of Record.**  
+Alle weiteren “Module/Prozesse” sind **Producer**, die bei Durchführung **Service-Ereignisse erzeugen** und als **Entries im Servicebook** ablegen.  
+→ Ownership bleibt beim Core: **Servicebook**.
 
 ---
 
-## 3) Consent Contract (aktuell)
+## Neu gebaut/angepasst (Core: Servicebook – Inspection Events + Cases + Remediation)
+### Ziel-Flow (Core-Mechanik)
+- Producer (z. B. GPS-Probefahrt / OBD-Auslesung) erzeugt **Inspection Event** im Servicebook.
+- Ergebnis **OK / NOT_OK**
+- Bei **NOT_OK**: automatisch **Case** (Maßnahmenfall) als Servicebook-Entry
+- Remediation dokumentiert; bei **OK**: Case wird **DONE**
 
-### 3.1 API
-- `POST /consent/accept` → speichert AGB+Datenschutz (Version+Timestamp)
-- `GET /consent/status` → `is_complete=true|false` + Version/Zeiten
+### Implementiert
+#### Router
+`server/app/routers/servicebook.py`
+- `GET  /servicebook/{servicebook_id}/entries`
+- `POST /servicebook/{servicebook_id}/inspection-events`
+- `POST /servicebook/{servicebook_id}/cases/{case_entry_id}/remediation`
 
-### 3.2 Erwartung
-- Consent ist Pflicht (AGB+Datenschutz)
-- Version+Timestamp auditierbar (persistiert)
+#### Security / RBAC / Auth
+- Router serverseitig **deny-by-default**
+- **Moderator ausgeschlossen**: `Depends(forbid_moderator)` hängt an allen `/servicebook/*` Routen
+- Actor erforderlich (ohne Actor → 401)
 
----
-
-## 4) Sale/Transfer P0 (aktuell)
-
-### 4.1 Zielbild
-- VIP erstellt Übergabe-Token (Transfer)
-- Dealer löst Token ein (Redeem)
-- RBAC enforced (VIP/Dealer, nicht Admin-only)
-- Audit best-effort: Fehler im Audit dürfen Business-Flow nicht killen
-
-### 4.2 Verhalten (Kurz)
-- Create: erzeugt Token + Persistenz
-- Redeem:
-  - valid/created → redeem ok
-  - bereits eingelöst / anderer Status → 409/410 (kein 200)
-  - expiry sauber geprüft (keine tz-naive/aware Exceptions)
-
----
-
-## 5) DEV-ENV (lokal)
-
-Minimal:
-- `LTC_SECRET_KEY` (>= 16 Zeichen; empfohlen >= 32)
-
-Optional/Dev:
-- `LTC_DEV_EXPOSE_OTP = "1"` → `/auth/request` liefert dev_otp (nur lokal)
-- `LTC_MAILER_MODE    = "null"` (kein SMTP Versand; DEV-OTP nutzen)
-- `LTC_DB_PATH        = ".\data\app.db"` (optional; default ist `./data/app.db`)
-
-Typische Stolperfallen:
-- Poetry muss im `server`-Ordner laufen (sonst: "pyproject.toml nicht gefunden").
-- Env setzen in PowerShell immer mit `$env:NAME="value"`.
+#### Store / DB (Autodetect + Bootstrap für Test/Dev)
+`server/app/services/servicebook_store.py`
+- Reflection/Autodetect (analog Export)
+- Auto-Bootstrap wenn Tabelle fehlt:
+  - **SQLite/Test/Dev**: auto bootstrap
+  - Optional Env: `LTC_AUTO_CREATE_SERVICEBOOK_TABLE=1`
+  - Sonst auto nur bei SQLite
+- Best-effort Mapping (owner/role/status/title/details/etc.)
 
 ---
 
-## 6) DEV Start & Smoke
+## P0: Uploads Quarantine-by-default (Core-Querschnitt)
+### Neue Routes (Documents)
+- `POST /documents/upload`
+- `GET /documents/{doc_id}`
+- `GET /documents/{doc_id}/download`
+- `GET /documents/admin/quarantine`
+- `POST /documents/{doc_id}/approve`
+- `POST /documents/{doc_id}/reject`
 
-### 6.1 Server Start (Fenster A)
-Script:
-- `server\scripts\dev_start_server.ps1`
-
-Start:
-- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev_start_server.ps1`
-
-Erwartung:
-- "Application startup complete."
-- Requests werden als 200 geloggt (bei Erfolg)
-
-### 6.2 Smoke: Auth + Consent (Fenster B)
-Script:
-- `server\scripts\smoke_auth_consent.ps1`
-
-Ziel:
-- Auth: request → verify → me
-- Consent: accept → status (`is_complete=true`)
-
-Start:
-- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke_auth_consent.ps1`
-
-### 6.3 Smoke: Sale/Transfer (Fenster B)
-Script:
-- `server\scripts\smoke_sale_transfer.ps1` (Stand: Commit `2629b67`)
-
-Ziel:
-- Login VIP → create transfer
-- Login Dealer → redeem transfer
-- optional: status read / cancel cases
+### Security / RBAC (FIX)
+- **Moderator** darf nur Blog/News → alle `/documents/*` müssen `Depends(forbid_moderator)` haben
+- **Keine public uploads**: Uploads/Storage werden **nicht** als StaticFiles gemounted
+- **Quarantine Default**: Uploads sind initial `PENDING/QUARANTINED`
+- **Download/Content** für `user/vip/dealer`: **nur** wenn Status **APPROVED** (und Scope passt)
+- **Quarantäne-Workflow**:
+  - `GET /documents/admin/quarantine` + `approve/reject` + Review-Download: **nur `admin`/`superadmin`**
+  - SoT dazu: `docs/03_RIGHTS_MATRIX.md` Abschnitt **3b**
 
 ---
 
-## 7) Tests / Qualität
-
-Letzter Status:
-- `poetry run pytest -q` → ✅ grün (04.02.2026)
-
-Abgedeckt:
-- Consent Contract Test
-- Sale/Transfer API: happy path + negative cases (u.a. Admin kann Status lesen)
+## Tests (neu/angepasst)
+### Servicebook
+- Route-Registrierungstest: Routen existieren + `forbid_moderator` auf allen `/servicebook/*`
+- Flow-Test: `NOT_OK` → Case erzeugt; Remediation `OK` → Case `DONE`
+- Tests setzen `get_actor` via `dependency_overrides` als admin
 
 ---
 
-## 8) Aktueller Git-Status (harte Fakten)
-
-- Branch: `main`
-- Status: up to date mit `origin/main`
-- Working Tree: clean
-
-Commits seit letztem Stand (harte Fakten):
-- `2629b67` — `P0: Sale/Transfer stabilisiert + Audit best-effort + Smoke + Master Checkpoint`
-- `18c809f` — `Chore: enforce LF via gitattributes`
+## Repo Hygiene (Gitignore / Cleanup)
+Ignorieren (nicht versionieren):
+- `__pycache__/`, `.pytest_cache/`
+- `server/data/*.db*`
+- `server/storage/**`
+- `.env*`
+- `node_modules/`, `dist/`
+- `*.zip`, `*.bak*`
 
 ---
 
-## 9) Ergebnis: aktueller Stand
+## Nächster Schritt (Core/P0): Export-Hardening passend zu Quarantäne
+**Ziel:** `export_servicebook_redacted` gibt Dokument-Refs **nur** mit Status `APPROVED` aus (Quarantäne-by-default).  
+**Nachweis:** Test beweist, dass `pending/unapproved` Docs im **redacted Export** nicht auftauchen.
 
-Consent (Discovery + Persistenz) ist funktional und reproduzierbar.  
-Sale/Transfer P0 ist implementiert inkl. RBAC + Audit (best-effort) und Test-Suite ist grün.
+Startsatz für neuen Chat:
+- **„weiter mit Export-Servicebook Redaction nur APPROVED“**
+
+---
+
+## Tests / Lokal ausführen
+```powershell
+cd .\server
+
+# für Export/Redaction Tests (sonst "missing_or_weak_secret_key")
+$env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+
+poetry run pytest -q
