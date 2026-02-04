@@ -1,4 +1,4 @@
-# docs/99_MASTER_CHECKPOINT.md
+docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-04**
@@ -15,6 +15,7 @@ Projekt:
 ## Status (Hauptmodul zuerst)
 ✅ `main` ist aktuell  
 ✅ Tests grün: `poetry run pytest -q`  
+✅ CI grün: GitHub Actions Workflow `CI` läuft auf `push`/`pull_request` (Branch `main`) und führt `pytest` aus
 
 ### Servicebook (Core / System of Record)
 ✅ Core Servicebook: **Inspection Events + Cases + Remediation** (als Servicebook-Entries/Logs)  
@@ -91,6 +92,36 @@ Alle weiteren “Module/Prozesse” sind **Producer**, die bei Durchführung **S
 
 ---
 
+## CI / GitHub Actions (Workflow) — 2026-02-04
+### Ziel / SoT
+- Produktionsreifer MVP, Security: deny-by-default + least privilege, RBAC serverseitig enforced
+- Source of Truth: `./docs` (keine Altpfade)
+
+### Heute erledigt (CI/Workflow)
+✅ GitHub Actions CI eingerichtet  
+✅ Ordner `.github/workflows/` im Repo-Root angelegt  
+✅ Workflow `ci.yml` hinzugefügt (trigger: `push`/`pull_request` für Branch `main`)  
+✅ CI nutzt **Python 3.12** + **Poetry** und führt `poetry run pytest -q` im `server/` Working-Directory aus  
+✅ GitHub Secret `LTC_SECRET_KEY` im Repo gesetzt (z. B. via `gh secret set LTC_SECRET_KEY`)
+
+### CI-Failure gefixt (SQLite)
+- Erstes CI-Run scheiterte mit:
+  - `sqlite3.OperationalError: unable to open database file (./data/app.db)`
+  - Ursache: im Runner fehlte der Ordner `server/data`
+✅ Fix: Workflow ergänzt um Step **“Prepare runtime dirs”** mit `mkdir -p data` (läuft im `server/` Working-Directory)  
+✅ Danach: neuer Run **grün**
+
+### Verifiziert
+- `gh workflow list` zeigt Workflow **CI** aktiv
+- Run `21688348224`: **Success** (Job `pytest` erfolgreich)
+
+### Wichtige Learnings (für nächste Chats)
+- Workflows gehören ins Repo-Root: `.github/workflows/...` (nicht unter `server/`)
+- YAML nicht in PowerShell “ausführen” — Datei im Editor anlegen
+- CI braucht ggf. Runtime-Verzeichnisse (hier `server/data`) explizit
+
+---
+
 ## Repo Hygiene (Gitignore / Cleanup)
 Ignorieren (nicht versionieren):
 - `__pycache__/`, `.pytest_cache/`
@@ -112,8 +143,15 @@ Ignorieren (nicht versionieren):
 - Tests: `moderator` bekommt **403** auf alle `/documents/*` (bleibt strikt nur Blog/News)
 - Keine Logs mit PII/Secrets beim Approve/Reject
 
-Startsatz für neuen Chat:
-- **„weiter mit Admin-Gates + Negativ-Tests für Documents Quarantine“**
+---
+
+## Next Focus (empfohlen): Branch Protection für `main` (GitHub UI)
+**Ziel:** PR-Workflow erzwingen, keine Direkt-Pushes auf `main`.  
+Empfohlene Settings:
+- Require PR before merge
+- Require status checks to pass (**CI/pytest**)
+- Require branch up to date
+- Optional: no bypass / conversation resolution
 
 ---
 
