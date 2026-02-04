@@ -87,3 +87,4 @@ Legende:
 | Full Export: Grant (one-time Token, TTL/Limit) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Full Export: Abruf (X-Export-Token, Response verschlüsselt) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
+

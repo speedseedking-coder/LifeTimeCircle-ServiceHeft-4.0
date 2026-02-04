@@ -1,195 +1,215 @@
-# server/app/services/documents_store.py
 from __future__ import annotations
 
+import hashlib
+import json
 import os
-import sqlite3
-from dataclasses import dataclass
+import re
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List
+
+from fastapi import UploadFile
+
+_DOC_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{6,128}$")
 
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _db_path() -> str:
-    # Default passend zu deinem Setup: server/data/app.db
-    return os.getenv("LTC_DB_PATH", os.path.join(".", "data", "app.db"))
+def _storage_base() -> Path:
+    """
+    Storage liegt absichtlich im Dateisystem (nicht in DB) und wird per .gitignore ausgeschlossen.
+    Default: ./storage (relativ zum server/ working dir).
+    """
+    base = os.getenv("LTC_STORAGE_DIR", "storage")
+    p = Path(base).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+
+    (p / "documents" / "quarantine").mkdir(parents=True, exist_ok=True)
+    (p / "documents" / "approved").mkdir(parents=True, exist_ok=True)
+    (p / "documents" / "rejected").mkdir(parents=True, exist_ok=True)
+    (p / "documents" / "meta").mkdir(parents=True, exist_ok=True)
+
+    return p
 
 
-def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(_db_path())
-    conn.row_factory = sqlite3.Row
-    return conn
+def _paths() -> Dict[str, Path]:
+    base = _storage_base()
+    return {
+        "base": base,
+        "quarantine": base / "documents" / "quarantine",
+        "approved": base / "documents" / "approved",
+        "rejected": base / "documents" / "rejected",
+        "meta": base / "documents" / "meta",
+    }
 
 
-def _ensure_tables(conn: sqlite3.Connection) -> None:
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS documents (
-            doc_id              TEXT PRIMARY KEY,
-            owner_user_id        TEXT NOT NULL,
-            original_filename    TEXT NOT NULL,
-            stored_name          TEXT NOT NULL,
-            content_type         TEXT NOT NULL,
-            size_bytes           INTEGER NOT NULL,
-            status               TEXT NOT NULL, -- quarantine | approved | rejected
-            created_at           TEXT NOT NULL,
-
-            approved_at          TEXT NULL,
-            approved_by          TEXT NULL,
-
-            rejected_at          TEXT NULL,
-            rejected_by          TEXT NULL,
-            rejection_reason     TEXT NULL
-        );
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents(owner_user_id);")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);")
+def _require_doc_id(doc_id: str) -> str:
+    if not isinstance(doc_id, str) or not _DOC_ID_RE.match(doc_id):
+        raise ValueError("invalid_doc_id")
+    return doc_id
 
 
-@dataclass(frozen=True)
-class Document:
-    doc_id: str
-    owner_user_id: str
-    original_filename: str
-    stored_name: str
-    content_type: str
-    size_bytes: int
-    status: str
-    created_at: str
-    approved_at: Optional[str]
-    approved_by: Optional[str]
-    rejected_at: Optional[str]
-    rejected_by: Optional[str]
-    rejection_reason: Optional[str]
+def _new_doc_id() -> str:
+    # Kurzer, URL-sicherer Identifier
+    import secrets
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "doc_id": self.doc_id,
-            "owner_user_id": self.owner_user_id,
-            "original_filename": self.original_filename,
-            "stored_name": self.stored_name,
-            "content_type": self.content_type,
-            "size_bytes": self.size_bytes,
-            "status": self.status,
-            "created_at": self.created_at,
-            "approved_at": self.approved_at,
-            "approved_by": self.approved_by,
-            "rejected_at": self.rejected_at,
-            "rejected_by": self.rejected_by,
-            "rejection_reason": self.rejection_reason,
-        }
+    return "doc_" + secrets.token_urlsafe(12).replace("-", "_")
 
 
-def create_quarantine_document(
-    *,
-    doc_id: str,
-    owner_user_id: str,
-    original_filename: str,
-    stored_name: str,
-    content_type: str,
-    size_bytes: int,
-) -> Document:
-    now = _utc_now_iso()
-    with _connect() as conn:
-        _ensure_tables(conn)
-        conn.execute(
-            """
-            INSERT INTO documents (
-                doc_id, owner_user_id, original_filename, stored_name,
-                content_type, size_bytes, status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            """,
-            (doc_id, owner_user_id, original_filename, stored_name, content_type, int(size_bytes), "quarantine", now),
-        )
-        row = conn.execute("SELECT * FROM documents WHERE doc_id = ? LIMIT 1;", (doc_id,)).fetchone()
-        assert row is not None
-        return _row_to_doc(row)
+def _meta_file(doc_id: str) -> Path:
+    doc_id = _require_doc_id(doc_id)
+    return _paths()["meta"] / f"{doc_id}.json"
 
 
-def get_document(doc_id: str) -> Optional[Document]:
-    with _connect() as conn:
-        _ensure_tables(conn)
-        row = conn.execute("SELECT * FROM documents WHERE doc_id = ? LIMIT 1;", (doc_id,)).fetchone()
-        if row is None:
-            return None
-        return _row_to_doc(row)
+def _file_path(doc_id: str, status: str) -> Path:
+    doc_id = _require_doc_id(doc_id)
+    ps = _paths()
+    if status == "quarantine":
+        return ps["quarantine"] / doc_id
+    if status == "approved":
+        return ps["approved"] / doc_id
+    if status == "rejected":
+        return ps["rejected"] / doc_id
+    raise ValueError("invalid_status")
 
 
-def list_quarantine(limit: int = 50) -> list[Document]:
-    with _connect() as conn:
-        _ensure_tables(conn)
-        rows = conn.execute(
-            "SELECT * FROM documents WHERE status = 'quarantine' ORDER BY created_at DESC LIMIT ?;",
-            (int(limit),),
-        ).fetchall()
-        return [_row_to_doc(r) for r in rows]
+def _write_meta(doc_id: str, meta: Dict[str, Any]) -> None:
+    mf = _meta_file(doc_id)
+    tmp = mf.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, mf)
 
 
-def mark_approved(doc_id: str, *, approved_by: str) -> Optional[Document]:
-    now = _utc_now_iso()
-    with _connect() as conn:
-        _ensure_tables(conn)
-        cur = conn.execute(
-            """
-            UPDATE documents
-               SET status = 'approved',
-                   approved_at = ?,
-                   approved_by = ?,
-                   rejected_at = NULL,
-                   rejected_by = NULL,
-                   rejection_reason = NULL
-             WHERE doc_id = ?;
-            """,
-            (now, approved_by, doc_id),
-        )
-        if cur.rowcount == 0:
-            return None
-        row = conn.execute("SELECT * FROM documents WHERE doc_id = ? LIMIT 1;", (doc_id,)).fetchone()
-        assert row is not None
-        return _row_to_doc(row)
+def _read_meta(doc_id: str) -> Dict[str, Any]:
+    mf = _meta_file(doc_id)
+    if not mf.exists():
+        raise FileNotFoundError(doc_id)
+    return json.loads(mf.read_text(encoding="utf-8"))
 
 
-def mark_rejected(doc_id: str, *, rejected_by: str, reason: str) -> Optional[Document]:
-    now = _utc_now_iso()
-    with _connect() as conn:
-        _ensure_tables(conn)
-        cur = conn.execute(
-            """
-            UPDATE documents
-               SET status = 'rejected',
-                   rejected_at = ?,
-                   rejected_by = ?,
-                   rejection_reason = ?,
-                   approved_at = NULL,
-                   approved_by = NULL
-             WHERE doc_id = ?;
-            """,
-            (now, rejected_by, reason, doc_id),
-        )
-        if cur.rowcount == 0:
-            return None
-        row = conn.execute("SELECT * FROM documents WHERE doc_id = ? LIMIT 1;", (doc_id,)).fetchone()
-        assert row is not None
-        return _row_to_doc(row)
+def create_document_quarantine(owner_user_id: str, upload: UploadFile) -> Dict[str, Any]:
+    """
+    Speichert Upload immer in quarantine.
+    Metadaten werden als JSON im Storage abgelegt.
+    """
+    if not isinstance(owner_user_id, str) or not owner_user_id.strip():
+        raise ValueError("invalid_owner_user_id")
+
+    doc_id = _new_doc_id()
+
+    # Für _require_doc_id: doc_id muss passen
+    _require_doc_id(doc_id)
+
+    qpath = _file_path(doc_id, "quarantine")
+
+    h = hashlib.sha256()
+    size = 0
+
+    # UploadFile.file ist ein file-like object
+    upload.file.seek(0)
+
+    with qpath.open("wb") as out:
+        while True:
+            chunk = upload.file.read(1024 * 1024)
+            if not chunk:
+                break
+            out.write(chunk)
+            h.update(chunk)
+            size += len(chunk)
+
+    meta: Dict[str, Any] = {
+        "doc_id": doc_id,
+        "owner_user_id": owner_user_id,
+        "status": "quarantine",
+        "created_at": _utc_now_iso(),
+        "updated_at": _utc_now_iso(),
+        "original_filename": upload.filename,
+        "content_type": getattr(upload, "content_type", None),
+        "size_bytes": size,
+        "sha256": h.hexdigest(),
+    }
+
+    _write_meta(doc_id, meta)
+    return meta
 
 
-def _row_to_doc(row: sqlite3.Row) -> Document:
-    d = dict(row)
-    return Document(
-        doc_id=d["doc_id"],
-        owner_user_id=d["owner_user_id"],
-        original_filename=d["original_filename"],
-        stored_name=d["stored_name"],
-        content_type=d["content_type"],
-        size_bytes=int(d["size_bytes"]),
-        status=d["status"],
-        created_at=d["created_at"],
-        approved_at=d.get("approved_at"),
-        approved_by=d.get("approved_by"),
-        rejected_at=d.get("rejected_at"),
-        rejected_by=d.get("rejected_by"),
-        rejection_reason=d.get("rejection_reason"),
-    )
+def get_document_meta(doc_id: str) -> Dict[str, Any]:
+    _require_doc_id(doc_id)
+    return _read_meta(doc_id)
+
+
+def list_quarantine_documents() -> List[Dict[str, Any]]:
+    ps = _paths()
+    out: List[Dict[str, Any]] = []
+
+    for mf in sorted(ps["meta"].glob("doc_*.json")):
+        try:
+            meta = json.loads(mf.read_text(encoding="utf-8"))
+            if meta.get("status") == "quarantine":
+                out.append(meta)
+        except Exception:
+            # Meta kaputt -> ignorieren (fail-safe: nicht anzeigen)
+            continue
+
+    return out
+
+
+def approve_document(doc_id: str, actor_user_id: str) -> Dict[str, Any]:
+    _require_doc_id(doc_id)
+    meta = _read_meta(doc_id)
+
+    if meta.get("status") != "quarantine":
+        raise ValueError("not_in_quarantine")
+
+    src = _file_path(doc_id, "quarantine")
+    if not src.exists():
+        raise FileNotFoundError(doc_id)
+
+    dst = _file_path(doc_id, "approved")
+    os.replace(src, dst)
+
+    meta["status"] = "approved"
+    meta["updated_at"] = _utc_now_iso()
+    meta["approved_by"] = actor_user_id
+    meta["approved_at"] = _utc_now_iso()
+    _write_meta(doc_id, meta)
+    return meta
+
+
+def reject_document(doc_id: str, actor_user_id: str) -> Dict[str, Any]:
+    _require_doc_id(doc_id)
+    meta = _read_meta(doc_id)
+
+    if meta.get("status") != "quarantine":
+        raise ValueError("not_in_quarantine")
+
+    src = _file_path(doc_id, "quarantine")
+    if not src.exists():
+        raise FileNotFoundError(doc_id)
+
+    dst = _file_path(doc_id, "rejected")
+    os.replace(src, dst)
+
+    meta["status"] = "rejected"
+    meta["updated_at"] = _utc_now_iso()
+    meta["rejected_by"] = actor_user_id
+    meta["rejected_at"] = _utc_now_iso()
+    _write_meta(doc_id, meta)
+    return meta
+
+
+def get_document_path_for_download(doc_id: str) -> str:
+    _require_doc_id(doc_id)
+    meta = _read_meta(doc_id)
+
+    status = meta.get("status")
+    if status not in {"quarantine", "approved", "rejected"}:
+        raise FileNotFoundError(doc_id)
+
+    p = _file_path(doc_id, status)
+    if not p.exists():
+        raise FileNotFoundError(doc_id)
+
+    return str(p)

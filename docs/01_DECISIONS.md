@@ -1,30 +1,44 @@
 # LifeTimeCircle – Service Heft 4.0
-**Decisions Log (verbindliche Entscheidungen)**  
+**Entscheidungen / SoT (Decisions Log)**  
 Stand: 2026-02-01
 
-> Regel: Nur Dinge, die wirklich entschieden sind, kommen hier rein.  
-> Alles andere gehört in Backlog/Offen.
+> Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
+> Regel: Wenn etwas nicht explizit erlaubt ist → **deny-by-default**.
 
-## D-001 | Projektname/Überbegriff
-**Datum:** 2026-01-27  
-**Entscheidung:** Projekt/Überbegriff lautet künftig: **„LifeTimeCircle - ServiceHeft 4.0“**.  
-**Hinweis:** Alter Projektname/Pfad „Digitale-Fahrzeugzukunft“ ist obsolet; neuer Root-Pfad wird neu angelegt/definiert.
+---
 
-## D-002 | Produkt-Titel
-**Datum:** 2026-01-27  
-**Entscheidung:** Produkt-Titel: **„Service Heft 4.0“** (statt Service Heft 2.0/ServiceF 2.0).
+## D-001: RBAC serverseitig enforced (deny-by-default + least privilege)
+**Status:** beschlossen  
+**Warum:** Client kann manipuliert werden; Rechte müssen im Backend sicher sein.  
+**Konsequenz:** Alle Router haben Dependencies/Gates; Tests prüfen Guard-Coverage.
 
-## D-003 | Branding / Schreibweise
-**Datum:** 2026-01-27  
-**Entscheidung:** Hauptbegriff/Branding: **„LifeTimeCircle“** (zusammengeschrieben, Life/Time/Circle jeweils groß).
+---
 
-## D-004 | Anmeldung / Verifizierung
-**Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung via **E-Mail-Login** und **Verifizierung** (OTP oder Magic-Link) wird umgesetzt.
+## D-002: Moderator strikt nur Blog/News
+**Status:** beschlossen  
+**Warum:** Minimierung von Datenzugriff, keine PII, keine Exports.  
+**Konsequenz:** `forbid_moderator` auf allen deny-Routen (nicht Blog/News).
 
-## D-005 | AGB & Datenschutz Pflicht
-**Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung nur möglich, wenn **AGB** und **Datenschutzrichtlinien** bestätigt wurden.
+---
+
+## D-003: Public-QR zeigt nur Dokumentations-/Nachweisqualität (Trustscore)
+**Status:** beschlossen  
+**Warum:** Keine technische Zustandsbewertung, keine Haftungs-/Fehlinterpretationsrisiken.  
+**Konsequenz:** Trustscore-Ampel bewertet nur Nachweise (keine „Vehicle health“).
+
+---
+
+## D-004: Export-Design mit Redaction-by-default
+**Status:** beschlossen  
+**Warum:** Privacy by design; Full Export ist High-Risk.  
+**Konsequenz:** Redacted Export Standard; Full Export nur via One-Time-Token + TTL + Superadmin.
+
+---
+
+## D-005: Consent-Dokumente als Single Source of Truth
+**Status:** beschlossen  
+**Warum:** Rechts-/Policy-Änderungen müssen versioniert und nachvollziehbar sein.  
+**Konsequenz:** `app/consent/policy.py` definiert required docs + Versions; Store/Router nutzen SoT.
 
 ## D-006 | Produktionsreife (keine Demo)
 **Datum:** 2026-01-27  

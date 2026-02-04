@@ -1,23 +1,46 @@
-.gitignore
+# python caches
 __pycache__/
+*.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# local dumps / generated context
+server/data/
 server/data/*.db
 server/data/*.db-*
 server/data/*.db-journal
 
-# local-only uploads/quarantine (niemals in Git)
+# storage (uploads/quarantine/etc.) niemals versionieren
 server/storage/
 server/storage/**
 
+# archives
 *.zip
 
+# env files
 .env
 .env.*
 !.env.example
 
+# node / build
 node_modules/
 dist/
-*.bak.*
 
 # backup files
 *.bak
+*.bak.*
+*.tmp
+
+# OS / IDE noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+server/scripts/dump_*.ps1
+dump_*.ps1
+
+# local helper scripts (dump)
+scripts/dump_*.ps1
