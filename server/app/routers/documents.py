@@ -8,28 +8,25 @@ from fastapi.responses import FileResponse
 
 from app.services.documents_store import DocumentStatus, DocumentsStore
 
-
-# ---- Auth/RBAC deps (use existing project deps if present; otherwise safe-stub) ----
+# Auth/Guards: Projekt-SoT (keine Stubs, sonst brechen Dependency-Overrides in Tests)
 try:
-    from app.auth.deps import require_actor as require_actor  # type: ignore
-except Exception:  # pragma: no cover
-    def require_actor() -> Any:  # type: ignore
-        raise HTTPException(status_code=401, detail="auth_not_configured")
-
+    from app.deps import get_current_user  # compat layer
+except ImportError:  # pragma: no cover
+    from app.rbac import get_current_user  # fallback (older layout)
 
 try:
-    from app.auth.deps import forbid_moderator as forbid_moderator  # type: ignore
-except Exception:  # pragma: no cover
-    def forbid_moderator(actor: Any = Depends(require_actor)) -> None:  # type: ignore
-        role = _actor_role(actor)
-        if role == "moderator":
-            raise HTTPException(status_code=403, detail="forbidden")
+    from app.guards import forbid_moderator
+except ImportError:  # pragma: no cover
+    # Wenn guards fehlt, ist das ein Projektfehler -> bewusst hart failen
+    raise
 
 
 def _actor_role(actor: Any) -> Optional[str]:
     if isinstance(actor, dict):
-        return (actor.get("role") or actor.get("user_role") or "").strip() or None
-    return getattr(actor, "role", None) or getattr(actor, "user_role", None)
+        v = actor.get("role") or actor.get("user_role")
+        return str(v).strip() if v is not None else None
+    v = getattr(actor, "role", None) or getattr(actor, "user_role", None)
+    return str(v).strip() if v is not None else None
 
 
 def _actor_id(actor: Any) -> str:
@@ -38,35 +35,31 @@ def _actor_id(actor: Any) -> str:
     return str(getattr(actor, "id", None) or getattr(actor, "user_id", None) or getattr(actor, "sub", None) or "")
 
 
-def require_admin(actor: Any = Depends(require_actor)) -> Any:
+def require_admin(actor: Any = Depends(get_current_user)) -> Any:
     role = _actor_role(actor)
     if role not in {"admin", "superadmin"}:
         raise HTTPException(status_code=403, detail="forbidden")
     return actor
 
 
-@lru_cache(maxsize=1)
-def _default_store() -> DocumentsStore:
-    return DocumentsStore.from_env()
-
-
 def get_documents_store() -> DocumentsStore:
-    return _default_store()
+    # WICHTIG: kein globaler Cache hier.
+    # Tests setzen env/tmp_path pro Test → Cache würde Pfade "einfrieren" und Tests flaken lassen.
+    return DocumentsStore.from_env()
 
 
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
-    dependencies=[Depends(require_actor), Depends(forbid_moderator)],
+    # Moderator strikt ausschließen (Blog/News-only)
+    dependencies=[Depends(forbid_moderator)],
 )
 
-
-# ---- Routes ----
 
 @router.post("/upload")
 def upload_document(
     file: UploadFile = File(...),
-    actor: Any = Depends(require_actor),
+    actor: Any = Depends(get_current_user),
     store: DocumentsStore = Depends(get_documents_store),
 ) -> Dict[str, Any]:
     owner_id = _actor_id(actor)
@@ -74,7 +67,11 @@ def upload_document(
         raise HTTPException(status_code=401, detail="unauthorized")
 
     try:
-        row = store.ingest_upload(owner_id=owner_id, original_filename=file.filename or "upload.bin", fileobj=file.file)
+        row = store.ingest_upload(
+            owner_id=owner_id,
+            original_filename=file.filename or "upload.bin",
+            fileobj=file.file,
+        )
     except ValueError as e:
         msg = str(e)
         if msg == "file_too_large":
@@ -95,7 +92,7 @@ def upload_document(
 @router.get("/{doc_id}")
 def get_document_metadata(
     doc_id: str,
-    actor: Any = Depends(require_actor),
+    actor: Any = Depends(get_current_user),
     store: DocumentsStore = Depends(get_documents_store),
 ) -> Dict[str, Any]:
     row = store.get(doc_id)
@@ -127,7 +124,7 @@ def get_document_metadata(
 @router.get("/{doc_id}/download")
 def download_document(
     doc_id: str,
-    actor: Any = Depends(require_actor),
+    actor: Any = Depends(get_current_user),
     store: DocumentsStore = Depends(get_documents_store),
 ):
     row = store.get(doc_id)
@@ -137,9 +134,9 @@ def download_document(
     role = _actor_role(actor)
     actor_id = _actor_id(actor)
 
-    # Admin/Superadmin: may review-download even while pending
+    # Admin/Superadmin: darf review-download auch wenn PENDING
     if role not in {"admin", "superadmin"}:
-        # user/vip/dealer: only own + APPROVED
+        # user/vip/dealer: nur own + APPROVED
         if row.owner_id != actor_id:
             raise HTTPException(status_code=403, detail="forbidden")
         if row.status != DocumentStatus.APPROVED.value:
