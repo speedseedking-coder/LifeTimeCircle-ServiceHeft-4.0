@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from importlib import import_module
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 import pytest
 from fastapi.testclient import TestClient
@@ -45,7 +45,7 @@ _get_actor = _import_attr(
 
 
 def _mk_actor(role: str, user_id: str) -> Dict[str, Any]:
-    # Minimales Schema, das in documents.py bereits genutzt wird (admin["user_id"])
+    # Minimales Schema, das in documents.py genutzt wird (admin["user_id"])
     return {"role": role, "user_id": user_id, "email": f"{user_id}@example.com"}
 
 
@@ -57,6 +57,31 @@ def _make_client(tmp_storage_dir: str, actor: Dict[str, Any]) -> TestClient:
     app = _create_app()
     app.dependency_overrides[_get_actor] = lambda: actor
     return TestClient(app)
+
+
+def _extract_doc_id(payload: Dict[str, Any]) -> Optional[str]:
+    """
+    Erwartete Response-Formen:
+    - {"doc_id": "..."} oder {"id": "..."}
+    - {"doc": {"doc_id": "..."}} (aktuell bei euch)
+    """
+    direct = (
+        payload.get("doc_id")
+        or payload.get("id")
+        or payload.get("document_id")
+        or payload.get("uuid")
+    )
+    if direct:
+        return str(direct)
+
+    doc = payload.get("doc") or {}
+    nested = (
+        doc.get("doc_id")
+        or doc.get("id")
+        or doc.get("document_id")
+        or doc.get("uuid")
+    )
+    return str(nested) if nested else None
 
 
 def _upload_quarantine_doc(client: TestClient) -> str:
@@ -77,15 +102,9 @@ def _upload_quarantine_doc(client: TestClient) -> str:
     assert r.status_code in (200, 201), r.text
     payload = r.json()
 
-    doc_id = (
-        payload.get("doc_id")
-        or payload.get("id")
-        or payload.get("document_id")
-        or payload.get("uuid")
-        or payload.get("doc", {}).get("id")
-    )
+    doc_id = _extract_doc_id(payload)
     assert doc_id, f"Upload response missing doc id. payload={payload}"
-    return str(doc_id)
+    return doc_id
 
 
 @pytest.mark.parametrize("role", ["user", "vip", "dealer"])
@@ -97,7 +116,7 @@ def test_documents_quarantine_admin_endpoints_forbidden_for_non_admin_roles(tmp_
     # Client mit verbotener Rolle
     forbidden_client = _make_client(str(tmp_path), _mk_actor(role, f"u_{role}"))
 
-    # Act + Assert: Admin-Endpoints müssen 403 liefern
+    # Admin-Endpoints müssen 403 liefern
     r1 = forbidden_client.get("/documents/admin/quarantine")
     assert r1.status_code == 403, r1.text
 
