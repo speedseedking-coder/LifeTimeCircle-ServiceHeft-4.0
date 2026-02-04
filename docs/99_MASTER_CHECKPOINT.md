@@ -165,29 +165,32 @@ $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 ---
 
-## 2026-02-04 – CI + Branch Protection finalisiert
+---
 
-### Merged PRs
-- #5 Tests: RBAC deny für Documents-Quarantäne-Admin-Endpunkte (Non-Admin => 403, Unauth => 401, Moderator auch Read => 403)
-- #6 Docs: Master Checkpoint CI/Actions Update
-- #7 chore: branch protection smoke (Smoke-Test)
-- #8 chore: remove bp smoke artifact (Cleanup)
+## 2026-02-04 – Branch Protection final + Start P0 Uploads-Quarantäne
 
-### CI
-- GitHub Actions Workflow: **CI** mit Job **pytest** aktiv.
-- Required Status Check final **robust** gesetzt über *required_status_checks.checks* (Check-Run):
-  - context: **pytest**
-  - app_id: **15368** (GitHub Actions)
-  -> vermeidet String-/Space-Mismatch ("CI/..." vs "CI / ...") und PR vs push Context-Fallen.
-
-### Branch Protection (main)
-- PR-only enforced (kein Direct Push).
+### Branch Protection (main) – final
+- PR-only enforced (kein Direct Push auf `main`)
 - strict: **true** (up-to-date required)
 - linear history: **true**
 - enforce admins: **true**
 - force pushes: **false**
 - deletions: **false**
 - require conversation resolution: **true**
+- Required Status Check **robust** via Check-Run:
+  - context: **pytest**
+  - app_id: **15368**
+  -> vermeidet String-/Space-Mismatch (z.B. `CI/…` vs `CI / …`) und PR-vs-push Context-Fallen.
+
+### Merged PRs
+- #7 chore: branch protection smoke
+- #8 chore: remove bp smoke artifact
+- #9 Docs: Master Checkpoint branch protection final
+
+### P0 gestartet
+- Branch: `feat/uploads-quarantine-p0`
+- PR: #10 „P0: Uploads Quarantäne“
+- Hinweis: PR wurde initial mit einem **Platzhalter-Commit** erstellt (`_uploads_quarantine_p0.txt`) – muss vor Merge wieder raus, sobald echte Änderungen drin sind.
 
 ### Learnings / Pitfalls (damit wir nicht wieder reinlaufen)
 - Branch-Protection REST: allow_force_pushes/allow_deletions im PUT-Body als **BOOLEAN** (nicht {enabled:...}).
