@@ -13,17 +13,18 @@ Projekt:
 ---
 
 ## Status (Hauptmodul zuerst)
+✅ `main` ist aktuell  
 ✅ Tests grün: `poetry run pytest -q`  
-✅ Branch: **feat/uploads-quarantine-p0**
 
 ### Servicebook (Core / System of Record)
 ✅ Core Servicebook: **Inspection Events + Cases + Remediation** (als Servicebook-Entries/Logs)  
-✅ Router sicher über `create_app()` eingebunden (keine unsicheren Patch-Scripts)
+✅ Router sicher über `create_app()` eingebunden
 
 ### Core-Querschnitt: Documents/Uploads/Export
 ✅ P0 Uploads: **Documents Router + Store** (**Quarantine-by-default**)  
 ✅ `python-multipart` als Dependency ergänzt (FastAPI FormData Uploads)  
-✅ Repo-Hygiene: `.gitignore`/Cleanup für Runtime/Cache/DB/Storage
+✅ Repo-Hygiene: `.gitignore`/Cleanup für Runtime/Cache/DB/Storage  
+✅ Export-Hardening: **redacted Export** gibt Dokument-Refs **nur** mit Status **APPROVED** aus (Test vorhanden)
 
 ---
 
@@ -65,7 +66,7 @@ Alle weiteren “Module/Prozesse” sind **Producer**, die bei Durchführung **S
 ---
 
 ## P0: Uploads Quarantine-by-default (Core-Querschnitt)
-### Neue Routes (Documents)
+### Routes (Documents)
 - `POST /documents/upload`
 - `GET /documents/{doc_id}`
 - `GET /documents/{doc_id}/download`
@@ -74,21 +75,19 @@ Alle weiteren “Module/Prozesse” sind **Producer**, die bei Durchführung **S
 - `POST /documents/{doc_id}/reject`
 
 ### Security / RBAC (FIX)
-- **Moderator** darf nur Blog/News → alle `/documents/*` müssen `Depends(forbid_moderator)` haben
+- **Moderator** darf nur Blog/News → alle `/documents/*` tragen `Depends(forbid_moderator)`
 - **Keine public uploads**: Uploads/Storage werden **nicht** als StaticFiles gemounted
 - **Quarantine Default**: Uploads sind initial `PENDING/QUARANTINED`
 - **Download/Content** für `user/vip/dealer`: **nur** wenn Status **APPROVED** (und Scope passt)
 - **Quarantäne-Workflow**:
-  - `GET /documents/admin/quarantine` + `approve/reject` + Review-Download: **nur `admin`/`superadmin`**
+  - Quarantäne-Liste + Review + `approve/reject`: **nur `admin`/`superadmin`**
   - SoT dazu: `docs/03_RIGHTS_MATRIX.md` Abschnitt **3b**
 
 ---
 
-## Tests (neu/angepasst)
-### Servicebook
-- Route-Registrierungstest: Routen existieren + `forbid_moderator` auf allen `/servicebook/*`
-- Flow-Test: `NOT_OK` → Case erzeugt; Remediation `OK` → Case `DONE`
-- Tests setzen `get_actor` via `dependency_overrides` als admin
+## Export-Hardening (Quarantine-by-default)
+✅ `export_servicebook_redacted` filtert Dokument-Refs strikt auf **APPROVED**  
+✅ Test beweist, dass `pending/unapproved` Docs im **redacted Export** nicht auftauchen
 
 ---
 
@@ -103,12 +102,18 @@ Ignorieren (nicht versionieren):
 
 ---
 
-## Nächster Schritt (Core/P0): Export-Hardening passend zu Quarantäne
-**Ziel:** `export_servicebook_redacted` gibt Dokument-Refs **nur** mit Status `APPROVED` aus (Quarantäne-by-default).  
-**Nachweis:** Test beweist, dass `pending/unapproved` Docs im **redacted Export** nicht auftauchen.
+## Nächster Schritt (P0 Security): Admin-Gates & Negativ-Tests für Quarantäne
+**Ziel:** Nachweisbar, dass normale Rollen niemals Quarantäne-Aktionen ausführen können.  
+**DoD:**
+- Tests: `user/vip/dealer` bekommen **403** auf:
+  - `GET /documents/admin/quarantine`
+  - `POST /documents/{id}/approve`
+  - `POST /documents/{id}/reject`
+- Tests: `moderator` bekommt **403** auf alle `/documents/*` (bleibt strikt nur Blog/News)
+- Keine Logs mit PII/Secrets beim Approve/Reject
 
 Startsatz für neuen Chat:
-- **„weiter mit Export-Servicebook Redaction nur APPROVED“**
+- **„weiter mit Admin-Gates + Negativ-Tests für Documents Quarantine“**
 
 ---
 
