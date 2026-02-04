@@ -35,6 +35,10 @@ jobs:
           poetry --version
           poetry install --no-interaction
 
+      - name: Prepare runtime dirs
+        run: |
+          mkdir -p data
+
       - name: Run tests
         env:
           LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
