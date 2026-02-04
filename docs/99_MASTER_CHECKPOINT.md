@@ -13,7 +13,7 @@ Projekt:
 ---
 
 ## Status (Hauptmodul zuerst)
-✅ **Tests grün**: `poetry run pytest -q` → **100%**  
+✅ Tests grün: `poetry run pytest -q`  
 ✅ Branch: **feat/uploads-quarantine-p0**
 
 ### Servicebook (Core / System of Record)
@@ -21,7 +21,7 @@ Projekt:
 ✅ Router sicher über `create_app()` eingebunden (keine unsicheren Patch-Scripts)
 
 ### Core-Querschnitt: Documents/Uploads/Export
-✅ P0 Uploads: **Documents Router + Store** (Quarantine-by-default)  
+✅ P0 Uploads: **Documents Router + Store** (**Quarantine-by-default**)  
 ✅ `python-multipart` als Dependency ergänzt (FastAPI FormData Uploads)  
 ✅ Repo-Hygiene: `.gitignore`/Cleanup für Runtime/Cache/DB/Storage
 
@@ -73,9 +73,14 @@ Alle weiteren “Module/Prozesse” sind **Producer**, die bei Durchführung **S
 - `POST /documents/{doc_id}/approve`
 - `POST /documents/{doc_id}/reject`
 
-### Security / RBAC
-- Moderator darf nur Blog/News → alle deny-Routen müssen `forbid_moderator` haben
-- Uploads/Storage werden **nicht** als StaticFiles gemounted (keine public uploads)
+### Security / RBAC (FIX)
+- **Moderator** darf nur Blog/News → alle `/documents/*` müssen `Depends(forbid_moderator)` haben
+- **Keine public uploads**: Uploads/Storage werden **nicht** als StaticFiles gemounted
+- **Quarantine Default**: Uploads sind initial `PENDING/QUARANTINED`
+- **Download/Content** für `user/vip/dealer`: **nur** wenn Status **APPROVED** (und Scope passt)
+- **Quarantäne-Workflow**:
+  - `GET /documents/admin/quarantine` + `approve/reject` + Review-Download: **nur `admin`/`superadmin`**
+  - SoT dazu: `docs/03_RIGHTS_MATRIX.md` Abschnitt **3b**
 
 ---
 
