@@ -1,4 +1,4 @@
-server/app/routers/documents.py
+# server/app/routers/documents.py
 from __future__ import annotations
 
 import os
@@ -23,7 +23,6 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 
 def _storage_base() -> Path:
-    # lokal, nicht in Git: server/storage/...
     base = os.getenv("LTC_STORAGE_DIR", os.path.join(".", "storage"))
     return Path(base).resolve()
 
@@ -41,9 +40,8 @@ def _approved_dir() -> Path:
 
 
 def _max_bytes() -> int:
-    # Default: 10MB
     try:
-        return int(os.getenv("LTC_UPLOAD_MAX_BYTES", "10000000"))
+        return int(os.getenv("LTC_UPLOAD_MAX_BYTES", "10000000"))  # 10MB default
     except Exception:
         return 10000000
 
@@ -53,7 +51,6 @@ _ALLOWED_CT = {"application/pdf", "image/png", "image/jpeg"}
 
 
 def _sniff_ok(content_type: str, head: bytes) -> bool:
-    # minimal signature checks (kein Magic dependency)
     if content_type == "application/pdf":
         return head.startswith(b"%PDF-")
     if content_type == "image/png":
@@ -73,7 +70,6 @@ async def upload_document(
     file: UploadFile = File(...),
     title: Optional[str] = Form(default=None),
 ) -> dict:
-    # moderator/public sind durch require_user ausgeschlossen
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="missing_filename")
 
@@ -113,7 +109,6 @@ async def upload_document(
     finally:
         await file.close()
 
-    # DB-Eintrag anlegen (Quarantine)
     doc = create_quarantine_document(
         doc_id=doc_id,
         owner_user_id=user["user_id"],
@@ -141,12 +136,11 @@ def get_document_meta(doc_id: str, user: Actor = Depends(require_user)) -> dict:
     if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
 
-    # deny-by-default: user/vip/dealer nur eigene Dokumente; admin/superadmin alles
     if not _is_admin(user) and doc.owner_user_id != user["user_id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
 
     d = doc.to_dict()
-    d.pop("stored_name", None)  # keine internen Dateinamen raus
+    d.pop("stored_name", None)
     return d
 
 
@@ -159,14 +153,12 @@ def download_document(doc_id: str, user: Actor = Depends(require_user)):
     if not _is_admin(user) and doc.owner_user_id != user["user_id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
 
-    # Quarantine ist nicht downloadbar für normale User (nur admin/superadmin)
     if doc.status != "approved" and not _is_admin(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not_approved")
 
     base = _approved_dir() if doc.status == "approved" else _quarantine_dir()
     path = (base / doc.stored_name).resolve()
 
-    # safety: path muss unter storage base liegen
     if _storage_base() not in path.parents:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="storage_path_invalid")
 
@@ -234,7 +226,6 @@ def admin_reject(
     if doc.status != "quarantine":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="not_in_quarantine")
 
-    # Datei löschen (Quarantine) – keine Aufbewahrung von potentiell schädlichem Content
     p = (_quarantine_dir() / doc.stored_name).resolve()
     try:
         if p.exists():
