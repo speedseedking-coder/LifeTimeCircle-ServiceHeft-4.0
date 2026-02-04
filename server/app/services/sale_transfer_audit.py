@@ -3,103 +3,215 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from sqlalchemy import Column, DateTime, MetaData, String, Table, Text, insert
-from sqlalchemy.inspection import inspect as sa_inspect
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session
+
+# Fallback-table (sale_transfer-spezifisch)
+name = "sale_transfer_audit_events"
+MODULE_ID = "sale_transfer"
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    # naive UTC (SQLite-friendly) – ohne datetime.utcnow() (DeprecationWarning)
+    return datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
 
 
-def _pick_audit_table(db: Session) -> Table:
+def _get_engine(db: Session) -> Engine:
     bind = db.get_bind()
-    if bind is None:
-        raise RuntimeError("DB bind fehlt")
+    if isinstance(bind, Engine):
+        return bind
+    if isinstance(bind, Connection):
+        return bind.engine
+    raise RuntimeError("DB bind ist weder Engine noch Connection")
 
-    insp = sa_inspect(bind)
+
+def _json(payload: Dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+def _ensure_fallback_table(engine: Engine) -> Table:
+    """
+    Wenn Tabelle existiert: autoload (damit Schema-Mismatch nicht crasht).
+    Wenn nicht: anlegen mit unseren Spalten.
+    """
+    insp = sa_inspect(engine)
     md = MetaData()
 
-    for name in ("audit_events", "audit", "audits"):
-        if insp.has_table(name):
-            return Table(name, md, autoload_with=bind)
-
-    name = "sale_transfer_audit_events"
-    if insp.has_table(name):
-        return Table(name, md, autoload_with=bind)
+    if name in set(insp.get_table_names()):
+        return Table(name, md, autoload_with=engine)
 
     t = Table(
         name,
         md,
-        Column("event_id", String(36), primary_key=True),
-        Column("at", DateTime(timezone=True), nullable=False, index=True),
-        Column("event_type", String(64), nullable=False, index=True),
-        Column("actor_id", String(64), nullable=True, index=True),
-        Column("target_id", String(64), nullable=True, index=True),
-        Column("payload_json", Text, nullable=True),
+        Column("id", String(36), primary_key=True),
+        Column("at", DateTime, nullable=False),
+        Column("event_type", String(64), nullable=False),
+        Column("module_id", String(64), nullable=False),
+        Column("actor_user_id", String(64), nullable=True),
+        Column("target_id", String(64), nullable=True),
+        Column("correlation_id", String(64), nullable=True),
+        Column("idempotency_key", String(128), nullable=True),
+        Column("payload_json", Text, nullable=False),
     )
-    md.create_all(bind=bind)
+    md.create_all(engine, tables=[t], checkfirst=True)
     return t
+
+
+def _pick_primary_table(engine: Engine) -> Optional[Table]:
+    insp = sa_inspect(engine)
+    tables = set(insp.get_table_names())
+    md = MetaData()
+    for candidate in ("audit_events", "audit", "audits"):
+        if candidate in tables:
+            return Table(candidate, md, autoload_with=engine)
+    return None
+
+
+def _build_values(
+    t: Table,
+    event_type: str,
+    *,
+    actor_user_id: Optional[str],
+    target_id: Optional[str],
+    correlation_id: Optional[str],
+    idempotency_key: Optional[str],
+    payload: Dict[str, Any],
+) -> Dict[str, Any]:
+    now = _utc_now()
+    pj = _json(payload)
+
+    cols = set(t.c.keys())
+    v: Dict[str, Any] = {}
+
+    # id / event_id
+    if "id" in cols:
+        v["id"] = str(uuid.uuid4())
+    elif "event_id" in cols:
+        v["event_id"] = str(uuid.uuid4())
+
+    # time columns (best-effort)
+    for k in ("at", "created_at", "occurred_at", "ts", "timestamp"):
+        if k in cols:
+            v[k] = now
+            break
+
+    # module_id ist oft NOT NULL -> immer setzen, wenn vorhanden
+    for k in ("module_id", "module", "moduleId"):
+        if k in cols:
+            v[k] = MODULE_ID
+            break
+
+    # event name/type columns
+    if "event_type" in cols:
+        v["event_type"] = event_type
+    if "event_name" in cols:
+        v["event_name"] = event_type
+    if "action" in cols:
+        v["action"] = event_type
+
+    # actor
+    if actor_user_id:
+        for k in ("actor_user_id", "actor_id", "user_id", "actor", "userId"):
+            if k in cols:
+                v[k] = actor_user_id
+                break
+
+    # target/entity
+    if target_id:
+        for k in ("target_id", "entity_id", "resource_id", "object_id", "target", "entityId"):
+            if k in cols:
+                v[k] = target_id
+                break
+
+    # correlation + idem
+    if correlation_id:
+        for k in ("correlation_id", "correlationId"):
+            if k in cols:
+                v[k] = correlation_id
+                break
+    if idempotency_key:
+        for k in ("idempotency_key", "idempotencyKey"):
+            if k in cols:
+                v[k] = idempotency_key
+                break
+
+    # payload json field
+    for k in ("payload_json", "details_json", "data_json", "payload"):
+        if k in cols:
+            v[k] = pj
+            break
+
+    return v
 
 
 def write_sale_audit(
     db: Session,
-    *,
     event_type: str,
-    actor_user_id: str,
-    target_id: str,
-    payload: Dict[str, Any],
+    *,
+    actor_user_id: Optional[str] = None,
+    target_id: Optional[str] = None,
+    correlation_id: Optional[str] = None,
+    idempotency_key: Optional[str] = None,
+    payload: Optional[Dict[str, Any]] = None,
 ) -> None:
-    t = _pick_audit_table(db)
-    now = _utc_now()
-    cols = set(c.name for c in t.c)
+    """
+    Best-effort Audit: darf Sale/Transfer NICHT killen.
+    Prefer existing audit_events/audit/audits; fallback auf sale_transfer_audit_events.
+    """
+    engine = _get_engine(db)
+    payload = payload or {}
 
-    values: Dict[str, Any] = {}
+    primary = _pick_primary_table(engine)
+    fallback = _ensure_fallback_table(engine)
 
-    if "event_id" in cols:
-        values["event_id"] = str(uuid.uuid4())
-    elif "id" in cols:
-        values["id"] = str(uuid.uuid4())
+    # 1) primary best-effort (eigene TX, damit Business-Session nicht kaputt geht)
+    if primary is not None:
+        try:
+            values = _build_values(
+                primary,
+                event_type,
+                actor_user_id=actor_user_id,
+                target_id=target_id,
+                correlation_id=correlation_id,
+                idempotency_key=idempotency_key,
+                payload=payload,
+            )
+            with engine.begin() as conn:
+                conn.execute(insert(primary).values(**values))
+            return
+        except Exception:
+            pass
 
-    if "at" in cols:
-        values["at"] = now
-    elif "created_at" in cols:
-        values["created_at"] = now
-    elif "timestamp" in cols:
-        values["timestamp"] = now
+    # 2) fallback best-effort
+    try:
+        values = _build_values(
+            fallback,
+            event_type,
+            actor_user_id=actor_user_id,
+            target_id=target_id,
+            correlation_id=correlation_id,
+            idempotency_key=idempotency_key,
+            payload=payload,
+        )
 
-    if "event_name" in cols:
-        values["event_name"] = event_type
-    elif "event_type" in cols:
-        values["event_type"] = event_type
-    elif "action" in cols:
-        values["action"] = event_type
+        # Mindestfelder absichern (falls fallback minimal ist)
+        cols = set(fallback.c.keys())
+        if "id" in cols:
+            values.setdefault("id", str(uuid.uuid4()))
+        if "at" in cols:
+            values.setdefault("at", _utc_now())
+        if "event_type" in cols:
+            values.setdefault("event_type", event_type)
+        if "module_id" in cols:
+            values.setdefault("module_id", MODULE_ID)
+        if "payload_json" in cols:
+            values.setdefault("payload_json", _json(payload))
 
-    if "actor_id" in cols:
-        values["actor_id"] = actor_user_id
-    elif "actor_user_id" in cols:
-        values["actor_user_id"] = actor_user_id
-
-    if "target_id" in cols:
-        values["target_id"] = target_id
-    elif "resource_id" in cols:
-        values["resource_id"] = target_id
-
-    if "result" in cols and "result" not in values:
-        values["result"] = "success"
-
-    if "correlation_id" in cols:
-        values["correlation_id"] = str(uuid.uuid4())
-    if "idempotency_key" in cols:
-        values["idempotency_key"] = "n/a"
-
-    if "payload_json" in cols:
-        values["payload_json"] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    elif "details_json" in cols:
-        values["details_json"] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    elif "details" in cols:
-        values["details"] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-
-    db.execute(insert(t).values(**values))
+        with engine.begin() as conn:
+            conn.execute(insert(fallback).values(**values))
+    except Exception:
+        return

@@ -15,17 +15,33 @@ function Get-VerifyConsents {
   $cc = irm "$Base/consent/current" -Method Get
   $docs = $null
 
-  if ($cc -is [System.Collections.IEnumerable] -and -not ($cc -is [hashtable])) {
-    $docs = @($cc)
-  } elseif ($cc.documents) {
-    $docs = @($cc.documents)
-  } elseif ($cc.consents) {
-    $docs = @($cc.consents)
-  } elseif ($cc.required) {
-    $docs = @($cc.required)
-  } else {
-    $docs = @()
-  }
+  $cc = irm "$Base/consent/current"
+
+$docs = $null
+if ($cc -is [System.Array]) {
+  $docs = $cc
+} elseif ($cc.documents) {
+  $docs = $cc.documents
+} elseif ($cc.docs) {
+  $docs = $cc.docs
+} elseif ($cc.consents) {
+  $docs = $cc.consents
+} elseif ($cc.items) {
+  $docs = $cc.items
+} else {
+  throw ("Unexpected /consent/current payload: " + ($cc | ConvertTo-Json -Depth 20))
+}
+
+$acceptedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+$consents = @()
+foreach ($d in $docs) {
+  $dt = $d.doc_type; if (-not $dt) { $dt = $d.docType }; if (-not $dt) { $dt = $d.type }
+  $dv = $d.doc_version; if (-not $dv) { $dv = $d.docVersion }; if (-not $dv) { $dv = $d.version }
+  if (-not $dt -or -not $dv) { continue }
+  $consents += @{ doc_type = $dt; doc_version = $dv; accepted_at = $acceptedAt }
+}
+
 
   $out = @()
   foreach ($d in $docs) {
