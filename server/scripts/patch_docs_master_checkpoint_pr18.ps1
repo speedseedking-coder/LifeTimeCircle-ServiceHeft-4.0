@@ -12,7 +12,12 @@ if (-not (Test-Path $target)) {
 
 $text = Get-Content -Raw -Encoding UTF8 $target
 
-# Safety: falls ein früherer Lauf literal `r`n eingebaut hat
+# Hard fail wenn conflict marker drin sind
+if ($text -match "(?m)^(<<<<<<<|=======|>>>>>>>)") {
+  throw "Konfliktmarker in docs/99_MASTER_CHECKPOINT.md gefunden. Bitte erst bereinigen."
+}
+
+# Safety: falls irgendwo literal `r`n drin steht
 $text = $text.Replace('`r`n', '')
 
 # --- Status Bullet einmalig einfügen ---
@@ -49,4 +54,4 @@ if ($text -notmatch [regex]::Escape($detailLine)) {
 if (-not $text.EndsWith("`n")) { $text += "`r`n" }
 
 Set-Content -Encoding UTF8 -NoNewline -Path $target -Value $text
-Write-Host "OK: patched $target (PR #18 notes, no literal `r`n, single insert)"
+Write-Host "OK: patched $target (PR #18 notes, single insert, no literal `r`n)"
