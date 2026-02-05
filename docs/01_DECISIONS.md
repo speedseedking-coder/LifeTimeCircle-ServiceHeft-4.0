@@ -54,3 +54,10 @@ Stand: 2026-02-05
 **Status:** beschlossen  
 **Warum:** Quarantäne ohne Scan ist zu schwach; Freigabe nur nach Scan.  
 **Konsequenz:** `scan_status` Feld + `approve` nur wenn `CLEAN`, sonst 409; Admin-Rescan Endpoint; INFECTED auto-reject.
+
+---
+
+## D-008: Sale/Transfer Status nur für Initiator oder Redeemer (object-level RBAC)
+**Status:** beschlossen  
+**Warum:** `tid` ist erratbar/teilbar; Status darf nicht für beliebige `vip|dealer` lesbar sein (ID-Leak via `initiator_user_id` / `redeemed_by_user_id`).  
+**Konsequenz:** `GET /sale/transfer/status/{tid}` zusätzlich zum Role-Gate (`vip|dealer`) nur wenn Actor **Initiator** oder **Redeemer** ist; sonst **403**. Tests müssen das explizit abdecken.
