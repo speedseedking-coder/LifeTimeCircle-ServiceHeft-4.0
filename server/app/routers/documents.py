@@ -5,9 +5,20 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
-from app.deps import forbid_moderator, get_actor, require_roles
+from app.deps import get_actor, require_roles
 from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
+
+
+def forbid_moderator(actor=Depends(get_actor)):
+    role = None
+    if isinstance(actor, dict):
+        role = actor.get("role")
+    else:
+        role = getattr(actor, "role", None)
+    if (role or "").lower() == "moderator":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return actor
 
 
 router = APIRouter(

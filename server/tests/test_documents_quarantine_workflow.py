@@ -9,7 +9,6 @@ from fastapi import Header
 from fastapi.testclient import TestClient
 
 from app import deps as app_deps
-from app.main import app
 from app.routers import documents as documents_router
 from app.services.documents_store import DocumentsStore
 
@@ -22,6 +21,10 @@ class Actor:
 
 @pytest.fixture()
 def client(tmp_path: Path):
+    from app.main import create_app  # import lokal, damit conftest/create_app kompatibel bleibt
+
+    app = create_app()
+
     store = DocumentsStore(
         storage_root=tmp_path / "storage",
         db_path=tmp_path / "data" / "app.db",
