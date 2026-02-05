@@ -21,7 +21,7 @@ class Actor:
 
 @pytest.fixture()
 def client(tmp_path: Path):
-    from app.main import create_app  # import lokal, damit conftest/create_app kompatibel bleibt
+    from app.main import create_app  # lokal import, damit conftest/create_app sauber bleibt
 
     app = create_app()
 

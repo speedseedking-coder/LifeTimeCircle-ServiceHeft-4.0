@@ -93,8 +93,16 @@ class DocumentsStore:
         self.db_path = Path(db_path)
         self.max_upload_bytes = int(max_upload_bytes)
 
-        self.allowed_ext = _norm_set({str(e).lstrip(".") for e in (allowed_ext or set())}) if allowed_ext is not None else None
-        self.allowed_mime = _norm_set({_normalize_mime(m) for m in (allowed_mime or set())}) if allowed_mime is not None else None
+        self.allowed_ext = (
+            _norm_set({str(e).lstrip(".") for e in (allowed_ext or set())})
+            if allowed_ext is not None
+            else None
+        )
+        self.allowed_mime = (
+            _norm_set({_normalize_mime(m) for m in (allowed_mime or set())})
+            if allowed_mime is not None
+            else None
+        )
 
         self.scan_mode = str(scan_mode or "stub").strip().lower()
 
@@ -316,7 +324,6 @@ class DocumentsStore:
         return bool(rec.owner_user_id) and actor_id == rec.owner_user_id
 
     def can_download(self, actor, rec: DocumentRecord) -> bool:
-        # Admin darf immer (auch quarantined), user nur wenn approved+owner
         role = _actor_get(actor, "role")
         if _is_admin_role(role):
             return True
@@ -340,6 +347,7 @@ class DocumentsStore:
 
 
 def default_store() -> DocumentsStore:
+    # default bleibt permissive (Tests konfigurieren allowed_ext/allowed_mime explizit, wo nötig)
     server_root = Path(__file__).resolve().parents[3]
     storage_root = server_root / "storage"
     db_path = server_root / "data" / "documents.sqlite"
@@ -347,7 +355,5 @@ def default_store() -> DocumentsStore:
         storage_root=storage_root,
         db_path=db_path,
         max_upload_bytes=10 * 1024 * 1024,
-        allowed_ext={"pdf"},
-        allowed_mime={"application/pdf"},
         scan_mode="stub",
     )

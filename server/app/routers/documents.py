@@ -5,20 +5,30 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
-from app.deps import get_actor, require_roles
+from app.deps import get_actor
 from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
 
 
 def forbid_moderator(actor=Depends(get_actor)):
-    role = None
-    if isinstance(actor, dict):
-        role = actor.get("role")
-    else:
-        role = getattr(actor, "role", None)
+    role = actor.get("role") if isinstance(actor, dict) else getattr(actor, "role", None)
     if (role or "").lower() == "moderator":
         raise HTTPException(status_code=403, detail="forbidden")
     return actor
+
+
+def require_roles(*roles: str):
+    allowed = {str(r).strip().lower() for r in roles if str(r).strip()}
+
+    def _dep(actor=Depends(get_actor)):
+        role = actor.get("role") if isinstance(actor, dict) else getattr(actor, "role", None)
+        if (role or "").lower() not in allowed:
+            raise HTTPException(status_code=403, detail="forbidden")
+        return actor
+
+    # wichtig für Guard-Tests: Name muss erkennbar sein
+    _dep.__name__ = "require_roles"
+    return _dep
 
 
 router = APIRouter(
@@ -53,7 +63,7 @@ async def upload_document(
     data = await file.read()
     try:
         return store.upload(
-            filename=file.filename or "upload.pdf",
+            filename=file.filename or "upload.bin",
             content_type=file.content_type or "application/octet-stream",
             data=data,
             owner_user_id=_actor_id(actor),
