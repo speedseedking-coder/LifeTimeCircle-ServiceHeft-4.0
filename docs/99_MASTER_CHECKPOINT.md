@@ -30,10 +30,11 @@ Projekt:
 ✅ Lokal Tests grün: `server → poetry run pytest -q` (für Export/Redaction: `LTC_SECRET_KEY` setzen)  
 ✅ CI grün: GitHub Actions Workflow `CI`, Job `pytest` (`poetry run pytest -q`)  
 ✅ Branch Protection `main` final (PR-only, strict, linear, enforce admins, required conversation resolution, required check via `checks[] + app_id`)
-
+✅ RBAC Guard-Coverage Test: deny-by-default enforced (PR #18)`r`n
 ---
 
 ## Servicebook (Core / System of Record)
+✅ Guard-Coverage: server/tests/test_rbac_guard_coverage.py; /consent Router mit Depends(forbid_moderator) (PR #18)
 ✅ Core Servicebook: **Inspection Events + Cases + Remediation** (als Servicebook-Entries/Logs)  
 ✅ Router sicher über `create_app()` eingebunden  
 ✅ RBAC deny-by-default, `moderator` via `forbid_moderator` ausgeschlossen, Actor required (ohne Actor → 401)
@@ -51,6 +52,7 @@ Projekt:
 ---
 
 ## Servicebook (Core / System of Record)
+✅ Guard-Coverage: server/tests/test_rbac_guard_coverage.py; /consent Router mit Depends(forbid_moderator) (PR #18)
 ✅ Core Servicebook: **Inspection Events + Cases + Remediation** (Servicebook-Entries/Logs)  
 ✅ Router sicher über `create_app()` eingebunden (`app.include_router(servicebook.router)`)
 
