@@ -170,7 +170,6 @@ def test_sale_transfer_create_redeem_happy_path(monkeypatch: pytest.MonkeyPatch,
 
     rs = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_a}"})
     assert rs.status_code == 200, rs.text
-
     rs2 = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_b}"})
     assert rs2.status_code == 200, rs2.text
 
@@ -201,7 +200,7 @@ def test_sale_transfer_rbac_blocks_user_and_admin_create(monkeypatch: pytest.Mon
     assert r2.status_code == 403, r2.text
 
 
-def test_sale_transfer_status_admin_can_read(monkeypatch: pytest.MonkeyPatch, tmp_path):
+def test_sale_transfer_status_admin_forbidden(monkeypatch: pytest.MonkeyPatch, tmp_path):
     db_path = _ensure_env(monkeypatch, tmp_path)
     app = _load_app()
     client = TestClient(app)
@@ -221,4 +220,4 @@ def test_sale_transfer_status_admin_can_read(monkeypatch: pytest.MonkeyPatch, tm
     _set_role(db_path, uid_adm, "admin")
 
     rs = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_adm}"})
-    assert rs.status_code == 200, rs.text
+    assert rs.status_code == 403, rs.text
