@@ -1,9 +1,4 @@
-
-
----
-
-### `docs/01_DECISIONS.md`
-```md
+# docs/01_DECISIONS.md
 # LifeTimeCircle – Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
 Stand: 2026-02-05

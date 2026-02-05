@@ -1,3 +1,6 @@
+
+```md
+# docs/03_RIGHTS_MATRIX.md
 # LifeTimeCircle – Service Heft 4.0
 **Rights / RBAC Matrix (SoT)**  
 Stand: 2026-02-05
@@ -13,7 +16,7 @@ Stand: 2026-02-05
 - `dealer`: Business-User (Händler), begrenzte Datenzugriffe, keine Admin/Quarantäne
 - `vip`: Premium-Enduser, erweiterte Einsichten (aber kein Admin/Quarantäne)
 - `user`: Standard-Enduser
-- `moderator`: **strikt nur Blog/News** (kein Zugriff auf Servicebook/Exports/Documents/PII)
+- `moderator`: **strikt nur Blog/News** (kein Zugriff auf Servicebook/Exports/Documents/PII, kein Audit)
 
 ---
 
@@ -23,6 +26,16 @@ Stand: 2026-02-05
 - **Moderator hard-block**: überall außer Blog/News → **403**
 - **Exports**: nur redacted für Nicht-Admins; Dokument-Refs nur `APPROVED`
 - **Uploads**: Quarantine-by-default; `APPROVED` nur nach Scan `CLEAN`
+- **Keine Secrets/PII** im Klartext in Logs/Audit/Exports
+
+---
+
+## 2b. Enforcement (Tests)
+- `server/tests/test_moderator_block_coverage_runtime.py`:
+  - iteriert über **alle registrierten Routes** (Runtime-Scan)
+  - Allowlist (ohne 403): `/auth/*`, `/health`, `/public/*`, `/blog/*`, `/news/*`
+  - außerhalb der Allowlist muss `moderator` **403** bekommen
+  - Blog/News-Test ist bewusst **skipped**, solange `/blog|/news` Routes noch nicht existieren
 
 ---
 
@@ -63,3 +76,20 @@ Stand: 2026-02-05
 | Redacted Export | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 
 **Dokument-Refs im Export:** nur `APPROVED`.
+
+---
+
+## 6. Verkauf / Übergabe (Sale/Transfer, inkl. interner Verkauf)
+> Business-Regel (RBAC): **nur `vip` und `dealer`** dürfen Verkauf/Übergabe-Prozesse auslösen/abwickeln.
+
+| Aktion (repräsentativ) | superadmin | admin | dealer | vip | user | moderator |
+|------|-----------:|------:|------:|----:|----:|----------:|
+| Verkauf/Übergabe initiieren | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
+| Verkauf/Übergabe annehmen/bestätigen | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
+| Interner Verkauf (Händler-intern) | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
+
+---
+
+## 7. VIP-Gewerbe (Staff-Limit & Freigabe)
+- VIP-Gewerbe darf **max. 2 Staff-Accounts** haben.
+- **Freigabe/Erhöhung/Änderung** der Staff-Zuordnung ist **nur `superadmin`** erlaubt.
