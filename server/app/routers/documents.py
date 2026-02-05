@@ -1,86 +1,32 @@
 # FILE: server/app/routers/documents.py
 from __future__ import annotations
 
-from typing import Callable, Optional
-
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
+from app.deps import forbid_moderator, get_actor, require_roles
 from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
-
-
-def _resolve_require_actor() -> Callable:
-    try:
-        from app.auth.deps import require_actor as dep  # type: ignore
-        return dep
-    except Exception:
-        pass
-    try:
-        from app.deps import require_actor as dep  # type: ignore
-        return dep
-    except Exception:
-        pass
-
-    # Fallback (DEV/Tests): header-basiert
-    from fastapi import Header
-
-    class _Actor:
-        def __init__(self, user_id: str, role: str) -> None:
-            self.user_id = user_id
-            self.role = role
-
-    def _header_actor(
-        x_user_id: Optional[str] = Header(default=None, alias="X-User-Id"),
-        x_role: Optional[str] = Header(default=None, alias="X-Role"),
-    ):
-        if not x_user_id or not x_role:
-            raise HTTPException(status_code=401, detail="actor_required")
-        return _Actor(user_id=x_user_id, role=x_role)
-
-    return _header_actor
-
-
-require_actor = _resolve_require_actor()
-
-
-def require_roles(*allowed_roles: str) -> Callable:
-    allowed = {r.lower() for r in allowed_roles if r}
-
-    try:
-        from app.auth.deps import require_roles as dep  # type: ignore
-        return dep(*allowed_roles)  # type: ignore
-    except Exception:
-        pass
-    try:
-        from app.deps import require_roles as dep  # type: ignore
-        return dep(*allowed_roles)  # type: ignore
-    except Exception:
-        pass
-
-    def _dep(actor=Depends(require_actor)):
-        role = (getattr(actor, "role", "") or "").lower()
-        if role not in allowed:
-            raise HTTPException(status_code=403, detail="forbidden")
-        return actor
-
-    return _dep
-
-
-def _block_moderator(actor) -> None:
-    if (getattr(actor, "role", "") or "").lower() == "moderator":
-        raise HTTPException(status_code=403, detail="forbidden")
 
 
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
+    dependencies=[Depends(get_actor), Depends(forbid_moderator)],
 )
 
 
 def get_documents_store() -> DocumentsStore:
     return default_store()
+
+
+def _actor_id(actor) -> str | None:
+    if actor is None:
+        return None
+    if isinstance(actor, dict):
+        return (actor.get("user_id") or actor.get("uid") or actor.get("id"))
+    return getattr(actor, "user_id", None) or getattr(actor, "uid", None) or getattr(actor, "id", None)
 
 
 class ScanBody(BaseModel):
@@ -91,21 +37,21 @@ class ScanBody(BaseModel):
 async def upload_document(
     file: UploadFile = File(...),
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
+    actor=Depends(get_actor),
 ):
-    _block_moderator(actor)
-
     data = await file.read()
     try:
         return store.upload(
-            filename=file.filename or "upload.bin",
+            filename=file.filename or "upload.pdf",
             content_type=file.content_type or "application/octet-stream",
             data=data,
-            owner_user_id=getattr(actor, "user_id", None),
+            owner_user_id=_actor_id(actor),
         )
     except ValueError as e:
         if str(e) == "too_large":
             raise HTTPException(status_code=413, detail="too_large")
+        if str(e) in {"ext_not_allowed", "mime_not_allowed"}:
+            raise HTTPException(status_code=415, detail="filetype_not_allowed")
         raise
 
 
@@ -113,10 +59,8 @@ async def upload_document(
 def get_document(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
+    actor=Depends(get_actor),
 ):
-    _block_moderator(actor)
-
     try:
         rec = store._get_record(doc_id)  # pylint: disable=protected-access
     except KeyError:
@@ -132,10 +76,8 @@ def get_document(
 def download_document(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
+    actor=Depends(get_actor),
 ):
-    _block_moderator(actor)
-
     try:
         rec = store._get_record(doc_id)  # pylint: disable=protected-access
     except KeyError:
@@ -151,33 +93,44 @@ def download_document(
     return FileResponse(path=path, filename=rec.filename, media_type=rec.content_type)
 
 
-@router.get("/admin/quarantine", response_model=list[DocumentOut], dependencies=[Depends(require_roles("admin", "superadmin"))])
+@router.get(
+    "/admin/quarantine",
+    response_model=list[DocumentOut],
+    dependencies=[Depends(require_roles("admin", "superadmin"))],
+)
 def admin_list_quarantine(
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
 ):
-    _block_moderator(actor)
     return store.list_quarantine()
 
 
-@router.post("/{doc_id}/scan", response_model=DocumentOut, dependencies=[Depends(require_roles("admin", "superadmin"))])
+@router.post(
+    "/{doc_id}/scan",
+    response_model=DocumentOut,
+    dependencies=[Depends(require_roles("admin", "superadmin"))],
+)
 def admin_set_scan(
     doc_id: str,
     body: ScanBody,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
 ):
-    _block_moderator(actor)
-    return store.set_scan_status(doc_id, body.scan_status)
+    try:
+        return store.set_scan_status(doc_id, body.scan_status)
+    except ValueError as e:
+        if str(e) == "scan_disabled":
+            raise HTTPException(status_code=409, detail="scan_disabled")
+        raise
 
 
-@router.post("/{doc_id}/approve", response_model=DocumentOut, dependencies=[Depends(require_roles("admin", "superadmin"))])
+@router.post(
+    "/{doc_id}/approve",
+    response_model=DocumentOut,
+    dependencies=[Depends(require_roles("admin", "superadmin"))],
+)
 def admin_approve(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
 ):
-    _block_moderator(actor)
     try:
         return store.approve(doc_id)
     except ValueError as e:
@@ -186,11 +139,13 @@ def admin_approve(
         raise
 
 
-@router.post("/{doc_id}/reject", response_model=DocumentOut, dependencies=[Depends(require_roles("admin", "superadmin"))])
+@router.post(
+    "/{doc_id}/reject",
+    response_model=DocumentOut,
+    dependencies=[Depends(require_roles("admin", "superadmin"))],
+)
 def admin_reject(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(require_actor),
 ):
-    _block_moderator(actor)
     return store.reject(doc_id)

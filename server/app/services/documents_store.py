@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional, Set
 
 from app.models.documents import DocumentApprovalStatus, DocumentOut, DocumentScanStatus
 
@@ -31,7 +31,6 @@ def _utc_now_iso() -> str:
 def _safe_filename(name: str) -> str:
     name = (name or "upload.bin").strip()
     name = name.replace("\\", "_").replace("/", "_")
-    # allow only a conservative set
     out = []
     for ch in name:
         if ch.isalnum() or ch in {".", "-", "_"}:
@@ -40,6 +39,40 @@ def _safe_filename(name: str) -> str:
             out.append("_")
     safe = "".join(out).strip("._")
     return safe or "upload.bin"
+
+
+def _file_ext_lower(filename: str) -> str:
+    f = (filename or "").strip().lower()
+    if "." not in f:
+        return ""
+    return f.rsplit(".", 1)[-1].strip().lstrip(".")
+
+
+def _normalize_mime(m: str) -> str:
+    return (m or "").split(";", 1)[0].strip().lower()
+
+
+def _norm_set(vals: Optional[Iterable[str]]) -> Optional[Set[str]]:
+    if vals is None:
+        return None
+    s = {str(v).strip().lower() for v in vals if str(v).strip()}
+    return s if s else None
+
+
+def _actor_get(actor, *keys: str) -> Optional[str]:
+    if actor is None:
+        return None
+    if isinstance(actor, dict):
+        for k in keys:
+            v = actor.get(k)
+            if v is not None and str(v).strip():
+                return str(v)
+        return None
+    for k in keys:
+        v = getattr(actor, k, None)
+        if v is not None and str(v).strip():
+            return str(v)
+    return None
 
 
 def _is_admin_role(role: Optional[str]) -> bool:
@@ -52,12 +85,18 @@ class DocumentsStore:
         storage_root: Path,
         db_path: Path,
         max_upload_bytes: int,
+        allowed_ext: Optional[set[str]] = None,
+        allowed_mime: Optional[set[str]] = None,
         scan_mode: str = "stub",
     ) -> None:
         self.storage_root = Path(storage_root)
         self.db_path = Path(db_path)
         self.max_upload_bytes = int(max_upload_bytes)
-        self.scan_mode = str(scan_mode or "stub")
+
+        self.allowed_ext = _norm_set({e.lstrip(".") for e in (allowed_ext or set())}) if allowed_ext is not None else None
+        self.allowed_mime = _norm_set({_normalize_mime(m) for m in (allowed_mime or set())}) if allowed_mime is not None else None
+
+        self.scan_mode = str(scan_mode or "stub").strip().lower()
 
         self.storage_root.mkdir(parents=True, exist_ok=True)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,18 +144,28 @@ class DocumentsStore:
         if len(data) > self.max_upload_bytes:
             raise ValueError("too_large")
 
-        doc_id = uuid.uuid4().hex
         safe = _safe_filename(filename)
+        ext = _file_ext_lower(safe)
+        mime = _normalize_mime(content_type or "application/octet-stream")
+
+        if self.allowed_ext is not None:
+            if not ext or ext not in self.allowed_ext:
+                raise ValueError("ext_not_allowed")
+
+        if self.allowed_mime is not None:
+            if not mime or mime not in self.allowed_mime:
+                raise ValueError("mime_not_allowed")
+
+        doc_id = uuid.uuid4().hex
         rel = f"documents/{doc_id}_{safe}"
         abs_path = self.storage_root / rel
         abs_path.parent.mkdir(parents=True, exist_ok=True)
-
         abs_path.write_bytes(data)
 
         rec = DocumentRecord(
             id=doc_id,
             filename=safe,
-            content_type=content_type or "application/octet-stream",
+            content_type=mime or "application/octet-stream",
             size_bytes=len(data),
             storage_relpath=rel,
             owner_user_id=owner_user_id,
@@ -209,8 +258,11 @@ class DocumentsStore:
         return outs
 
     def set_scan_status(self, doc_id: str, status: DocumentScanStatus) -> DocumentOut:
+        if self.scan_mode in {"disabled", "off", "none"}:
+            raise ValueError("scan_disabled")
+
         if not isinstance(status, DocumentScanStatus):
-            status = DocumentScanStatus(str(status))
+            status = DocumentScanStatus(str(status).upper())
 
         approval = None
         if status == DocumentScanStatus.INFECTED:
@@ -255,19 +307,22 @@ class DocumentsStore:
         return self.storage_root / rec.storage_relpath
 
     def can_read(self, actor, rec: DocumentRecord) -> bool:
-        role = getattr(actor, "role", None)
+        role = _actor_get(actor, "role")
         if _is_admin_role(role):
             return True
         if rec.approval_status != DocumentApprovalStatus.APPROVED.value:
             return False
-        # MVP-scope: owner-only (object-level)
-        return bool(rec.owner_user_id) and getattr(actor, "user_id", None) == rec.owner_user_id
+        actor_id = _actor_get(actor, "user_id", "uid", "id")
+        return bool(rec.owner_user_id) and actor_id == rec.owner_user_id
 
     def can_download(self, actor, rec: DocumentRecord) -> bool:
         return self.can_read(actor, rec)
 
     def _to_out(self, rec: DocumentRecord) -> DocumentOut:
-        created = datetime.fromisoformat(rec.created_at.replace("Z", "+00:00"))
+        s = rec.created_at or _utc_now_iso()
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        created = datetime.fromisoformat(s)
         return DocumentOut(
             id=rec.id,
             filename=rec.filename,
@@ -281,7 +336,6 @@ class DocumentsStore:
 
 
 def default_store() -> DocumentsStore:
-    # .../server/app/services/documents_store.py -> parents[3] == server/
     server_root = Path(__file__).resolve().parents[3]
     storage_root = server_root / "storage"
     db_path = server_root / "data" / "documents.sqlite"
@@ -289,5 +343,7 @@ def default_store() -> DocumentsStore:
         storage_root=storage_root,
         db_path=db_path,
         max_upload_bytes=10 * 1024 * 1024,
+        allowed_ext={"pdf"},
+        allowed_mime={"application/pdf"},
         scan_mode="stub",
     )
