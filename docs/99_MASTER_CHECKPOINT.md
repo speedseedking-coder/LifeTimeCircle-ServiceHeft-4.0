@@ -17,19 +17,22 @@ Projekt:
 ✅ Lokal Tests grün: `server → poetry run pytest -q` (mit `LTC_SECRET_KEY` gesetzt)  
 ✅ CI grün: GitHub Actions Workflow **CI** (Job: `pytest`)
 
-### Servicebook (Core / System of Record)
+---
+
+## Servicebook (Core / System of Record)
 ✅ Core Servicebook: **Inspection Events + Cases + Remediation** (Servicebook-Entries/Logs)  
 ✅ Router sicher über `create_app()` eingebunden (`app.include_router(servicebook.router)`)
 
 ---
 
-## Core-Querschnitt: Documents / Uploads / Quarantine / Export
+## Core-Querschnitt: Documents / Uploads / Quarantine / Scan / Export
+
 ### Router Registration (verifiziert)
 ✅ `server/app/main.py` enthält:
 - `app.include_router(documents_router)`
 - `app.include_router(servicebook.router)`
 
-### P0 Uploads: Quarantine-by-default (done)
+### P0 Uploads: Quarantine-by-default (merged)
 ✅ Uploads sind initial **PENDING** (deny-by-default)  
 ✅ `GET /documents/{id}` und `GET /documents/{id}/download` liefern für normale Rollen **nur bei APPROVED**  
 ✅ Admin-Workflow:
@@ -37,11 +40,11 @@ Projekt:
 - `POST /documents/{id}/approve`
 - `POST /documents/{id}/reject`
 
-### P0 Scan Hook (neu, done)
+### P0 Scan Hook: Approve nur bei CLEAN (merged)
 ✅ Scan-Hook nach Upload (Env: `LTC_SCAN_MODE=stub|disabled|clamav`)  
 ✅ DB-Felder: `scan_status`, `scanned_at`, `scan_engine`, `scan_error` (lightweight `ALTER TABLE`)  
 ✅ Approve ist **nur** erlaubt wenn `scan_status=CLEAN` → sonst **409** `not_scanned_clean`  
-✅ Admin kann Rescan triggern:
+✅ Admin Rescan Endpoint:
 - `POST /documents/{id}/scan`  
 ✅ Policy: `INFECTED` → auto-reject (reviewed_by=`scanner`)
 
@@ -97,5 +100,7 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 
 # für Export/Redaction/Secret-Checks
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+
+poetry run pytest -q
 
 poetry run pytest -q
