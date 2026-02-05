@@ -156,12 +156,22 @@ def sale_transfer_status(
 ) -> SaleTransferStatusOut:
     uid = _actor_user_id(actor)
     role = _actor_role(actor)
-    if not uid or role not in {"vip", "dealer", "admin", "superadmin"}:
+
+    # Role-Gate (SoT): Verkauf/Übergabe nur vip|dealer
+    if not uid or role not in {"vip", "dealer"}:
         raise HTTPException(status_code=403, detail="forbidden")
+
     out = get_transfer_status(
         db=db,
         actor_user_id=uid,
         actor_role=role,
         transfer_id=transfer_id,
     )
+
+    # Object-level RBAC: Status nur Initiator oder Redeemer (verhindert tid-Enumeration/ID-Leaks)
+    initiator_id = str(out.get("initiator_user_id") or "")
+    redeemer_id = str(out.get("redeemed_by_user_id") or "")
+    if uid not in {initiator_id, redeemer_id}:
+        raise HTTPException(status_code=403, detail="forbidden")
+
     return SaleTransferStatusOut(**out)

@@ -149,6 +149,8 @@ def test_sale_transfer_create_redeem_happy_path(monkeypatch: pytest.MonkeyPatch,
     token = out["transfer_token"]
     tid = out["transfer_id"]
 
+"/sale/transfer/redeem"
+
     r2 = client.post(
         "/sale/transfer/redeem",
         json={"transfer_token": token},
