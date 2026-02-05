@@ -1,7 +1,11 @@
+# FILE: server/app/models/documents.py
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class DocumentApprovalStatus(str, Enum):
@@ -17,11 +21,11 @@ class DocumentScanStatus(str, Enum):
 
 
 class DocumentOut(BaseModel):
-    id: str = Field(..., min_length=6)
-    owner_user_id: str
+    id: str
     filename: str
     content_type: str
-    size_bytes: int = Field(..., ge=0)
+    size_bytes: int
+    created_at: datetime
+    owner_user_id: Optional[str] = None
     approval_status: DocumentApprovalStatus
     scan_status: DocumentScanStatus
-    created_at: str  # ISO-8601 (UTC)
