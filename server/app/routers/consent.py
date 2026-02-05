@@ -17,10 +17,7 @@ from app.services.consent_store import (
     record_consents,
     validate_and_normalize_consents,
 )
-
-router = APIRouter(prefix="/consent", tags=["consent"])
-
-
+router = APIRouter(prefix="/consent", tags=["consent"], dependencies=[Depends(forbid_moderator)])
 class ConsentItem(BaseModel):
     doc_type: str
     doc_version: str
