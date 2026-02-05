@@ -1,9 +1,4 @@
-
-
----
-
-### `docs/06_WORK_RULES.md`
-```md
+# docs/06_WORK_RULES.md
 # LifeTimeCircle – Service Heft 4.0
 **Arbeitsregeln (Chat/Umsetzung) – SoT**  
 Stand: 2026-02-05
@@ -53,3 +48,4 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 
 poetry run pytest -q
+```
