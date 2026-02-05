@@ -152,7 +152,7 @@ def sale_transfer_cancel(
 def sale_transfer_status(
     transfer_id: str,
     db: Annotated[Session, Depends(get_db)],
-    actor: Annotated[Actor, Depends(require_roles("vip", "dealer", "admin", "superadmin"))],
+    actor: Annotated[Actor, Depends(require_roles("vip", "dealer"))],
 ) -> SaleTransferStatusOut:
     uid = _actor_user_id(actor)
     role = _actor_role(actor)
