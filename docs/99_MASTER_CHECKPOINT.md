@@ -1,13 +1,5 @@
-<<<<<<< HEAD
 
 
-# docs/99_MASTER_CHECKPOINT.md
-
-
-=======
-
-
->>>>>>> origin/main
 
 
 # LifeTimeCircle – Service Heft 4.0
@@ -34,16 +26,6 @@ Projekt:
 - Ziel: **produktionsreif (keine Demo)**
 
 
-<<<<<<< HEAD
-
-
-- Security: **deny-by-default + least privilege**, RBAC **serverseitig** enforced
-
-
-- Source of Truth: **/docs** (keine Altpfade/Altversionen)
-
-
-=======
 
 
 - Sicherheits-Prämisse: **deny-by-default + least privilege**, RBAC **serverseitig** enforced
@@ -52,7 +34,6 @@ Projekt:
 - Source of Truth: **./docs** (keine Altpfade/Altversionen)
 
 
->>>>>>> origin/main
 
 
 
@@ -67,19 +48,6 @@ Projekt:
 ## Status (Hauptmodul zuerst)
 
 
-<<<<<<< HEAD
-
-
-✅ `main` ist aktuell (lokal clean & synced)  
-
-
-✅ Lokal Tests grün: `server → poetry run pytest -q` (mit `LTC_SECRET_KEY` gesetzt)  
-
-
-✅ CI grün: GitHub Actions Workflow **CI** (Job: `pytest`)
-
-
-=======
 
 
 ✅ `main` ist aktuell (synced)  
@@ -145,7 +113,6 @@ Projekt:
 ✅ P0 Scan-Hook: Upload wird gescannt; **Approve nur bei CLEAN**; Admin-Rescan Endpoint
 
 
->>>>>>> origin/main
 
 
 
@@ -177,97 +144,6 @@ Projekt:
 
 
 
-<<<<<<< HEAD
-
-
-## Core-Querschnitt: Documents / Uploads / Quarantine / Scan / Export
-
-
-
-
-
-### Router Registration (verifiziert)
-
-
-✅ `server/app/main.py` enthält:
-
-
-- `app.include_router(documents_router)`
-
-
-- `app.include_router(servicebook.router)`
-
-
-
-
-
-### P0 Uploads: Quarantine-by-default (merged)
-
-
-✅ Uploads sind initial **PENDING** (deny-by-default)  
-
-
-✅ `GET /documents/{id}` und `GET /documents/{id}/download` liefern für normale Rollen **nur bei APPROVED**  
-
-
-✅ Admin-Workflow:
-
-
-- `GET  /documents/admin/quarantine`
-
-
-- `POST /documents/{id}/approve`
-
-
-- `POST /documents/{id}/reject`
-
-
-
-
-
-### P0 Scan Hook: Approve nur bei CLEAN (merged)
-
-
-✅ Scan-Hook nach Upload (Env: `LTC_SCAN_MODE=stub|disabled|clamav`)  
-
-
-✅ DB-Felder: `scan_status`, `scanned_at`, `scan_engine`, `scan_error` (lightweight `ALTER TABLE`)  
-
-
-✅ Approve ist **nur** erlaubt wenn `scan_status=CLEAN` → sonst **409** `not_scanned_clean`  
-
-
-✅ Admin Rescan Endpoint:
-
-
-- `POST /documents/{id}/scan`  
-
-
-✅ Policy: `INFECTED` → auto-reject (reviewed_by=`scanner`)
-
-
-
-
-
-### Security / RBAC (SoT)
-
-
-✅ `moderator` strikt nur Blog/News → **hart geblockt** für `/documents/*`  
-
-
-✅ Unauthenticated → **401** (require_actor)  
-
-
-✅ Quarantäne-Aktionen **nur** `admin/superadmin`  
-
-
-✅ Keine public uploads: Storage wird **nicht** als StaticFiles gemounted  
-
-
-✅ Exports: **redacted default**, Dokument-Refs nur wenn **APPROVED**
-
-
-=======
 
 
 ## P0: Uploads Quarantine-by-default (Core-Querschnitt)
@@ -366,7 +242,6 @@ Uploads bleiben Quarantäne-by-default. Freigabe (APPROVED) nur, wenn der Upload
 - Policy: `INFECTED` → auto-reject (reviewed_by=`scanner`)
 
 
->>>>>>> origin/main
 
 
 
@@ -396,61 +271,6 @@ Uploads bleiben Quarantäne-by-default. Freigabe (APPROVED) nur, wenn der Upload
 
 
 
-<<<<<<< HEAD
-
-
-## CI / Branch Protection (final)
-
-
-### GitHub Actions
-
-
-✅ Workflow: `CI` → Job `pytest` (Python 3.12 + Poetry, `poetry run pytest -q` im `server/` Working Directory)  
-
-
-✅ Runner Prep: `mkdir -p data` (verhindert SQLite `unable to open database file`)  
-
-
-✅ Repo Secret: `LTC_SECRET_KEY` gesetzt
-
-
-
-
-
-### Branch Protection `main` (final)
-
-
-✅ PR-only enforced (kein direct push)  
-
-
-✅ strict: true (branch up-to-date required)  
-
-
-✅ required_linear_history: true  
-
-
-✅ enforce_admins: true  
-
-
-✅ allow_force_pushes: false  
-
-
-✅ allow_deletions: false  
-
-
-✅ required_conversation_resolution: true  
-
-
-✅ Required Check robust über `required_status_checks.checks`:
-
-
-- context: `pytest`
-
-
-- app_id: `15368` (GitHub Actions)
-
-
-=======
 
 
 ## CI / GitHub Actions (Workflow)
@@ -468,7 +288,6 @@ Uploads bleiben Quarantäne-by-default. Freigabe (APPROVED) nur, wenn der Upload
 ✅ GitHub Secret `LTC_SECRET_KEY` gesetzt
 
 
->>>>>>> origin/main
 
 
 
@@ -513,19 +332,11 @@ Ignorieren (nicht versionieren):
 
 
 
-<<<<<<< HEAD
-
-
-## Lokal Tests / Smoke
-
-
-=======
 
 
 ## Tests / Lokal ausführen
 
 
->>>>>>> origin/main
 
 
 ```powershell
@@ -546,24 +357,10 @@ $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 
 
 
-<<<<<<< HEAD
 
 
 poetry run pytest -q
 
 
-
-
-
-poetry run pytest -q
-
-
-=======
-
-
-poetry run pytest -q
-
-
->>>>>>> origin/main
 
 
