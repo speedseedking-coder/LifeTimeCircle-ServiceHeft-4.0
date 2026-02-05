@@ -53,7 +53,7 @@ function EnsureHttpExceptionImport([string[]]$lines) {
     }
   }
 
-  # fallback: add new import near top (after first import block)
+  # fallback: add separate import near top after first import line
   for ($i=0; $i -lt $lines.Count; $i++) {
     if ($lines[$i] -match '^\s*(import|from)\s+') {
       $insertAt = $i + 1
@@ -67,10 +67,63 @@ function EnsureHttpExceptionImport([string[]]$lines) {
     }
   }
 
-  # worst-case: prepend
   $new2 = @("from fastapi import HTTPException") + $lines
   Info "OK: HTTPException Import am Dateianfang ergänzt."
   return ,$new2
+}
+
+function CountChar([string]$s, [char]$c) {
+  $n = 0
+  foreach ($ch in $s.ToCharArray()) { if ($ch -eq $c) { $n++ } }
+  return $n
+}
+
+function FindDecoratorBlock([string[]]$lines, [string]$method) {
+  # returns @{ start = int; end = int; text = string; firstLine = string } or $null
+  for ($i=0; $i -lt $lines.Count; $i++) {
+    $ln = $lines[$i]
+    if ($ln -match ("^\s*@\w+\." + [regex]::Escape($method) + "\s*\(")) {
+      $depth = (CountChar $ln '(') - (CountChar $ln ')')
+      $j = $i
+      while ($depth -gt 0 -and ($j + 1) -lt $lines.Count) {
+        $j++
+        $depth += (CountChar $lines[$j] '(') - (CountChar $lines[$j] ')')
+      }
+      $block = $lines[$i..$j]
+      $text = [string]::Join("`n", $block)
+      return @{ start = $i; end = ($j + 1); text = $text; firstLine = $ln }
+    }
+  }
+  return $null
+}
+
+function FindStatusEndpoint([string[]]$lines) {
+  # 1) try: GET decorator block containing "status" anywhere in block
+  for ($i=0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -match '^\s*@\w+\.get\s*\(') {
+      $depth = (CountChar $lines[$i] '(') - (CountChar $lines[$i] ')')
+      $j = $i
+      while ($depth -gt 0 -and ($j + 1) -lt $lines.Count) {
+        $j++
+        $depth += (CountChar $lines[$j] '(') - (CountChar $lines[$j] ')')
+      }
+      $block = $lines[$i..$j]
+      $text = [string]::Join("`n", $block)
+      if ($text -match 'status') {
+        return @{ decorStart = $i; decorEnd = ($j + 1); decorText = $text }
+      }
+      $i = $j
+    }
+  }
+
+  # 2) fallback: function name contains status
+  for ($i=0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -match '^\s*def\s+\w*status\w*\s*\(') {
+      return @{ decorStart = -1; decorEnd = -1; decorText = "" ; defIndex = $i }
+    }
+  }
+
+  return $null
 }
 
 function FindNextDefIndex([string[]]$lines, [int]$start) {
@@ -89,8 +142,6 @@ function FindFunctionEnd([string[]]$lines, [int]$defIndex) {
   for ($i=$defIndex+1; $i -lt $lines.Count; $i++) {
     $ln = $lines[$i]
     if ($ln -match '^\s*$') { continue }
-
-    # next top-level def/decorator at same indent => function ends
     if ($ln.StartsWith($baseIndent) -and $ln -match '^\s*(def|@)\s+') {
       return $i
     }
@@ -99,22 +150,20 @@ function FindFunctionEnd([string[]]$lines, [int]$defIndex) {
 }
 
 function ExtractActorParamName([string[]]$lines, [int]$defIndex) {
-  # read signature until we hit line ending with ":" after a ")"
   $sig = New-Object System.Collections.Generic.List[string]
   for ($i=$defIndex; $i -lt $lines.Count; $i++) {
     $sig.Add($lines[$i])
     if ($lines[$i] -match '\)\s*(?:->\s*[^:]+)?\s*:\s*$') { break }
   }
   $sigText = [string]::Join(" ", $sig)
-
   $m = [regex]::Match($sigText, '(?<name>\w+)\s*=\s*Depends\(\s*require_actor\b')
   if ($m.Success) { return $m.Groups["name"].Value }
   return "actor"
 }
 
-function ExtractPathParamFromDecorator([string]$decorLine) {
-  # example: @router.get("/status/{tid}")
-  $m = [regex]::Match($decorLine, '["''](?<path>[^"'']+)["'']')
+function ExtractPathParamFromDecorText([string]$decorText) {
+  # try to find first quoted path containing {param}
+  $m = [regex]::Match($decorText, '["''](?<path>[^"'']+)["'']')
   if (-not $m.Success) { return "tid" }
   $path = $m.Groups["path"].Value
   $m2 = [regex]::Match($path, '\{(?<p>[A-Za-z_][A-Za-z0-9_]*)\}')
@@ -131,45 +180,57 @@ function PatchRouter([string]$routerPath) {
 
   $nl = DetectNewline $text
   $lines = SplitLines $text
-
   $lines = EnsureHttpExceptionImport $lines
 
-  # find decorator line for status endpoint
-  $decorIdx = -1
-  for ($i=0; $i -lt $lines.Count; $i++) {
-    $ln = $lines[$i]
-    if ($ln -match '^\s*@\w+\.get\(' -and $ln -match 'status') {
-      $decorIdx = $i
-      break
+  $found = FindStatusEndpoint $lines
+  if (-not $found) {
+    # Debug-Hinweise (kurz, aber hilfreich)
+    Info "HINT: In sale_transfer.py keine @*.get(...status...) Block gefunden."
+    Info "HINT: Zeilen mit 'status' (zur Orientierung):"
+    for ($k=0; $k -lt $lines.Count; $k++) {
+      if ($lines[$k] -match 'status') { Info ("  L{0}: {1}" -f ($k+1), $lines[$k].Trim()) }
     }
-  }
-  if ($decorIdx -lt 0) {
-    Die "PATCH-ABBRUCH: Status-Decorator nicht gefunden in $routerPath (erwartet: @router.get(...status...))."
+    Die "PATCH-ABBRUCH: Status-Endpoint nicht gefunden (Decorator-Block oder def *status*)."
   }
 
-  $paramName = ExtractPathParamFromDecorator $lines[$decorIdx]
-  $defIdx = FindNextDefIndex $lines ($decorIdx + 1)
-  if ($defIdx -lt 0) {
-    Die "PATCH-ABBRUCH: def nach Status-Decorator nicht gefunden in $routerPath."
+  if ($found.ContainsKey("defIndex")) {
+    $defIdx = [int]$found.defIndex
+    $decorText = ""
+    $paramName = "tid"
+  } else {
+    $decorStart = [int]$found.decorStart
+    $decorEnd   = [int]$found.decorEnd
+    $decorText  = [string]$found.decorText
+    $defIdx = FindNextDefIndex $lines $decorEnd
+    if ($defIdx -lt 0) { Die "PATCH-ABBRUCH: def nach Status-Decorator nicht gefunden in $routerPath." }
+    $paramName = ExtractPathParamFromDecorText $decorText
   }
 
   $endIdx = FindFunctionEnd $lines $defIdx
   $actorName = ExtractActorParamName $lines $defIdx
 
-  # find first assignment inside function body that references paramName
+  # find first assignment inside function body that references paramName; fallback to common candidates
+  $cands = @($paramName, "tid", "transfer_id", "id") | Select-Object -Unique
+
   $assignIdx = -1
   $transferVar = $null
   for ($i=$defIdx+1; $i -lt $endIdx; $i++) {
     $ln = $lines[$i]
-    if ($ln -match '^\s+\w+\s*=\s*' -and $ln -match "\b$([regex]::Escape($paramName))\b" -and $ln.Contains("(")) {
-      $assignIdx = $i
-      $m = [regex]::Match($ln, '^\s*(?<var>[A-Za-z_][A-Za-z0-9_]*)\s*=')
-      if ($m.Success) { $transferVar = $m.Groups["var"].Value }
-      break
+    if ($ln -match '^\s+\w+\s*=\s*' -and $ln.Contains("(")) {
+      foreach ($c in $cands) {
+        if ($ln -match ("\b" + [regex]::Escape($c) + "\b")) {
+          $assignIdx = $i
+          $m = [regex]::Match($ln, '^\s*(?<var>[A-Za-z_][A-Za-z0-9_]*)\s*=')
+          if ($m.Success) { $transferVar = $m.Groups["var"].Value }
+          break
+        }
+      }
+      if ($assignIdx -ge 0) { break }
     }
   }
+
   if ($assignIdx -lt 0 -or -not $transferVar) {
-    Die "PATCH-ABBRUCH: Konnte keine passende Fetch-Assignment-Zeile mit '$paramName' im Status-Endpoint finden."
+    Die "PATCH-ABBRUCH: Konnte keine passende Fetch-Assignment-Zeile im Status-Endpoint finden (tid/transfer_id)."
   }
 
   $indentMatch = [regex]::Match($lines[$assignIdx], '^(\s+)')
@@ -196,7 +257,6 @@ function PatchRouter([string]$routerPath) {
     "${indent2}raise HTTPException(status_code=403, detail=`"forbidden`")"
   )
 
-  # insert right after assignment line
   $newLines = New-Object System.Collections.Generic.List[string]
   for ($i=0; $i -lt $lines.Count; $i++) {
     $newLines.Add($lines[$i])
@@ -220,7 +280,6 @@ function PatchTests([string]$testPath) {
   $nl = DetectNewline $text
   $lines = SplitLines $text
 
-  # find a line that calls status with tok_b (we patch within that test)
   $anchorIdx = -1
   for ($i=0; $i -lt $lines.Count; $i++) {
     if ($lines[$i] -match '/sale/transfer/status/\{tid\}' -and $lines[$i] -match 'tok_b') {
@@ -232,10 +291,9 @@ function PatchTests([string]$testPath) {
     Die "PATCH-ABBRUCH: Konnte im Test keine Status-Call-Zeile mit tok_b finden: $testPath"
   }
 
-  # find surrounding test function
   $fnStart = -1
   for ($i=$anchorIdx; $i -ge 0; $i--) {
-    if ($lines[$i] -match '^def\s+test_') { $fnStart = $i; break }
+    if ($lines[$i] -match '^\s*def\s+test_') { $fnStart = $i; break }
   }
   if ($fnStart -lt 0) {
     Die "PATCH-ABBRUCH: Konnte den Start der Testfunktion nicht finden (def test_*)."
@@ -243,13 +301,12 @@ function PatchTests([string]$testPath) {
 
   $fnEnd = $lines.Count
   for ($i=$fnStart+1; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -match '^def\s+test_') { $fnEnd = $i; break }
+    if ($lines[$i] -match '^\s*def\s+test_') { $fnEnd = $i; break }
   }
 
-  # inside that function: insert before first redeem call
   $insertAt = -1
   for ($i=$fnStart; $i -lt $fnEnd; $i++) {
-    if ($lines[$i] -match '"/sale/transfer/redeem"' -or $lines[$i] -match "'/sale/transfer/redeem'") {
+    if ($lines[$i] -match 'sale/transfer/redeem') {
       $insertAt = $i
       break
     }
@@ -258,7 +315,6 @@ function PatchTests([string]$testPath) {
     Die "PATCH-ABBRUCH: Konnte im Zieltest keine Redeem-Call-Zeile finden."
   }
 
-  # detect indentation from the redeem line
   $indentMatch = [regex]::Match($lines[$insertAt], '^(\s+)')
   $indent = "    "
   if ($indentMatch.Success) { $indent = $indentMatch.Groups[1].Value }
