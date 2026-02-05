@@ -1,5 +1,4 @@
 
-```md
 # docs/03_RIGHTS_MATRIX.md
 # LifeTimeCircle – Service Heft 4.0
 **Rights / RBAC Matrix (SoT)**  
