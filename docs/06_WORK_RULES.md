@@ -1,9 +1,4 @@
-
-
----
-
-### `docs/06_WORK_RULES.md`
-```md
+# docs/06_WORK_RULES.md
 # LifeTimeCircle – Service Heft 4.0
 **Arbeitsregeln (Chat/Umsetzung) – SoT**  
 Stand: 2026-02-05
