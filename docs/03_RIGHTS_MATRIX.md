@@ -1,4 +1,3 @@
-
 # docs/03_RIGHTS_MATRIX.md
 # LifeTimeCircle – Service Heft 4.0
 **Rights / RBAC Matrix (SoT)**  
@@ -86,6 +85,12 @@ Stand: 2026-02-05
 | Verkauf/Übergabe initiieren | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
 | Verkauf/Übergabe annehmen/bestätigen | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
 | Interner Verkauf (Händler-intern) | ❌ 403 | ❌ 403 | ✅ | ✅ | ❌ 403 | ❌ 403 |
+
+### 6b. Status lesen ist object-level gated (ID-Leak verhindern)
+`GET /sale/transfer/status/{tid}`
+
+- Role-Gate: **nur `vip|dealer`** (alle anderen **403**)
+- Zusätzlich: **nur Initiator oder Redeemer** darf den Status lesen (sonst **403**), weil sonst `tid`-Enumeration zu ID-Leaks führen kann (`initiator_user_id`, `redeemed_by_user_id`).
 
 ---
 
