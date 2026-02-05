@@ -1,100 +1,65 @@
 # LifeTimeCircle – Service Heft 4.0
-**Rechte-Matrix (RBAC) – implementierbar (SoT)**  
-Stand: 2026-02-04
+**Rights / RBAC Matrix (SoT)**  
+Stand: 2026-02-05
 
-> Zweck: Diese Matrix ist die **serverseitig** umzusetzende Rechtebasis (deny-by-default + least privilege).
-> Grundregel: Wenn etwas hier nicht explizit erlaubt ist → **verweigern**.
+> Rollen sind serverseitig enforced. Default: deny-by-default.
+> Wenn etwas nicht explizit erlaubt ist → **verboten**.
 
-Legende:
-- ✅ erlaubt
-- 🔒 nur eingeschränkt / nur eigener Scope / nur wenn berechtigt
-- ❌ nicht erlaubt
+---
 
-## Rollen
-- public
-- user
-- vip
-- dealer (gewerblich)
-- moderator
-- admin
-- superadmin
+## 1. Rollen
+- `superadmin`: Vollzugriff (System, Admin, Support, Debug)
+- `admin`: Admin-Funktionen, Quarantäne-Review, Exports, Management
+- `dealer`: Business-User (Händler), begrenzte Datenzugriffe, keine Admin/Quarantäne
+- `vip`: Premium-Enduser, erweiterte Einsichten (aber kein Admin/Quarantäne)
+- `user`: Standard-Enduser
+- `moderator`: **strikt nur Blog/News** (kein Zugriff auf Servicebook/Exports/Documents/PII)
 
-## Grundregeln (FIX)
-- **Scope**: `user/vip/dealer` arbeiten grundsätzlich im **eigenen** Fahrzeug-/Account-Scope; „fremd“ nur wenn **explizit berechtigt**.
-- **moderator**: strikt **nur Blog/News**; keine Vehicles/Entries/Documents/Verification; **kein Export**, **kein Audit-Read**, **keine PII**.
-- **superadmin**: High-Risk-Gates (z.B. Full-Exports, VIP-Gewerbe-Staff-Freigaben). Provisioning **out-of-band** (nicht über normale Admin-Rollen-Setter).
+---
 
-## Funktionsbereiche
+## 2. Globale Regeln
+- **deny-by-default**: jede Route muss explizit gated sein
+- **Actor required**: ohne Actor → **401**
+- **Moderator hard-block**: überall außer Blog/News → **403**
+- **Exports**: nur redacted für Nicht-Admins; Dokument-Refs nur `APPROVED`
+- **Uploads**: Quarantine-by-default; `APPROVED` nur nach Scan `CLEAN`
 
-### 1) Public-QR Mini-Check (anonyme Ansicht)
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| QR-Link öffnen / Trust-Ampel sehen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Details zur Trust-Berechnung (Indicators, **keine Halterdaten**) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Technische Zustandsbewertung | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+---
 
-### 2) Service Heft – Fahrzeug & Einträge
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Fahrzeug anlegen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Eigenes Fahrzeugprofil ansehen | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Fremde Fahrzeuge ansehen (voll) | ❌ | ❌ | 🔒 (wenn berechtigt) | 🔒 (wenn berechtigt) | ❌ | ✅ | ✅ |
-| Einträge erstellen/bearbeiten (eigene Fahrzeuge) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Einträge löschen | ❌ | 🔒 (nur eigener, optional soft-delete) | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Dokumente hochladen (Rechnung/Prüfbericht etc.) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+## 3. Dokumente / Uploads (`/documents/*`)
 
-### 3) Bilder/Dokumente – Sichtbarkeit (Tiefe)
-> FIX: **Quarantine-by-default**. Dokument-Inhalte sind für `user/vip/dealer` erst bei Status **APPROVED** abrufbar.
-> Admin/Superadmin dürfen Inhalte in Quarantäne **nur zum Review** sehen (siehe 3b).
+### 3a: Zugriff auf approved Dokumente
+| Route | superadmin | admin | dealer | vip | user | moderator |
+|------|-----------:|------:|------:|----:|----:|----------:|
+| `POST /documents/upload` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
+| `GET /documents/{id}` | ✅ | ✅ | ✅ (nur wenn APPROVED+scope) | ✅ (nur wenn APPROVED+scope) | ✅ (nur wenn APPROVED+scope) | ❌ 403 |
+| `GET /documents/{id}/download` | ✅ | ✅ | ✅ (nur wenn APPROVED+scope) | ✅ (nur wenn APPROVED+scope) | ✅ (nur wenn APPROVED+scope) | ❌ 403 |
 
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Dokument-Metadaten (Titel/Datum/Typ) sehen (eigener Scope) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Dokument-Inhalt ansehen/downloaden (**nur APPROVED**, eigener Scope) | ❌ | 🔒 | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Bildansicht „VIP only“ (**nur APPROVED**) | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ |
+### 3b: Quarantäne-Workflow (Admin only)
+| Route | superadmin | admin | dealer | vip | user | moderator |
+|------|-----------:|------:|------:|----:|----:|----------:|
+| `GET /documents/admin/quarantine` | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 403 |
+| `POST /documents/{id}/approve` | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 403 |
+| `POST /documents/{id}/reject` | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 403 |
+| `POST /documents/{id}/scan` | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 403 |
 
-### 3b) Dokumente – Quarantäne Workflow (P0 Uploads)
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Quarantäne-Liste sehen (`PENDING/QUARANTINED`) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Dokument in Quarantäne inhaltlich prüfen (Review-Download/Preview) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Dokument freigeben (`APPROVE`) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Dokument ablehnen (`REJECT`) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Öffentlicher Zugriff auf Uploads (StaticFiles o.ä.) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+**Approve-Gate:** Approve ist nur erlaubt bei `scan_status=CLEAN`, sonst **409 not_scanned_clean**.
 
-### 4) Verkauf/Übergabe-QR & interner Verkauf (Business-Gating)
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Übergabe-QR erzeugen | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Interner Verkauf starten/abwickeln | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Audit/Protokoll einsehen | ❌ | ❌ | 🔒 (eigene Vorgänge) | 🔒 (eigene Vorgänge) | ❌ | ✅ | ✅ |
+---
 
-### 5) Blogbase / News
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| News lesen | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| News erstellen/bearbeiten | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| News löschen | ❌ | ❌ | ❌ | ❌ | 🔒 (nur eigene Posts, optional) | ✅ | ✅ |
+## 4. Servicebook (`/servicebook/*`)
+| Route (repräsentativ) | superadmin | admin | dealer | vip | user | moderator |
+|------|-----------:|------:|------:|----:|----:|----------:|
+| `GET /servicebook/{id}/entries` | ✅ | ✅ | ✅ (scoped) | ✅ (scoped) | ✅ (scoped) | ❌ 403 |
+| `POST /servicebook/{id}/inspection-events` | ✅ | ✅ | ✅ (scoped) | ✅ (scoped) | ✅ (scoped) | ❌ 403 |
+| `POST /servicebook/{id}/cases/{case_id}/remediation` | ✅ | ✅ | ✅ (scoped) | ✅ (scoped) | ✅ (scoped) | ❌ 403 |
 
-### 6) Newsletter
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Opt-in / Opt-out (Abo verwalten) | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Versand auslösen | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+---
 
-### 7) Admin / Governance
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Rollen vergeben / User sperren (ohne SUPERADMIN-Setzen) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Moderatoren akkreditieren | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| VIP-Gewerbe: 2 Mitarbeiterplätze freigeben | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Halterdaten einsehen | ❌ | ❌ | ❌ | 🔒 (wenn berechtigt & notwendig) | ❌ | ✅ | ✅ |
-| Audit lesen (ohne PII/Secrets) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| SUPERADMIN-Provisioning (Bootstrap/out-of-band) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+## 5. Export (`/export/*`)
+| Route (repräsentativ) | superadmin | admin | dealer | vip | user | moderator |
+|------|-----------:|------:|------:|----:|----:|----------:|
+| Grant Full Export Token | ✅ | ✅ | ❌ 403 | ❌ 403 | ❌ 403 | ❌ 403 |
+| Redacted Export | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 
-### 8) Exports (Security/Privacy)
-| Funktion | public | user | vip | dealer | moderator | admin | superadmin |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Redacted Export (Default) | ❌ | 🔒 (eigener Scope) | 🔒 (eigener Scope) | 🔒 (berechtigt) | ❌ | ✅ | ✅ |
-| Full Export: Grant (one-time Token, TTL/Limit) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Full Export: Abruf (X-Export-Token, Response verschlüsselt) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+**Dokument-Refs im Export:** nur `APPROVED`.
