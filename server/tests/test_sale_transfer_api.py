@@ -30,6 +30,7 @@ def _load_app():
         importlib.reload(sys.modules["app.main"])
         return sys.modules["app.main"].app
     from app.main import app  # type: ignore
+
     return app
 
 
@@ -149,7 +150,13 @@ def test_sale_transfer_create_redeem_happy_path(monkeypatch: pytest.MonkeyPatch,
     token = out["transfer_token"]
     tid = out["transfer_id"]
 
-"/sale/transfer/redeem"
+    # Initiator darf Status sehen
+    rs_a_pre = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_a}"})
+    assert rs_a_pre.status_code == 200, rs_a_pre.text
+
+    # VOR Redeem: Dealer ist noch kein Teilnehmer -> 403 (object-level gate)
+    rs_b_pre = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_b}"})
+    assert rs_b_pre.status_code == 403, rs_b_pre.text
 
     r2 = client.post(
         "/sale/transfer/redeem",
@@ -163,6 +170,11 @@ def test_sale_transfer_create_redeem_happy_path(monkeypatch: pytest.MonkeyPatch,
     assert out2["status"] == "redeemed"
     assert "ownership_transferred" in out2
 
+    # Nach Redeem: Dealer ist Redeemer -> 200
+    rs_b_post = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_b}"})
+    assert rs_b_post.status_code == 200, rs_b_post.text
+
+    # Double-redeem block
     r3 = client.post(
         "/sale/transfer/redeem",
         json={"transfer_token": token},
@@ -170,10 +182,9 @@ def test_sale_transfer_create_redeem_happy_path(monkeypatch: pytest.MonkeyPatch,
     )
     assert r3.status_code in (409, 410), r3.text
 
-    rs = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_a}"})
-    assert rs.status_code == 200, rs.text
-    rs2 = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_b}"})
-    assert rs2.status_code == 200, rs2.text
+    # Initiator weiterhin ok
+    rs_a_post = client.get(f"/sale/transfer/status/{tid}", headers={"Authorization": f"Bearer {tok_a}"})
+    assert rs_a_post.status_code == 200, rs_a_post.text
 
 
 def test_sale_transfer_rbac_blocks_user_and_admin_create(monkeypatch: pytest.MonkeyPatch, tmp_path):
