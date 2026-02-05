@@ -13,9 +13,11 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #27 gemerged: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
+✅ Status Endpoint (`GET /sale/transfer/status/{transfer_id}`): object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)  
+✅ Test-Coverage erweitert in `server/tests/test_sale_transfer_api.py` (vor Redeem: **403**, nach Redeem: **200**)  
 ✅ PR #24 gemerged: `Test: moderator blocked on all non-public routes (runtime scan)`  
 ✅ CI/pytest (pull_request) grün  
-✅ `main` pulled, Branch aufgeräumt  
 ✅ Test ist in `server/tests/test_moderator_block_coverage_runtime.py` vorhanden (Runtime-Scan über alle registrierten Routes)  
 ✅ Regel: außerhalb `/auth`, `/health`, `/public` und `/blog|/news` muss MODERATOR **403** bekommen  
 ℹ️ Blog/News Assertions sind bewusst **skipped**, bis `/blog|/news` Routes existieren
@@ -51,4 +53,3 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 
 poetry run pytest -q
-```
