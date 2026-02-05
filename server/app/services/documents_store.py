@@ -1,3 +1,4 @@
+# FILE: server/app/services/documents_store.py
 from __future__ import annotations
 
 import re
@@ -46,8 +47,13 @@ class DocumentsStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
+    def _connect(self) -> sqlite3.Connection:
+        # Wichtig für Windows: Connections IMMER explizit schließen (sonst file-locks)
+        return sqlite3.connect(self.db_path)
+
     def _init_db(self) -> None:
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             con.execute(
                 """
                 CREATE TABLE IF NOT EXISTS documents (
@@ -64,6 +70,8 @@ class DocumentsStore:
                 """
             )
             con.commit()
+        finally:
+            con.close()
 
     @staticmethod
     def _now_iso_utc() -> str:
@@ -123,7 +131,8 @@ class DocumentsStore:
             scan_status=DocumentScanStatus.PENDING.value,
         )
 
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             con.execute(
                 """
                 INSERT INTO documents (
@@ -144,11 +153,14 @@ class DocumentsStore:
                 ),
             )
             con.commit()
+        finally:
+            con.close()
 
         return self._to_out(rec)
 
     def get(self, doc_id: str) -> DocumentRecord:
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             row = con.execute(
                 """
                 SELECT id, owner_user_id, filename, content_type, size_bytes,
@@ -157,12 +169,16 @@ class DocumentsStore:
                 """,
                 (doc_id,),
             ).fetchone()
+        finally:
+            con.close()
+
         if not row:
             raise KeyError("not_found")
         return DocumentRecord(*row)
 
     def list_quarantine(self) -> list[DocumentOut]:
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             rows = con.execute(
                 """
                 SELECT id, owner_user_id, filename, content_type, size_bytes,
@@ -173,6 +189,9 @@ class DocumentsStore:
                 """,
                 (DocumentApprovalStatus.QUARANTINED.value,),
             ).fetchall()
+        finally:
+            con.close()
+
         return [self._to_out(DocumentRecord(*r)) for r in rows]
 
     def set_scan_status(self, doc_id: str, status: DocumentScanStatus) -> DocumentOut:
@@ -181,7 +200,8 @@ class DocumentsStore:
         if status == DocumentScanStatus.INFECTED:
             approval = DocumentApprovalStatus.REJECTED.value
 
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             con.execute(
                 """
                 UPDATE documents
@@ -191,6 +211,8 @@ class DocumentsStore:
                 (status.value, approval, doc_id),
             )
             con.commit()
+        finally:
+            con.close()
 
         return self._to_out(self.get(doc_id))
 
@@ -199,22 +221,30 @@ class DocumentsStore:
         if rec.scan_status != DocumentScanStatus.CLEAN.value:
             raise ValueError("not_scanned_clean")
 
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             con.execute(
                 "UPDATE documents SET approval_status = ? WHERE id = ?",
                 (DocumentApprovalStatus.APPROVED.value, doc_id),
             )
             con.commit()
+        finally:
+            con.close()
+
         return self._to_out(self.get(doc_id))
 
     def reject(self, doc_id: str) -> DocumentOut:
         self.get(doc_id)
-        with sqlite3.connect(self.db_path) as con:
+        con = self._connect()
+        try:
             con.execute(
                 "UPDATE documents SET approval_status = ? WHERE id = ?",
                 (DocumentApprovalStatus.REJECTED.value, doc_id),
             )
             con.commit()
+        finally:
+            con.close()
+
         return self._to_out(self.get(doc_id))
 
     def file_path(self, rec: DocumentRecord) -> Path:
