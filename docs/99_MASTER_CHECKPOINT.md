@@ -1,5 +1,3 @@
-@'
-# docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-06** (Europe/Berlin)
@@ -67,36 +65,6 @@ Verifikation (lokal):
 
 ---
 
-## P0: Uploads Quarantäne (Documents) — DONE (main)
-**Ziel:** Uploads werden serverseitig **niemals** automatisch ausgeliefert, bevor Admin-Freigabe erfolgt.
-
-Workflow:
-- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
-- Admin kann `scan_status` setzen: `CLEAN` oder `INFECTED`
-- `INFECTED` erzwingt `approval_status=REJECTED`
-- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409 not_scanned_clean**)
-
-Download-Regeln:
-- **User/VIP/Dealer**: nur wenn `APPROVED` **und** Scope/Owner passt (object-level)
-- **Admin/Superadmin**: darf auch QUARANTINED/PENDING downloaden (Review)
-
-RBAC/Guards:
-- `/documents/*` ist **nicht-public** → Actor erforderlich (**401** ohne Actor)
-- Moderator ist auf Documents überall **403**
-- Admin-Endpoints (Quarantine/Approve/Reject/Scan) sind **admin-only** (nicht-admin: **403**)
-
----
-
-## Sale/Transfer Status (ID-Leak Fix) — DONE (main)
-Endpoint:
-- `GET /sale/transfer/status/{transfer_id}`
-
-Regeln:
-- Role-Gate: nur `vip|dealer` (alle anderen **403**)
-- Zusätzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
-
----
-
 ## RBAC (SoT)
 - Default: **deny-by-default**
 - **Actor required**: ohne Actor → **401**
@@ -118,12 +86,9 @@ Alles andere: **403**.
 
 ---
 
-## Tests / Lokal ausführen
-> Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
-
-```powershell
-cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
-$env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
-poetry run pytest -q
-poetry run python .\scripts\check_openapi_duplicates.py
-poetry run uvicorn app.main:app --reload
+## Lokal (Quick)
+- `cd "...\server"`
+- `$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"`
+- `poetry run pytest -q`
+- `poetry run python .\scripts\check_openapi_duplicates.py`
+- `poetry run uvicorn app.main:app --reload`
