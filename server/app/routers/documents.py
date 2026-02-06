@@ -10,7 +10,17 @@ from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
 
 
-def forbid_moderator(actor=Depends(get_actor)):
+def require_actor(actor=Depends(get_actor)):
+    """
+    SoT: Actor required -> ohne Actor 401.
+    Wichtig: Tests überschreiben documents_router.require_actor direkt.
+    """
+    if actor is None:
+        raise HTTPException(status_code=401, detail="actor_required")
+    return actor
+
+
+def forbid_moderator(actor=Depends(require_actor)):
     role = actor.get("role") if isinstance(actor, dict) else getattr(actor, "role", None)
     if (role or "").lower() == "moderator":
         raise HTTPException(status_code=403, detail="forbidden")
@@ -20,13 +30,13 @@ def forbid_moderator(actor=Depends(get_actor)):
 def require_roles(*roles: str):
     allowed = {str(r).strip().lower() for r in roles if str(r).strip()}
 
-    def _dep(actor=Depends(get_actor)):
+    def _dep(actor=Depends(require_actor)):
         role = actor.get("role") if isinstance(actor, dict) else getattr(actor, "role", None)
         if (role or "").lower() not in allowed:
             raise HTTPException(status_code=403, detail="forbidden")
         return actor
 
-    # wichtig für Guard-Tests: Name muss erkennbar sein
+    # Guard-Tests erkennen Dependencies i.d.R. über __name__
     _dep.__name__ = "require_roles"
     return _dep
 
@@ -34,7 +44,7 @@ def require_roles(*roles: str):
 router = APIRouter(
     prefix="/documents",
     tags=["documents"],
-    dependencies=[Depends(get_actor), Depends(forbid_moderator)],
+    dependencies=[Depends(require_actor), Depends(forbid_moderator)],
 )
 
 
@@ -42,7 +52,7 @@ def get_documents_store() -> DocumentsStore:
     return default_store()
 
 
-def _actor_id(actor) -> str | None:
+def _actor_user_id(actor) -> str | None:
     if actor is None:
         return None
     if isinstance(actor, dict):
@@ -58,7 +68,7 @@ class ScanBody(BaseModel):
 async def upload_document(
     file: UploadFile = File(...),
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(get_actor),
+    actor=Depends(require_actor),
 ):
     data = await file.read()
     try:
@@ -66,7 +76,7 @@ async def upload_document(
             filename=file.filename or "upload.bin",
             content_type=file.content_type or "application/octet-stream",
             data=data,
-            owner_user_id=_actor_id(actor),
+            owner_user_id=_actor_user_id(actor),
         )
     except ValueError as e:
         if str(e) == "too_large":
@@ -80,27 +90,27 @@ async def upload_document(
 def get_document(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(get_actor),
+    actor=Depends(require_actor),
 ):
     try:
-        rec = store._get_record(doc_id)  # pylint: disable=protected-access
+        rec = store._get_record(doc_id)  # noqa: SLF001
     except KeyError:
         raise HTTPException(status_code=404, detail="not_found")
 
     if not store.can_read(actor, rec):
         raise HTTPException(status_code=403, detail="forbidden")
 
-    return store._to_out(rec)  # pylint: disable=protected-access
+    return store._to_out(rec)  # noqa: SLF001
 
 
 @router.get("/{doc_id}/download")
 def download_document(
     doc_id: str,
     store: DocumentsStore = Depends(get_documents_store),
-    actor=Depends(get_actor),
+    actor=Depends(require_actor),
 ):
     try:
-        rec = store._get_record(doc_id)  # pylint: disable=protected-access
+        rec = store._get_record(doc_id)  # noqa: SLF001
     except KeyError:
         raise HTTPException(status_code=404, detail="not_found")
 

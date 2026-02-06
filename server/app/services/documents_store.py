@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Optional, Set
+from typing import Optional, Set
 
 from app.models.documents import DocumentApprovalStatus, DocumentOut, DocumentScanStatus
 
@@ -42,37 +43,26 @@ def _safe_filename(name: str) -> str:
 
 
 def _file_ext_lower(filename: str) -> str:
-    f = (filename or "").strip().lower()
-    if "." not in f:
+    fn = (filename or "").strip().lower()
+    if "." not in fn:
         return ""
-    return f.rsplit(".", 1)[-1].strip().lstrip(".")
+    return fn.rsplit(".", 1)[-1]
 
 
-def _normalize_mime(m: str) -> str:
-    return (m or "").split(";", 1)[0].strip().lower()
-
-
-def _norm_set(vals: Optional[Iterable[str]]) -> Optional[Set[str]]:
-    if vals is None:
-        return None
-    s = {str(v).strip().lower() for v in vals if str(v).strip()}
-    return s if s else None
-
-
-def _actor_get(actor, *keys: str) -> Optional[str]:
+def _actor_role(actor) -> Optional[str]:
     if actor is None:
         return None
     if isinstance(actor, dict):
-        for k in keys:
-            v = actor.get(k)
-            if v is not None and str(v).strip():
-                return str(v)
+        return actor.get("role")
+    return getattr(actor, "role", None)
+
+
+def _actor_user_id(actor) -> Optional[str]:
+    if actor is None:
         return None
-    for k in keys:
-        v = getattr(actor, k, None)
-        if v is not None and str(v).strip():
-            return str(v)
-    return None
+    if isinstance(actor, dict):
+        return actor.get("user_id") or actor.get("uid") or actor.get("id")
+    return getattr(actor, "user_id", None) or getattr(actor, "uid", None) or getattr(actor, "id", None)
 
 
 def _is_admin_role(role: Optional[str]) -> bool:
@@ -85,38 +75,46 @@ class DocumentsStore:
         storage_root: Path,
         db_path: Path,
         max_upload_bytes: int,
-        allowed_ext: Optional[set[str]] = None,
-        allowed_mime: Optional[set[str]] = None,
+        allowed_ext: Optional[Set[str]] = None,
+        allowed_mime: Optional[Set[str]] = None,
         scan_mode: str = "stub",
     ) -> None:
         self.storage_root = Path(storage_root)
         self.db_path = Path(db_path)
         self.max_upload_bytes = int(max_upload_bytes)
-
-        self.allowed_ext = (
-            _norm_set({str(e).lstrip(".") for e in (allowed_ext or set())})
-            if allowed_ext is not None
-            else None
-        )
-        self.allowed_mime = (
-            _norm_set({_normalize_mime(m) for m in (allowed_mime or set())})
-            if allowed_mime is not None
-            else None
-        )
-
+        self.allowed_ext = {str(x).strip().lower() for x in (allowed_ext or set()) if str(x).strip()}
+        self.allowed_mime = {str(x).strip().lower() for x in (allowed_mime or set()) if str(x).strip()}
         self.scan_mode = str(scan_mode or "stub").strip().lower()
 
         self.storage_root.mkdir(parents=True, exist_ok=True)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _db(self):
+        """
+        Windows: sqlite3.Connection als Context-Manager schließt NICHT automatisch.
+        Explizit close() -> sonst bleibt app.db gelockt (TempDir cleanup schlägt fehl).
+        """
         con = sqlite3.connect(self.db_path)
         con.row_factory = sqlite3.Row
-        return con
+        try:
+            yield con
+            con.commit()
+        except Exception:
+            try:
+                con.rollback()
+            finally:
+                con.close()
+            raise
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
 
     def _init_db(self) -> None:
-        with self._connect() as con:
+        with self._db() as con:
             con.execute(
                 """
                 CREATE TABLE IF NOT EXISTS documents (
@@ -154,15 +152,12 @@ class DocumentsStore:
 
         safe = _safe_filename(filename)
         ext = _file_ext_lower(safe)
-        mime = _normalize_mime(content_type or "application/octet-stream")
+        ctype = (content_type or "application/octet-stream").strip().lower()
 
-        if self.allowed_ext is not None:
-            if not ext or ext not in self.allowed_ext:
-                raise ValueError("ext_not_allowed")
-
-        if self.allowed_mime is not None:
-            if not mime or mime not in self.allowed_mime:
-                raise ValueError("mime_not_allowed")
+        if self.allowed_ext and ext not in self.allowed_ext:
+            raise ValueError("ext_not_allowed")
+        if self.allowed_mime and ctype not in self.allowed_mime:
+            raise ValueError("mime_not_allowed")
 
         doc_id = uuid.uuid4().hex
         rel = f"documents/{doc_id}_{safe}"
@@ -173,7 +168,7 @@ class DocumentsStore:
         rec = DocumentRecord(
             id=doc_id,
             filename=safe,
-            content_type=mime or "application/octet-stream",
+            content_type=ctype,
             size_bytes=len(data),
             storage_relpath=rel,
             owner_user_id=owner_user_id,
@@ -182,7 +177,7 @@ class DocumentsStore:
             scan_status=DocumentScanStatus.PENDING.value,
         )
 
-        with self._connect() as con:
+        with self._db() as con:
             con.execute(
                 """
                 INSERT INTO documents (
@@ -207,7 +202,7 @@ class DocumentsStore:
         return self._to_out(rec)
 
     def _get_record(self, doc_id: str) -> DocumentRecord:
-        with self._connect() as con:
+        with self._db() as con:
             row = con.execute(
                 """
                 SELECT id, filename, content_type, size_bytes, storage_relpath,
@@ -234,7 +229,7 @@ class DocumentsStore:
         return self._to_out(self._get_record(doc_id))
 
     def list_quarantine(self) -> list[DocumentOut]:
-        with self._connect() as con:
+        with self._db() as con:
             rows = con.execute(
                 """
                 SELECT id, filename, content_type, size_bytes, storage_relpath,
@@ -266,17 +261,17 @@ class DocumentsStore:
         return outs
 
     def set_scan_status(self, doc_id: str, status: DocumentScanStatus) -> DocumentOut:
-        if self.scan_mode in {"disabled", "off", "none"}:
+        if self.scan_mode == "disabled":
             raise ValueError("scan_disabled")
 
         if not isinstance(status, DocumentScanStatus):
-            status = DocumentScanStatus(str(status).upper())
+            status = DocumentScanStatus(str(status))
 
         approval = None
         if status == DocumentScanStatus.INFECTED:
             approval = DocumentApprovalStatus.REJECTED.value
 
-        with self._connect() as con:
+        with self._db() as con:
             if approval is None:
                 con.execute(
                     "UPDATE documents SET scan_status = ? WHERE id = ?",
@@ -295,7 +290,7 @@ class DocumentsStore:
         if rec.scan_status != DocumentScanStatus.CLEAN.value:
             raise ValueError("not_scanned_clean")
 
-        with self._connect() as con:
+        with self._db() as con:
             con.execute(
                 "UPDATE documents SET approval_status = ? WHERE id = ?",
                 (DocumentApprovalStatus.APPROVED.value, doc_id),
@@ -303,7 +298,7 @@ class DocumentsStore:
         return self.get_out(doc_id)
 
     def reject(self, doc_id: str) -> DocumentOut:
-        with self._connect() as con:
+        with self._db() as con:
             con.execute(
                 "UPDATE documents SET approval_status = ? WHERE id = ?",
                 (DocumentApprovalStatus.REJECTED.value, doc_id),
@@ -315,25 +310,22 @@ class DocumentsStore:
         return self.storage_root / rec.storage_relpath
 
     def can_read(self, actor, rec: DocumentRecord) -> bool:
-        role = _actor_get(actor, "role")
+        role = _actor_role(actor)
         if _is_admin_role(role):
             return True
+
         if rec.approval_status != DocumentApprovalStatus.APPROVED.value:
             return False
-        actor_id = _actor_get(actor, "user_id", "uid", "id")
-        return bool(rec.owner_user_id) and actor_id == rec.owner_user_id
+
+        # MVP: owner-only (object-level)
+        uid = _actor_user_id(actor)
+        return bool(rec.owner_user_id) and uid == rec.owner_user_id
 
     def can_download(self, actor, rec: DocumentRecord) -> bool:
-        role = _actor_get(actor, "role")
-        if _is_admin_role(role):
-            return True
         return self.can_read(actor, rec)
 
     def _to_out(self, rec: DocumentRecord) -> DocumentOut:
-        s = rec.created_at or _utc_now_iso()
-        if s.endswith("Z"):
-            s = s[:-1] + "+00:00"
-        created = datetime.fromisoformat(s)
+        created = datetime.fromisoformat(rec.created_at.replace("Z", "+00:00"))
         return DocumentOut(
             id=rec.id,
             filename=rec.filename,
@@ -347,7 +339,6 @@ class DocumentsStore:
 
 
 def default_store() -> DocumentsStore:
-    # default bleibt permissive (Tests konfigurieren allowed_ext/allowed_mime explizit, wo nötig)
     server_root = Path(__file__).resolve().parents[3]
     storage_root = server_root / "storage"
     db_path = server_root / "data" / "documents.sqlite"
@@ -355,5 +346,7 @@ def default_store() -> DocumentsStore:
         storage_root=storage_root,
         db_path=db_path,
         max_upload_bytes=10 * 1024 * 1024,
+        allowed_ext={"pdf"},
+        allowed_mime={"application/pdf"},
         scan_mode="stub",
     )

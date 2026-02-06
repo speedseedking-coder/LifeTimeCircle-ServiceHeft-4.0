@@ -8,7 +8,6 @@ import pytest
 from fastapi import Header
 from fastapi.testclient import TestClient
 
-from app import deps as app_deps
 from app.routers import documents as documents_router
 from app.services.documents_store import DocumentsStore
 
@@ -21,7 +20,7 @@ class Actor:
 
 @pytest.fixture()
 def client(tmp_path: Path):
-    from app.main import create_app  # lokal import, damit conftest/create_app sauber bleibt
+    from app.main import create_app
 
     app = create_app()
 
@@ -41,10 +40,10 @@ def client(tmp_path: Path):
         x_user_id: str = Header("u1", alias="X-User-Id"),
         x_role: str = Header("user", alias="X-Role"),
     ):
-        return Actor(uid=x_user_id, role=x_role)
+        return {"user_id": x_user_id, "role": x_role}
 
     app.dependency_overrides[documents_router.get_documents_store] = override_store
-    app.dependency_overrides[app_deps.get_actor] = override_actor_headers
+    app.dependency_overrides[documents_router.require_actor] = override_actor_headers
 
     with TestClient(app) as c:
         yield c
