@@ -1,4 +1,5 @@
-﻿# LifeTimeCircle â€“ Service Heft 4.0
+﻿# docs/99_MASTER_CHECKPOINT.md
+# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-06** (Europe/Berlin)
 
@@ -12,38 +13,45 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
-✅ PR #43 gemerged: Web Trust-Ampel Pflichttext im UI + CI/web workflow_dispatch
-âœ… P0 Uploads-QuarantÃ¤ne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
-âœ… Fix Windows-SQLite-Locks: Connections sauber schlieÃŸen (Tempdir/cleanup stabil)  
-âœ… PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
+✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
+✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)  
+✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
 - `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)  
-âœ… PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`  
-- Runtime-Scan Ã¼ber alle registrierten Routes, Moderator auÃŸerhalb Allowlist â†’ **403**  
-âœ… PR #33: **Public: blog/news endpoints**  
+✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`  
+- Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**  
+✅ PR #33: **Public: blog/news endpoints**  
 - Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`  
 - Router wired in `server/app/main.py`  
 - RBAC-Tests/Allowlist entsprechend erweitert  
-âœ… PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`  
+✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`  
 - Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)  
-âœ… PR #40: `Add web skeleton + root redirect + docs updates`
+✅ PR #40: `Add web skeleton + root redirect + docs updates`
 - Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
-- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
-- API Root Redirect: `GET /` â†’ 307 â†’ `/public/site`
-- `GET /favicon.ico` â†’ 204
-âœ… Tests grÃ¼n: `poetry run pytest -q`
+- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
+- API Root Redirect: `GET /` → 307 → `/public/site`
+- `GET /favicon.ico` → 204
+✅ PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)  
+- Zentraler Actor ist serverseitig die **Source of Truth** (kein Client-Trust)  
+- DEV/Test-Header-Override nur hinter Gate (nicht in Produktion)  
+- Files u.a.: `server/app/auth/actor.py`, `server/scripts/patch_actor_source_of_truth_p0.ps1`  
+✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate** (serverseitig)  
+- VIP-Gewerbe: **max. 2 Staff-Accounts**  
+- Staff-Zuordnung/Freigabe/Erhöhung: **nur superadmin**  
+- Files u.a.: `server/app/admin/routes.py`, `server/tests/test_vip_business_staff_limit.py`  
+✅ Tests grün: `poetry run pytest -q`
 
 ---
 
-## Web Frontend (Vite + React + TS) â€” DONE (main)
+## Web Frontend (Vite + React + TS) — DONE (main)
 Paths / URLs:
 - API: `http://127.0.0.1:8000`  (/, /public/site, /docs, /redoc)
 - Web: `http://127.0.0.1:5173`
-- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
+- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
 
 Gotchas:
 - API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
 - Vite nicht mit `q` beenden, wenn Web laufen soll.
-- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). FÃ¼r Commands extra Tab.
+- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). Für Commands extra Tab.
 
 Start (2 Tabs/Fenster A=API, B=WEB):
 - A (API):
@@ -63,14 +71,14 @@ Checks:
 
 ---
 
-## OpenAPI / Router Wiring â€” DONE (main)
+## OpenAPI / Router Wiring — DONE (main)
 Thema:
 - FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
 
 Ursache:
 - Documents-Router wurde in `server/app/main.py` doppelt registriert:
   - einmal via `documents_router` (`from app.routers.documents import router as documents_router`)
-  - zusÃ¤tzlich nochmal Ã¼ber `from app.routers import documents` (und dann `documents.router`)
+  - zusätzlich nochmal über `from app.routers import documents` (und dann `documents.router`)
 
 Fix (PR #36):
 - `server/app/main.py`: Documents-Router **nur 1x** via `include_router(...)`
@@ -82,7 +90,7 @@ Verifikation (lokal):
 
 ---
 
-## Public: Blog/News â€” DONE (main)
+## Public: Blog/News — DONE (main)
 Public Router:
 - `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
 - `GET /news` + `GET /news/` + `GET /news/{slug}`
@@ -91,15 +99,42 @@ Files:
 - `server/app/routers/blog.py`
 - `server/app/routers/news.py`
 - `server/app/routers/__init__.py`
-- `server/app/main.py` â†’ `app.include_router(blog.router)` + `app.include_router(news.router)`
+- `server/app/main.py` → `app.include_router(blog.router)` + `app.include_router(news.router)`
 
 ---
 
-## P0: Uploads QuarantÃ¤ne (Documents) â€” DONE (main)
+## P0: Actor Source of Truth — DONE (main)
+**Ziel:** Actor-Identität/Claims sind **serverseitig** die Quelle der Wahrheit (kein Client-Trust, kein inkonsistentes Actor-Mapping).
+
+Regeln:
+- Actor wird serverseitig zentral bestimmt (einheitlicher Pfad für alle Router/Dependencies).
+- Ohne Actor → **401** (unauth).
+- DEV/Test: optionaler Header-Override ist **gated** (nur in DEV/Test erlaubt, nicht in Produktion).
+
+Files (repräsentativ):
+- `server/app/auth/actor.py`
+- `server/scripts/patch_actor_source_of_truth_p0.ps1`
+
+---
+
+## P0: VIP Business Staff-Limit + SUPERADMIN Gate — DONE (main)
+**Ziel:** VIP-Gewerbe kann nicht unkontrolliert Staff-Accounts aufblasen; sensitive Staff-Verwaltung ist least-privilege.
+
+Regeln:
+- VIP-Gewerbe: **max. 2 Staff-Accounts**.
+- Staff-Zuordnung/Freigabe/Erhöhung/Änderung: **nur `superadmin`**.
+
+Files (repräsentativ):
+- `server/app/admin/routes.py`
+- `server/tests/test_vip_business_staff_limit.py`
+
+---
+
+## P0: Uploads Quarantäne (Documents) — DONE (main)
 **Ziel:** Uploads werden serverseitig **niemals** automatisch ausgeliefert, bevor Admin-Freigabe erfolgt.
 
 Workflow:
-- Upload â†’ `approval_status=QUARANTINED`, `scan_status=PENDING`
+- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
 - Admin kann `scan_status` setzen: `CLEAN` oder `INFECTED`
 - `INFECTED` erzwingt `approval_status=REJECTED`
 - Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409 not_scanned_clean**)
@@ -110,22 +145,23 @@ Download-Regeln:
 
 ---
 
-## Sale/Transfer Status (ID-Leak Fix) â€” DONE (main)
+## Sale/Transfer Status (ID-Leak Fix) — DONE (main)
 Endpoint:
 - `GET /sale/transfer/status/{transfer_id}`
 
 Regeln:
 - Role-Gate: nur `vip|dealer` (alle anderen **403**)
-- ZusÃ¤tzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
+- Zusätzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
 
 ---
 
 ## RBAC (SoT)
 - Default: **deny-by-default**
-- **Actor required**: ohne Actor â†’ **401**
-- **Moderator**: strikt nur **Blog/News**; sonst Ã¼berall **403**
+- **Actor required**: ohne Actor → **401**
+- **Actor SoT**: Actor wird serverseitig zentral bestimmt; DEV/Test-Header nur gated
+- **Moderator**: strikt nur **Blog/News**; sonst überall **403**
 
-### Allowlist fÃ¼r MODERATOR (ohne 403)
+### Allowlist für MODERATOR (ohne 403)
 - `/auth/*`
 - `/health`
 - `/public/*`
@@ -137,12 +173,12 @@ Alles andere: **403**.
 ---
 
 ## Public-QR Trust-Ampel (Pflichttext)
-â€žDie Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.â€œ
+„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
 
 ---
 
-## Tests / Lokal ausfÃ¼hren
-> Env-Hinweis: Export/Redaction/HMAC benÃ¶tigt `LTC_SECRET_KEY` (>=16). FÃ¼r DEV/Tests explizit setzen.
+## Tests / Lokal ausführen
+> Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
 
 ```powershell
 cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
