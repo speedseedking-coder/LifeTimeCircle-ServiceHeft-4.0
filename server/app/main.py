@@ -1,5 +1,8 @@
 from app.routers import servicebook
 from app.routers import documents
+from app.routers import blog
+from app.routers import news
+
 # server/app/main.py
 from app.guards import forbid_moderator
 from contextlib import asynccontextmanager
@@ -65,6 +68,10 @@ def create_app() -> FastAPI:
     app.include_router(documents_router)
     app.include_router(servicebook.router)
     app.include_router(documents.router)
+    # Blog/News (public)
+    app.include_router(blog.router)
+    app.include_router(news.router)
+
     return app
 
 
