@@ -1,5 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
-
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 type HealthResult = {
   ok: boolean;
   detail?: string;
@@ -143,3 +142,4 @@ export default function App() {
     </div>
   );
 }
+
