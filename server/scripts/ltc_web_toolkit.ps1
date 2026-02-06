@@ -47,7 +47,7 @@ function Web-Smoke {
 
   if ($Clean) {
     Rm-NodeModules
-    try { & cmd /c "npm cache clean --force" | Out-Null } catch { }
+    try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }
   }
 
   NpmCmd ci --no-audit --no-fund
