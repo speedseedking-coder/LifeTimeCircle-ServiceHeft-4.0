@@ -13,14 +13,41 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ Commit `1e6f947`: `P0: documents upload quarantined by default + admin scan/approve (v2)`  
+✅ Commit `7c4f318`: `Fix: close sqlite connections to avoid Windows file locks` (Tempdir/cleanup auf Windows stabil)  
+
 ✅ PR #27 gemerged: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
 ✅ Status Endpoint (`GET /sale/transfer/status/{transfer_id}`): object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)  
 ✅ Test-Coverage erweitert in `server/tests/test_sale_transfer_api.py` (vor Redeem: **403**, nach Redeem: **200**)  
+
 ✅ PR #24 gemerged: `Test: moderator blocked on all non-public routes (runtime scan)`  
 ✅ CI/pytest (pull_request) grün  
 ✅ Test ist in `server/tests/test_moderator_block_coverage_runtime.py` vorhanden (Runtime-Scan über alle registrierten Routes)  
 ✅ Regel: außerhalb `/auth`, `/health`, `/public` und `/blog|/news` muss MODERATOR **403** bekommen  
 ℹ️ Blog/News Assertions sind bewusst **skipped**, bis `/blog|/news` Routes existieren
+
+---
+
+## P0: Uploads Quarantäne (Documents) — DONE (main)
+**Ziel:** Uploads werden serverseitig **niemals** automatisch ausgeliefert, bevor Admin-Freigabe erfolgt.
+
+Workflow:
+- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
+- Admin kann `scan_status` setzen: `CLEAN` oder `INFECTED`
+- `INFECTED` erzwingt `approval_status=REJECTED`
+- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409 not_scanned_clean**)
+- Download-Regeln:
+  - **User**: nur wenn `APPROVED` **und** Owner-Match (object-level)
+  - **Admin**: darf auch QUARANTINED/PENDING downloaden (Review)
+
+RBAC/Guards:
+- `/documents/*` ist **nicht-public** → Actor erforderlich (**401** ohne Actor)
+- Moderator ist auf Documents überall **403** (Blog/News only SoT)
+- Admin-Endpoints unter `/documents/admin/*` bzw. approve/reject/scan sind **admin-only** (nicht-admin: **403**)
+
+Tests:
+- Quarantine-Workflow + Approve-Only-After-CLEAN: `server/tests/test_documents_quarantine_workflow.py`
+- Negative RBAC/Moderator/Admin-Gates: `server/tests/test_documents_quarantine_*`
 
 ---
 
