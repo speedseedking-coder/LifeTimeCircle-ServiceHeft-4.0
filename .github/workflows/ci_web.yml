@@ -1,7 +1,7 @@
-# .github/workflows/ci_web.yml
-name: CI/web
+﻿name: CI/web
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "packages/web/**"
@@ -11,6 +11,9 @@ on:
     paths:
       - "packages/web/**"
       - ".github/workflows/ci_web.yml"
+
+permissions:
+  contents: read
 
 jobs:
   web_build:
@@ -27,11 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      - name: Versions
-        run: |
-          node -v
-          npm -v
 
       - name: Install
         run: npm install
