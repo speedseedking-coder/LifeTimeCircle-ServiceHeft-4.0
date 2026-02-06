@@ -1,8 +1,9 @@
-// packages/web/src/App.tsx
+﻿// packages/web/src/App.tsx
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 import { TrustAmpelDisclaimer } from "./components/TrustAmpelDisclaimer";
 
+import { PublicQrPage } from "./pages/PublicQrPage";
 type Route =
   | { kind: "home" }
   | { kind: "publicSite" }
@@ -99,10 +100,10 @@ function ApiBox(props: { path: string; title: string }) {
     <Card title={props.title}>
       <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 8 }}>
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` → ${state.status}` : ""}
+        {typeof state.status === "number" ? ` â†’ ${state.status}` : ""}
       </div>
       {state.loading ? (
-        <div>Lädt…</div>
+        <div>LÃ¤dtâ€¦</div>
       ) : (
         <pre style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 13, lineHeight: 1.35 }}>{state.text}</pre>
       )}
@@ -166,11 +167,11 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
     <Card title={props.title}>
       <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 8 }}>
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` → ${state.status}` : ""}
+        {typeof state.status === "number" ? ` â†’ ${state.status}` : ""}
       </div>
 
       {state.loading ? (
-        <div>Lädt…</div>
+        <div>LÃ¤dtâ€¦</div>
       ) : state.error ? (
         <pre style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 13, lineHeight: 1.35 }}>{state.error}</pre>
       ) : state.items ? (
@@ -193,7 +194,7 @@ function PostView(props: { title: string; path: string; backHref: string; backLa
   return (
     <>
       <div style={{ marginBottom: 12 }}>
-        <a href={props.backHref}>← {props.backLabel}</a>
+        <a href={props.backHref}>â† {props.backLabel}</a>
       </div>
       <ApiBox path={props.path} title={props.title} />
     </>
@@ -201,7 +202,12 @@ function PostView(props: { title: string; path: string; backHref: string; backLa
 }
 
 export default function App() {
-  const [route, setRoute] = useState<Route>(() => parseHash());
+  
+  const _qrMatch = window.location.pathname.match(/^\/qr\/([^\/?#]+)$/);
+  if (_qrMatch) {
+    return <PublicQrPage vehicleId={decodeURIComponent(_qrMatch[1])} />;
+  }
+const [route, setRoute] = useState<Route>(() => parseHash());
 
   useEffect(() => {
     const onChange = () => setRoute(parseHash());
@@ -212,7 +218,7 @@ export default function App() {
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle – Service Heft 4.0";
+        return "LifeTimeCircle â€“ Service Heft 4.0";
       case "publicSite":
         return "Public Site (API)";
       case "blogList":
@@ -244,7 +250,7 @@ export default function App() {
                 API: <code>http://127.0.0.1:8000</code>
               </li>
               <li>
-                Proxy: <code>/api/*</code> → <code>http://127.0.0.1:8000/*</code>
+                Proxy: <code>/api/*</code> â†’ <code>http://127.0.0.1:8000/*</code>
               </li>
             </ul>
             <TrustAmpelDisclaimer />
