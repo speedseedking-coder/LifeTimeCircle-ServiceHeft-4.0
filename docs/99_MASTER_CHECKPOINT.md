@@ -1,7 +1,7 @@
 # docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
-**MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-06** (Europe/Berlin)
+**MASTER CHECKPOINT (SoT)**
+Stand: **2026-02-07** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -20,6 +20,13 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #60 gemerged: docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)
+- Neue SoT Datei: docs/02_PRODUCT_SPEC_UNIFIED.md
+- Updates: docs/01_DECISIONS.md, docs/03_RIGHTS_MATRIX.md, docs/04_REPO_STRUCTURE.md, docs/06_WORK_RULES.md, docs/99_MASTER_CHECKPOINT.md
+- Script: server/scripts/patch_docs_unified_final_refresh.ps1 (Validator; idempotent; keine Änderungen an bestehenden Docs)
+
+✅ PR #61 gemerged: ix(scripts): make docs unified refresh patch script parseable + safe
+- Script: server/scripts/patch_docs_unified_final_refresh.ps1 ist jetzt parsebar und prüft Pflicht-Disclaimer + Kernanker (keine Doc-Rewrites)
 ✅ PR #54: `fix(web): add mandatory Public QR disclaimer`
 - Pflichttext ist exakt in `packages/web/src/pages/PublicQrPage.tsx`:
   - „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
