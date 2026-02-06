@@ -13,6 +13,10 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #58 gemerged: `chore(web): silence npm cache clean --force warning (stderr redirect)`
+✅ Web Smoke Toolkit: `server/scripts/ltc_web_toolkit.ps1` silenced `npm cache clean --force` via `2>$null`
+✅ Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+
 ✅ PR #54 gemerged: `fix(web): add mandatory Public QR disclaimer`
 ✅ Public QR: Pflichttext (exakt) in `packages/web/src/pages/PublicQrPage.tsx`
 ✅ Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)
