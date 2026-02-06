@@ -1,5 +1,4 @@
-
-```md
+@'
 # docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
@@ -12,22 +11,27 @@ Projekt:
 - Security: **deny-by-default + least privilege**, RBAC **serverseitig enforced**
 - Source of Truth: **./docs** (keine Altpfade/Altversionen)
 
+Konflikt-Priorität:
+1) `docs/99_MASTER_CHECKPOINT.md`
+2) `docs/03_RIGHTS_MATRIX.md`
+3) `server/`
+4) Backlog/sonstiges
+
+Env-Hinweis:
+- Export/Redaction/HMAC braucht `LTC_SECRET_KEY` (>=16); Tests/DEV setzen ihn explizit.
+
 ---
 
 ## Aktueller Stand (main)
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)  
-✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
-- `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)  
 ✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`  
-- Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**  
-✅ PR #33: **Public: blog/news endpoints**  
-- Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`  
-✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`  
-- Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)  
-✅ PR #37: `Feat: public landing page (/public/site) + docs/07 MVP gates + scripts`  
+✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
+✅ PR #33: `Public: blog/news endpoints`  
+✅ PR #36: `Fix: include documents router only once (remove duplicate routes/OpenAPI warnings)`  
+✅ PR #37: `Feat: public landing page (/public/site) + docs/07 MVP gates`  
 ✅ PR #38: `Fix: /favicon.ico returns 204 (no 404 noise on public site)`  
-✅ Tests grün: `poetry run pytest` → **78 passed**  
+✅ CI/Tests: `poetry run pytest -q` **grün**
 
 ---
 
@@ -42,7 +46,7 @@ Projekt:
 
 ---
 
-## OpenAPI / Router Wiring — DONE (main)
+## OpenAPI / Duplicate OperationId — DONE (main)
 Thema:
 - FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
 
@@ -56,7 +60,9 @@ Fix (PR #36):
 - `server/app/routers/__init__.py`: Exporte bereinigt (documents nicht mehr im `__all__` / nicht mehr importiert)
 
 Verifikation (lokal):
-- Route-Dedupe-Check: `DUP_ROUTES_COUNT = 0` (via `from app.main import app`, unique route signature check)
+- `server/scripts/check_openapi_duplicates.py`:
+  - `DUP_ROUTES_COUNT = 0`
+  - `DUP_OPERATION_ID_COUNT = 0`
 - `curl http://127.0.0.1:8000/openapi.json` triggert keine Duplicate-Warnungen mehr im Server-Fenster
 
 ---
@@ -120,4 +126,4 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 poetry run python .\scripts\check_openapi_duplicates.py
-poetry run uvicorn app.main:app --reload`
+poetry run uvicorn app.main:app --reload
