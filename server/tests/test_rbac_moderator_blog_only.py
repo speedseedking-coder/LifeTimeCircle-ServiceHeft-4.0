@@ -1,78 +1,53 @@
 # server/tests/test_rbac_moderator_blog_only.py
 from __future__ import annotations
 
-from typing import Any
+from typing import Set
 
-import pytest
 from fastapi.routing import APIRoute
-from fastapi.testclient import TestClient
-
-
-@pytest.fixture()
-def client() -> TestClient:
-    from app.main import app
-
-    return TestClient(app)
-
-
-def _has_forbid_moderator(route: APIRoute) -> bool:
-    names: set[str] = set()
-
-    # dependencies via dependant
-    try:
-        for dep in getattr(route, "dependant", None).dependencies:  # type: ignore[union-attr]
-            call = getattr(dep, "call", None)
-            if call is None:
-                continue
-            names.add(getattr(call, "__name__", str(call)))
-    except Exception:
-        pass
-
-    # dependencies via route.dependencies
-    try:
-        for dep in (route.dependencies or []):
-            call = getattr(dep, "dependency", None)
-            if call is None:
-                continue
-            names.add(getattr(call, "__name__", str(call)))
-    except Exception:
-        pass
-
-    return "forbid_moderator" in names
+from fastapi.dependencies.models import Dependant
+from starlette.testclient import TestClient
 
 
 def _is_allowed_path(path: str) -> bool:
     """
-    Allowed = darf OHNE forbid_moderator existieren.
-
-    - Auth muss für jede Rolle funktionieren (Login/Verify/Me)
-    - Public-QR ist öffentlich
-    - Consent-Contract Discovery ist öffentlich: /consent/current
-    - OpenAPI/Docs sind Framework-Routen
-    - Blog/News (falls vorhanden) darf Moderator sehen
+    MODERATOR-Allowlist (SoT):
+    /auth/*, /health, /public/*, /blog/*, /news/*
     """
-    if not path:
+    if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
         return True
-
-    # framework
-    if path in ("/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"):
+    if path == "/health" or path.startswith("/health/"):
         return True
-
-    # auth endpoints (public/login + authed me/logout etc.)
-    if path.startswith("/auth"):
+    if path == "/auth" or path.startswith("/auth/"):
         return True
-
-    # public qr + ggf. blog/news
-    if path.startswith("/public/qr"):
+    if path == "/public" or path.startswith("/public/"):
         return True
-    if path.startswith("/public/blog") or path.startswith("/public/news"):
+    if path == "/blog" or path.startswith("/blog/"):
         return True
-
-    # consent discovery must be public
-    if path == "/consent/current":
+    if path == "/news" or path.startswith("/news/"):
         return True
-
     return False
+
+
+def _collect_dep_names(route: APIRoute) -> Set[str]:
+    names: Set[str] = set()
+
+    def walk(dep: Dependant | None) -> None:
+        if dep is None:
+            return
+        call = getattr(dep, "call", None)
+        if call is not None:
+            n = getattr(call, "__name__", None)
+            if n:
+                names.add(str(n))
+        for child in getattr(dep, "dependencies", []) or []:
+            walk(child)
+
+    walk(getattr(route, "dependant", None))
+    return {n for n in names if n}
+
+
+def _has_forbid_moderator(route: APIRoute) -> bool:
+    return "forbid_moderator" in _collect_dep_names(route)
 
 
 def test_non_blog_routes_have_forbid_moderator_dependency(client: TestClient) -> None:

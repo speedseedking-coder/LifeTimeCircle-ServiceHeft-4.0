@@ -1,115 +1,118 @@
 # server/tests/test_rbac_guard_coverage.py
 from __future__ import annotations
 
-import functools
-from typing import Callable, Iterable, List, Set, Tuple
+from typing import List, Set, Tuple
 
-from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from fastapi.dependencies.models import Dependant
 
+from app.main import create_app
 
-def _get_app() -> FastAPI:
-    """
-    Projektkonvention: app.main stellt create_app() bereit.
-    Fallback: app-Instanz.
-    """
-    try:
-        from app.main import create_app  # type: ignore
-
-        return create_app()
-    except Exception:
-        from app.main import app  # type: ignore
-
-        return app
-
-
-PUBLIC_EXACT = {
-    "/",
-    "/health",
-    "/healthz",
-    "/openapi.json",
-}
-
-PUBLIC_PREFIXES = (
-    "/auth",
-    "/public",
-    "/public-qr",
-    "/docs",
-    "/redoc",
-)
-
-MODERATOR_ALLOWED_PREFIXES = (
-    "/blog",
-    "/news",
-)
-
-# Auth-/Role-Gates, die als "auth vorhanden" zählen.
-# Wichtig: forbid_moderator zählt als Auth-Gate, weil es einen Actor braucht (Auth implizit).
+# Gates, die als "Auth vorhanden" zählen (deny-by-default)
 AUTH_GATES: Set[str] = {
+    # project-typisch
     "get_actor",
-    "require_actor",
     "require_roles",
+    "require_role",
+    "forbid_moderator",
+    # fallback (falls im Projekt vorhanden)
     "require_admin",
     "require_superadmin",
-    "forbid_moderator",
+    "rbac_guard",
+    "HTTPBearer",
 }
 
-# Moderator-Block ist erfüllt, wenn forbid_moderator vorhanden ist ODER ein Role-Gate greift,
-# das Moderator implizit ausschließt (admin/superadmin/require_roles).
+# Gates, die als "Moderator geblockt" zählen (außer Allowlist)
 MODERATOR_BLOCK_GATES: Set[str] = {
     "forbid_moderator",
     "require_roles",
+    "require_role",
     "require_admin",
     "require_superadmin",
+    "rbac_guard",
 }
 
 
+def _get_app():
+    return create_app()
+
+
 def _is_public_path(path: str) -> bool:
-    if path in PUBLIC_EXACT:
+    """
+    Public = ohne Actor/Auth erreichbar.
+    Wichtig: /blog* und /news* sind public & im MODERATOR-Allowlist.
+    """
+    if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
         return True
-    for p in PUBLIC_PREFIXES:
-        if path == p or path.startswith(p + "/"):
-            return True
+    if path == "/health" or path.startswith("/health/"):
+        return True
+    if path == "/auth" or path.startswith("/auth/"):
+        return True
+    if path == "/public" or path.startswith("/public/"):
+        return True
+    if path == "/blog" or path.startswith("/blog/"):
+        return True
+    if path == "/news" or path.startswith("/news/"):
+        return True
     return False
 
 
 def _is_moderator_allowed_path(path: str) -> bool:
-    for p in MODERATOR_ALLOWED_PREFIXES:
-        if path == p or path.startswith(p + "/"):
-            return True
+    """
+    MODERATOR-Allowlist (SoT):
+    /auth/*, /health, /public/*, /blog/*, /news/*
+    """
+    if path == "/health" or path.startswith("/health/"):
+        return True
+    if path == "/auth" or path.startswith("/auth/"):
+        return True
+    if path == "/public" or path.startswith("/public/"):
+        return True
+    if path == "/blog" or path.startswith("/blog/"):
+        return True
+    if path == "/news" or path.startswith("/news/"):
+        return True
+    # docs/openapi sind ohnehin public
+    if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
+        return True
     return False
 
 
-def _unwrap_callable(c: Callable) -> Callable:
-    if isinstance(c, functools.partial):
-        c = c.func  # type: ignore[assignment]
-    while hasattr(c, "__wrapped__"):
-        c = getattr(c, "__wrapped__")  # type: ignore[assignment]
-    return c
-
-
-def _callable_name(c: Callable) -> str:
-    c = _unwrap_callable(c)
-    return getattr(c, "__name__", c.__class__.__name__)
-
-
-def _iter_dependency_calls(route: APIRoute) -> Iterable[Callable]:
-    """
-    Traversiert route.dependant.dependencies rekursiv.
-    """
-    stack = list(getattr(route, "dependant").dependencies)
-    while stack:
-        dep = stack.pop()
-        call = getattr(dep, "call", None)
-        if callable(call):
-            yield call
-        nested = getattr(dep, "dependencies", None)
-        if nested:
-            stack.extend(list(nested))
-
-
 def _collect_dep_names(route: APIRoute) -> Set[str]:
-    return {_callable_name(c) for c in _iter_dependency_calls(route)}
+    """
+    Sammelt __name__ der Dependencies (rekursiv).
+    """
+    names: Set[str] = set()
+
+    def walk(dep: Dependant | None) -> None:
+        if dep is None:
+            return
+        call = getattr(dep, "call", None)
+        if call is not None:
+            n = getattr(call, "__name__", None)
+            if n:
+                names.add(str(n))
+        for child in getattr(dep, "dependencies", []) or []:
+            walk(child)
+
+    walk(getattr(route, "dependant", None))
+
+    # Security-Reqs (wenn genutzt)
+    try:
+        for req in route.dependant.security_requirements:  # type: ignore[attr-defined]
+            scheme = getattr(req, "security_scheme", None)
+            if scheme is None:
+                continue
+            cls = getattr(scheme, "__class__", None)
+            if cls is not None:
+                names.add(getattr(cls, "__name__", ""))
+            scheme_name = getattr(scheme, "scheme_name", None)
+            if scheme_name:
+                names.add(str(scheme_name))
+    except Exception:
+        pass
+
+    return {n for n in names if n}
 
 
 def test_rbac_guard_coverage_deny_by_default() -> None:
@@ -129,6 +132,8 @@ def test_rbac_guard_coverage_deny_by_default() -> None:
             continue
 
         path = r.path
+
+        # Public darf ohne Auth sein
         if _is_public_path(path):
             continue
 
@@ -139,7 +144,7 @@ def test_rbac_guard_coverage_deny_by_default() -> None:
             for m in sorted(r.methods or []):
                 missing.append((m, path, "Auth-Gate fehlt (z.B. forbid_moderator/get_actor/require_roles/...)"))
 
-        # 2) Moderator block (außer Blog/News)
+        # 2) Moderator block (außer Allowlist)
         if not _is_moderator_allowed_path(path):
             if dep_names.isdisjoint(MODERATOR_BLOCK_GATES):
                 for m in sorted(r.methods or []):
