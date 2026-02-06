@@ -1,7 +1,7 @@
 # docs/01_DECISIONS.md
 # LifeTimeCircle – Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
-Stand: 2026-02-05
+Stand: 2026-02-06
 
 > Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
 > Regel: Wenn etwas nicht explizit erlaubt ist → **deny-by-default**.
@@ -61,3 +61,17 @@ Stand: 2026-02-05
 **Status:** beschlossen  
 **Warum:** `tid` ist erratbar/teilbar; Status darf nicht für beliebige `vip|dealer` lesbar sein (ID-Leak via `initiator_user_id` / `redeemed_by_user_id`).  
 **Konsequenz:** `GET /sale/transfer/status/{tid}` zusätzlich zum Role-Gate (`vip|dealer`) nur wenn Actor **Initiator** oder **Redeemer** ist; sonst **403**. Tests müssen das explizit abdecken.
+
+---
+
+## D-009: Actor Source of Truth (serverseitig, DEV-Headers gated)
+**Status:** beschlossen  
+**Warum:** Client/Headers sind manipulierbar; Actor/Claims müssen serverseitig konsistent und vertrauenswürdig bestimmt werden.  
+**Konsequenz:** Zentraler Actor-Resolver ist **serverseitige SoT**; DEV/Test-Header-Override ist **hart gated** (nur DEV/Test), in Produktion deaktiviert/ignoriert.
+
+---
+
+## D-010: VIP Business Staff-Limit + SUPERADMIN Gate
+**Status:** beschlossen  
+**Warum:** Staff-Accounts sind ein Rechte-/Angriffsvektor; least privilege und Kosten-/Missbrauchsschutz.  
+**Konsequenz:** VIP-Gewerbe ist auf **max. 2 Staff-Accounts** limitiert; Freigabe/Erhöhung/Änderung der Staff-Zuordnung ist **nur `superadmin`** erlaubt. Tests müssen das Limit und das Gate abdecken.
