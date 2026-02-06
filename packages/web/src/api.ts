@@ -1,8 +1,4 @@
----
-
-**packages/web/src/api.ts**
-```ts
-export type ApiBody = unknown | string;
+﻿export type ApiBody = unknown | string;
 
 export type ApiResult =
   | {
