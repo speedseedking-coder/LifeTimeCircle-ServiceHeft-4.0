@@ -13,6 +13,7 @@ function Get-RepoRoot {
     $root = (git rev-parse --show-toplevel 2>$null).Trim()
     if ($LASTEXITCODE -eq 0 -and $root) { return $root }
   } catch {}
+  if ($PSScriptRoot) { return (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path }
   return (Get-Location).Path
 }
 
@@ -56,14 +57,15 @@ $need54 = -not ([regex]::IsMatch($text2, "(?m)PR\s*#54\b"))
 
 $insertLines = @()
 if ($need54) {
-  $insertLines += "✅ PR #54 gemerged: `fix(web): add mandatory Public QR disclaimer`"
-  $insertLines += "✅ Public QR: Pflichttext (exakt) in `packages/web/src/pages/PublicQrPage.tsx`"
-  $insertLines += "✅ Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)"
+  # Single-Quotes absichtlich: Backticks sollen literal bleiben (Markdown)
+  $insertLines += '✅ PR #54 gemerged: `fix(web): add mandatory Public QR disclaimer`'
+  $insertLines += '✅ Public QR: Pflichttext (exakt) in `packages/web/src/pages/PublicQrPage.tsx`'
+  $insertLines += '✅ Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)'
 }
 if ($need53) {
-  $insertLines += "✅ PR #53 gemerged: `chore(web): add web smoke toolkit script`"
-  $insertLines += "✅ Public QR Landing: `packages/web/src/pages/PublicQrPage.tsx` + App-Route `/qr/<vehicleId>`"
-  $insertLines += "✅ Script: `server/scripts/ltc_web_toolkit.ps1` (quiet kill-node; optional -Clean; npm ci + build)"
+  $insertLines += '✅ PR #53 gemerged: `chore(web): add web smoke toolkit script`'
+  $insertLines += '✅ Public QR Landing: `packages/web/src/pages/PublicQrPage.tsx` + App-Route `/qr/<vehicleId>`'
+  $insertLines += '✅ Script: `server/scripts/ltc_web_toolkit.ps1` (quiet kill-node; optional -Clean; npm ci + build)'
 }
 
 if ($insertLines.Count -gt 0) {
