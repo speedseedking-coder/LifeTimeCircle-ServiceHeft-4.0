@@ -1,16 +1,16 @@
 # docs/03_RIGHTS_MATRIX.md
 # LifeTimeCircle – Service Heft 4.0
 **Rights / RBAC Matrix (SoT)**  
-Stand: 2026-02-05
+Stand: 2026-02-06
 
-> Rollen sind serverseitig enforced. Default: deny-by-default.
+> Rollen sind serverseitig enforced. Default: deny-by-default.  
 > Wenn etwas nicht explizit erlaubt ist → **verboten**.
 
 ---
 
 ## 1. Rollen
 - `superadmin`: Vollzugriff (System, Admin, Support, Debug)
-- `admin`: Admin-Funktionen, Quarantäne-Review, Exports, Management
+- `admin`: Admin-Funktionen, Quarantäne-Review, Exports, Management (ohne Super-Privileges)
 - `dealer`: Business-User (Händler), begrenzte Datenzugriffe, keine Admin/Quarantäne
 - `vip`: Premium-Enduser, erweiterte Einsichten (aber kein Admin/Quarantäne)
 - `user`: Standard-Enduser
@@ -21,6 +21,7 @@ Stand: 2026-02-05
 ## 2. Globale Regeln
 - **deny-by-default**: jede Route muss explizit gated sein
 - **Actor required**: ohne Actor → **401**
+- **Actor SoT**: Actor/Claims werden serverseitig zentral bestimmt; DEV/Test-Overrides sind **hart gated**
 - **Moderator hard-block**: überall außer Blog/News → **403**
 - **Exports**: nur redacted für Nicht-Admins; Dokument-Refs nur `APPROVED`
 - **Uploads**: Quarantine-by-default; `APPROVED` nur nach Scan `CLEAN`
@@ -33,7 +34,6 @@ Stand: 2026-02-05
   - iteriert über **alle registrierten Routes** (Runtime-Scan)
   - Allowlist (ohne 403): `/auth/*`, `/health`, `/public/*`, `/blog/*`, `/news/*`
   - außerhalb der Allowlist muss `moderator` **403** bekommen
-  - Blog/News-Test ist bewusst **skipped**, solange `/blog|/news` Routes noch nicht existieren
 
 ---
 
@@ -97,3 +97,10 @@ Stand: 2026-02-05
 ## 7. VIP-Gewerbe (Staff-Limit & Freigabe)
 - VIP-Gewerbe darf **max. 2 Staff-Accounts** haben.
 - **Freigabe/Erhöhung/Änderung** der Staff-Zuordnung ist **nur `superadmin`** erlaubt.
+- `admin` ist hier bewusst **nicht** ausreichend (least privilege).
+
+---
+
+## 8. DEV/Test Overrides (hart gated)
+- DEV/Test-Header-Overrides (Actor/Claims) sind nur erlaubt, wenn das Gate aktiv ist (DEV/Test).
+- In Produktion sind Overrides deaktiviert/ignoriert.
