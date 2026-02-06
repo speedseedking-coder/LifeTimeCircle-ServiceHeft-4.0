@@ -1,4 +1,4 @@
-﻿# docs/99_MASTER_CHECKPOINT.md
+# docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-06** (Europe/Berlin)
@@ -13,6 +13,13 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #54 gemerged: `fix(web): add mandatory Public QR disclaimer`
+✅ Public QR: Pflichttext (exakt) in `packages/web/src/pages/PublicQrPage.tsx`
+✅ Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)
+✅ PR #53 gemerged: `chore(web): add web smoke toolkit script`
+✅ Public QR Landing: `packages/web/src/pages/PublicQrPage.tsx` + App-Route `/qr/<vehicleId>`
+✅ Script: `server/scripts/ltc_web_toolkit.ps1` (quiet kill-node; optional -Clean; npm ci + build)
+
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)  
 ✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
