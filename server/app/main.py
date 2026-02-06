@@ -1,17 +1,16 @@
-from app.routers import servicebook
-from app.routers import documents
-from app.routers import blog
-from app.routers import news
+from __future__ import annotations
 
-# server/app/main.py
-from app.guards import forbid_moderator
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 
+from app.auth.routes import router as auth_router
+from app.admin.routes import router as admin_router
 from app.core.config import get_settings
 from app.db.session import init_db
+from app.guards import forbid_moderator
+from app.public.routes import router as public_router
 from app.routers.consent import router as consent_router
 from app.routers.documents import router as documents_router
 from app.routers.export import router as export_router
@@ -19,9 +18,9 @@ from app.routers.export_servicebook import router as export_servicebook_router
 from app.routers.export_vehicle import router as export_vehicle_router
 from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.sale_transfer import router as sale_transfer_router
-from app.auth.routes import router as auth_router
-from app.admin.routes import router as admin_router
-from app.public.routes import router as public_router
+
+# Package-Module Router (ohne documents!)
+from app.routers import servicebook, blog, news
 
 
 def create_app() -> FastAPI:
@@ -47,6 +46,24 @@ def create_app() -> FastAPI:
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
 
+    app.include_router(admin_router)
+    app.include_router(public_router)
+
+    app.include_router(export_vehicle_router)
+    app.include_router(export_servicebook_router)
+
+    app.include_router(consent_router)
+    app.include_router(sale_transfer_router)
+
+    # ✅ Documents NUR EINMAL
+    app.include_router(documents_router)
+
+    app.include_router(servicebook.router)
+
+    # Blog/News (public)
+    app.include_router(blog.router)
+    app.include_router(news.router)
+
     @app.get("/health", include_in_schema=False, dependencies=[Depends(forbid_moderator)])
     def health() -> dict:
         return {"ok": True}
@@ -58,19 +75,6 @@ def create_app() -> FastAPI:
         if settings.env == "dev":
             return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
         return JSONResponse(status_code=500, content={"error": "internal_error"})
-
-    app.include_router(admin_router)
-    app.include_router(public_router)
-    app.include_router(export_vehicle_router)
-    app.include_router(export_servicebook_router)
-    app.include_router(consent_router)
-    app.include_router(sale_transfer_router)
-    app.include_router(documents_router)
-    app.include_router(servicebook.router)
-    app.include_router(documents.router)
-    # Blog/News (public)
-    app.include_router(blog.router)
-    app.include_router(news.router)
 
     return app
 
