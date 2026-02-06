@@ -1,6 +1,9 @@
+
+```md
+# docs/04_REPO_STRUCTURE.md
 # LifeTimeCircle – Service Heft 4.0
 **Repo-Struktur / Source of Truth (SoT)**  
-Stand: 2026-02-05
+Stand: 2026-02-06
 
 > Ziel: klare Pfade, keine Altversionen, keine Duplikate.
 
@@ -20,6 +23,7 @@ docs/
 03_RIGHTS_MATRIX.md
 04_REPO_STRUCTURE.md
 06_WORK_RULES.md
+07_MVP_DONE.md
 99_MASTER_CHECKPOINT.md
 server/
 app/
@@ -32,10 +36,12 @@ tests/
 scripts/
 data/ (runtime)
 storage/ (runtime)
+packages/
+web/
+(React+Vite, lokal, optional)
 .github/
 workflows/
 ci.yml
-
 
 ---
 
@@ -51,6 +57,9 @@ ci.yml
 ## 4. Runtime-Verzeichnisse (nicht versionieren)
 - `server/data/` (SQLite DB)
 - `server/storage/` (Uploads)
+- `packages/web/node_modules/`
+- `packages/web/dist/`
+- `packages/web/.vite/`
 
 ---
 
@@ -61,3 +70,13 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0"
 
 # Status
 git status
+
+# API (Backend)
+cd ".\server"
+$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"
+poetry run uvicorn app.main:app --reload
+
+# Web (Frontend)
+cd "..\packages\web"
+npm install
+npm run dev
