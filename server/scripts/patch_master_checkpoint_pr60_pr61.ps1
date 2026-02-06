@@ -3,6 +3,7 @@
 # - docs/99_MASTER_CHECKPOINT.md: Stand -> 2026-02-07 (Europe/Berlin)
 # - entfernt "## In Arbeit (dieser Branch) ..." Block (falls vorhanden)
 # - fügt PR #60/#61 unter "## Aktueller Stand (main)" ein (ohne Duplikate)
+# - FIX: Backticks bleiben erhalten (Markdown Inline-Code)
 # PowerShell 7+
 
 Set-StrictMode -Version Latest
@@ -29,10 +30,10 @@ function Get-RepoRoot([string]$fallbackPath) {
   try {
     $top = (& git rev-parse --show-toplevel 2>$null)
     if ($LASTEXITCODE -eq 0 -and $top -and $top.Trim().Length -gt 0) {
-      return (Resolve-Path $top.Trim())
+      return (Resolve-Path $top.Trim()).Path
     }
   } catch { }
-  return (Resolve-Path $fallbackPath)
+  return (Resolve-Path $fallbackPath).Path
 }
 
 $basePath = if ($PSScriptRoot -and $PSScriptRoot.Trim().Length -gt 0) {
@@ -48,11 +49,11 @@ $mcPath = Join-Path $repoRoot "docs/99_MASTER_CHECKPOINT.md"
 $raw = Read-File $mcPath
 $orig = $raw
 
-# Stand aktualisieren (nur die Master-Header-Zeile)
+# Stand aktualisieren (idempotent)
 $raw = [regex]::Replace(
   $raw,
-  '(?ms)^\# docs/99_MASTER_CHECKPOINT\.md\s*\n\# LifeTimeCircle – Service Heft 4\.0\s*\n\*\*MASTER CHECKPOINT \(SoT\)\*\*\s*\nStand:\s*\*\*.*?\*\*.*?\n',
-  "# docs/99_MASTER_CHECKPOINT.md`n# LifeTimeCircle – Service Heft 4.0`n**MASTER CHECKPOINT (SoT)**`nStand: **2026-02-07** (Europe/Berlin)`n"
+  '(?m)^Stand:\s*\*\*.*?\*\*\s*\(Europe\/Berlin\)\s*$',
+  'Stand: **2026-02-07** (Europe/Berlin)'
 )
 
 # "In Arbeit (dieser Branch)" Block entfernen (falls vorhanden)
@@ -62,31 +63,30 @@ $raw = [regex]::Replace(
   "`n"
 )
 
-# Bestehende PR #60/#61 Einträge entfernen (idempotent)
-$raw = [regex]::Replace($raw, '(?m)^\s*✅\s*PR\s*#60.*(?:\n(?!\s*✅\s*PR\s*#\d+).*)*', '')
-$raw = [regex]::Replace($raw, '(?m)^\s*✅\s*PR\s*#61.*(?:\n(?!\s*✅\s*PR\s*#\d+).*)*', '')
+# Bestehende PR #60/#61 Blöcke entfernen (idempotent, robust)
+$raw = [regex]::Replace($raw, '(?ms)^\s*✅\s*PR\s*#60\b.*?(?=^\s*✅\s*PR\s*#\d+\b|^## |\z)', '')
+$raw = [regex]::Replace($raw, '(?ms)^\s*✅\s*PR\s*#61\b.*?(?=^\s*✅\s*PR\s*#\d+\b|^## |\z)', '')
 
-$insert = @"
-✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
-- Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
-- Updates: `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/04_REPO_STRUCTURE.md`, `docs/06_WORK_RULES.md`, `docs/99_MASTER_CHECKPOINT.md`
-- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (Validator; idempotent; keine Änderungen an bestehenden Docs)
-
-✅ PR #61 gemerged: `fix(scripts): make docs unified refresh patch script parseable + safe`
-- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` ist jetzt parsebar und prüft Pflicht-Disclaimer + Kernanker (keine Doc-Rewrites)
-
-"@
+# Insert-Text als Lines (Single-Quotes -> Backticks bleiben literal)
+$insertLines = @(
+  '✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`',
+  '- Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`',
+  '- Updates: `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/04_REPO_STRUCTURE.md`, `docs/06_WORK_RULES.md`, `docs/99_MASTER_CHECKPOINT.md`',
+  '- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (Validator; idempotent; keine Änderungen an bestehenden Docs)',
+  '',
+  '✅ PR #61 gemerged: `fix(scripts): make docs unified refresh patch script parseable + safe`',
+  '- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` ist jetzt parsebar und prüft Pflicht-Disclaimer + Kernanker (keine Doc-Rewrites)',
+  ''
+)
+$insert = ($insertLines -join "`n")
 
 if ($raw -notmatch '(?m)^## Aktueller Stand \(main\)\s*$') {
   throw "MASTER_CHECKPOINT missing header: ## Aktueller Stand (main)"
 }
 
-# Insert direkt nach Header
-$raw = [regex]::Replace(
-  $raw,
-  '(?m)^## Aktueller Stand \(main\)\s*$',
-  ("## Aktueller Stand (main)`n" + $insert).TrimEnd()
-)
+# Insert direkt nach Header (idempotent, da PR-Blöcke vorher entfernt wurden)
+$re = [regex]'(?m)^## Aktueller Stand \(main\)\s*$'
+$raw = $re.Replace($raw, ("## Aktueller Stand (main)`n$insert").TrimEnd(), 1)
 
 $raw = Normalize-Lf $raw
 
