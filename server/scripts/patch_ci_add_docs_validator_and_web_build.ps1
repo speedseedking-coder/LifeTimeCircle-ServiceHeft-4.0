@@ -1,19 +1,24 @@
+# server/scripts/patch_ci_add_docs_validator_and_web_build.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Resolve-RepoRoot {
   $start = $PSScriptRoot
   if ([string]::IsNullOrWhiteSpace($start)) { $start = (Get-Location).Path }
-  $dir = Resolve-Path -LiteralPath $start
+
+  $current = (Resolve-Path -LiteralPath $start).Path
 
   while ($true) {
-    $gitDir = Join-Path $dir ".git"
-    $mc = Join-Path $dir "docs\99_MASTER_CHECKPOINT.md"
-    if ((Test-Path -LiteralPath $gitDir) -or (Test-Path -LiteralPath $mc)) { return $dir.Path }
+    $gitDir = Join-Path $current ".git"
+    $mc = Join-Path $current "docs/99_MASTER_CHECKPOINT.md"
 
-    $parent = Split-Path -LiteralPath $dir.Path -Parent
-    if ([string]::IsNullOrWhiteSpace($parent) -or ($parent -eq $dir.Path)) { break }
-    $dir = Resolve-Path -LiteralPath $parent
+    if ((Test-Path -LiteralPath $gitDir) -or (Test-Path -LiteralPath $mc)) {
+      return $current
+    }
+
+    $parent = [System.IO.Directory]::GetParent($current)
+    if ($null -eq $parent) { break }
+    $current = $parent.FullName
   }
 
   throw "Repo root not found (expected .git or docs/99_MASTER_CHECKPOINT.md). Start=$start"
@@ -31,7 +36,7 @@ function Write-TextFile([string]$Path, [string]$Text) {
 }
 
 function Find-WorkflowFile([string]$RepoRoot) {
-  $wfDir = Join-Path $RepoRoot ".github\workflows"
+  $wfDir = Join-Path $RepoRoot ".github/workflows"
   if (-not (Test-Path -LiteralPath $wfDir)) { throw "Missing workflows dir: $wfDir" }
 
   $candidates = @()
@@ -128,6 +133,7 @@ function Ensure-CiSteps([string[]]$Lines, [string]$Nl) {
   }
   if ($anchor -lt 0) { throw "Could not find insertion point (no checkout step, no steps:)" }
 
+  # 1) Docs validator
   if ($raw -notmatch "patch_docs_unified_final_refresh\.ps1") {
     $docsStep = @(
       ($stepIndent + "- name: LTC docs unified validator"),
@@ -139,6 +145,7 @@ function Ensure-CiSteps([string[]]$Lines, [string]$Nl) {
     $raw = ($Lines -join $Nl)
   }
 
+  # 2) Node setup
   if ($raw -notmatch "actions/setup-node@") {
     $nodeStep = @(
       ($stepIndent + "- name: Setup Node (web)"),
@@ -154,7 +161,8 @@ function Ensure-CiSteps([string[]]$Lines, [string]$Nl) {
     $raw = ($Lines -join $Nl)
   }
 
-  if ($raw -notmatch "working-directory:\s*packages/web" -and $raw -notmatch "@lifetimecircle/web") {
+  # 3) Web build
+  if ($raw -notmatch "working-directory:\s*packages/web" -and $raw -notmatch "npm run build") {
     $webStep = @(
       ($stepIndent + "- name: Web build (packages/web)"),
       ($k + "working-directory: packages/web"),
