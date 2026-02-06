@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 
 type TrustLight = "GREEN" | "YELLOW" | "RED";
@@ -126,6 +126,10 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
       </section>
 
       <TrustAmpelDisclaimer />
-    </main>
+        <div data-testid="public-qr-disclaimer" className="mt-6 rounded-lg border p-3 text-xs opacity-80">
+      Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.
+    </div>
+
+</main>
   );
 }
