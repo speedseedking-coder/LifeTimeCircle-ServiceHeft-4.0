@@ -1,7 +1,7 @@
 # docs/01_DECISIONS.md
 # LifeTimeCircle – Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
-Stand: 2026-02-06
+Stand: **2026-02-06**
 
 > Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
 > Regel: Wenn etwas nicht explizit erlaubt ist → **deny-by-default**.
@@ -64,14 +64,140 @@ Stand: 2026-02-06
 
 ---
 
-## D-009: Actor Source of Truth (serverseitig, DEV-Headers gated)
+## D-009: Produkt ist „Unified“ (kein Parallelzweig „2.0“)
 **Status:** beschlossen  
-**Warum:** Client/Headers sind manipulierbar; Actor/Claims müssen serverseitig konsistent und vertrauenswürdig bestimmt werden.  
-**Konsequenz:** Zentraler Actor-Resolver ist **serverseitige SoT**; DEV/Test-Header-Override ist **hart gated** (nur DEV/Test), in Produktion deaktiviert/ignoriert.
+**Warum:** Doppelspurigkeit erzeugt Drift; ein Produkt, eine Roadmap.  
+**Konsequenz:** Spezifikation liegt zentral in `docs/02_PRODUCT_SPEC_UNIFIED.md` und ist bindend.
 
 ---
 
-## D-010: VIP Business Staff-Limit + SUPERADMIN Gate
+## D-010: Consent ist versioniert + zeitgestempelt, Re-Consent ist blockierend
 **Status:** beschlossen  
-**Warum:** Staff-Accounts sind ein Rechte-/Angriffsvektor; least privilege und Kosten-/Missbrauchsschutz.  
-**Konsequenz:** VIP-Gewerbe ist auf **max. 2 Staff-Accounts** limitiert; Freigabe/Erhöhung/Änderung der Staff-Zuordnung ist **nur `superadmin`** erlaubt. Tests müssen das Limit und das Gate abdecken.
+**Warum:** Rechtssicherheit/DSGVO; nachvollziehbar, welche Version akzeptiert wurde.  
+**Konsequenz:** AGB/Datenschutz speichern: `version` + `accepted_at`; bei neuer Version muss Re-Consent erfolgen, sonst Produkt-Flow gesperrt.
+
+---
+
+## D-011: Paywall-Regel Fahrzeuge (1 gratis, ab 2 kostenpflichtig) ist serverseitig enforced
+**Status:** beschlossen  
+**Warum:** UI-only Sperren sind trivial zu umgehen.  
+**Konsequenz:** Create/Activate eines 2. Fahrzeugs wird serverseitig gegen Plan/Entitlement geprüft (deny-by-default).
+
+---
+
+## D-012: Add-on Gate nur bei Erstaktivierung (Grandfathering)
+**Status:** beschlossen  
+**Warum:** Bestandskunden dürfen keine Funktionsverschlechterung bekommen.  
+**Konsequenz:** Paywall greift nur wenn `addon_first_enabled_at == null`; nach erstem Enable bleibt Add-on für Bestandsfahrzeug nutzbar, auch bei Reaktivierung.
+
+---
+
+## D-013: PII-Workflow blockiert Trust T3 solange offen; bestätigte PII wird automatisch gelöscht
+**Status:** beschlossen  
+**Warum:** PII-Risiko minimieren; Trust darf nicht „grün“ werden, solange PII ungeklärt ist.  
+**Konsequenz:** PII-Status `suspected|confirmed` verhindert T3; `confirmed` triggert Auto-Löschung nach Default 30 Tagen (konfigurierbar).
+
+---
+
+## D-014: Trusted Upload speichert Hash/Checksum als Integritätssignal
+**Status:** beschlossen  
+**Warum:** Nachweisqualität/Manipulationsresistenz; Basis für Trust.  
+**Konsequenz:** Bei Upload wird Hash/Checksum gespeichert und in internen Nachweisen genutzt (public niemals roh dokumentlastig).
+
+---
+
+## D-015: Essentielle Systemlogs sind immutable (OBD/GPS)
+**Status:** beschlossen  
+**Warum:** Nachweiswert entsteht durch Unveränderbarkeit.  
+**Konsequenz:** OBD-Log/GPS-Probefahrt-Log sind nicht lösch-/editierbar; nur Ergänzungen (Dokumentation) erlaubt.
+
+---
+
+## D-016: Zertifikate/Exports haben TTL; Historie bleibt
+**Status:** beschlossen  
+**Warum:** Minimierung von Datenabfluss; Reproduzierbarkeit per neuer Version.  
+**Konsequenz:** Dateien laufen ab/werden gelöscht; der Historie-Eintrag bleibt, neue Version ersetzt Datei, Historie bleibt.
+
+---
+
+## D-017: End-to-End Nutzerfluss ist bindend (Landing → Eintritt → Rollenwahl → Signup → Consent → VIN → Einträge)
+**Status:** beschlossen  
+**Warum:** Ohne durchgängigen Flow entsteht Fragmentierung; Onboarding muss sofort produktiven Wert liefern.  
+**Konsequenz:** Web/Backend müssen den E2E-Flow unterstützen; Spezifikation liegt in `docs/02_PRODUCT_SPEC_UNIFIED.md`.
+
+---
+
+## D-018: Gewerbe-Typen sind Taxonomie für „durchgeführt von“
+**Status:** beschlossen  
+**Warum:** Vergleichbarkeit/Filterbarkeit der Historie; konsistente Darstellung (Werkstatt vs. Gesetzliches vs. Eigenleistung).  
+**Konsequenz:** „durchgeführt von“ nutzt feste Kategorien: Fachwerkstatt, Händler, Autohaus, Reifenservice, Tuning-Fachbetrieb, Sonstiges, Gesetzliches (TÜV/Gutachten/Wertgutachten), Eigenleistung.
+
+---
+
+## D-019: Entry-Pflichtfelder + Optionalfelder + UX-Hinweis sind verbindlich
+**Status:** beschlossen  
+**Warum:** Minimaldaten sichern den roten Faden; optionale Pflege steigert Nachweisqualität.  
+**Konsequenz:** Server erzwingt Pflichtfelder (Datum, Typ, durchgeführt von, Kilometerstand). UI zeigt bei Optionalfeldern stets: „Datenpflege = bessere Trust-Stufe & Verkaufswert“.
+
+---
+
+## D-020: T1/T2/T3 Definition ist normiert (physisches Serviceheft berücksichtigt)
+**Status:** beschlossen  
+**Warum:** Nachträge müssen nachvollziehbar eingestuft werden.  
+**Konsequenz:** T3 = Dokument vorhanden; T2 = physisches Serviceheft vorhanden; T1 = physisches Serviceheft nicht vorhanden.
+
+---
+
+## D-021: Unfallstatus „Unbekannt“ deckelt Trust max. Orange; Grün erfordert Abschluss bei Unfall
+**Status:** beschlossen  
+**Warum:** Unklarheit ist ein Risiko; Grün darf nicht ohne belastbare Nachweise vergeben werden.  
+**Konsequenz:** Public/Intern: „Unbekannt“ begrenzt Trust auf Orange. Bei „Nicht unfallfrei“ ist Grün nur möglich, wenn Unfalltrust abgeschlossen und belegt ist.
+
+---
+
+## D-022: To-dos starten ab Gelb; VIP priorisiert Top 3, Non-VIP sieht komplette Liste
+**Status:** beschlossen  
+**Warum:** Gelb ist „solide, aber optimierbar“; VIP erhält fokussierte Priorisierung.  
+**Konsequenz:** To-dos aktiv ab Gelb. VIP: Top-3 Priorisierung. Non-VIP: vollständige Liste. To-do enthält Systemgrund + optional Owner-Notiz.
+
+---
+
+## D-023: PII-Workflow ist blockierend für T3, Admin-Override auditpflichtig, Auto-Löschung Default 30 Tage
+**Status:** beschlossen  
+**Warum:** DSGVO/PII Risiko minimieren; Trust darf nicht T3 erreichen, solange PII ungeklärt ist.  
+**Konsequenz:** PII suspected/confirmed → nur Owner/Admin sichtbar, T3 blockiert. Admin-Override nur mit Audit. PII confirmed ohne Bereinigung → Auto-Löschung nach Default 30 Tagen.
+
+---
+
+## D-024: PDFs/Zertifikate haben TTL; Datei wird gelöscht, Historie bleibt; Erneuerung erfordert User-Bestätigung
+**Status:** beschlossen  
+**Warum:** Datenabfluss reduzieren; Nachweise bleiben als Historie erhalten; Re-Issuance bewusst.  
+**Konsequenz:** Trust-Zertifikat 90 Tage, Wartungsstand 30 Tage, Inserat-Export 30 Tage (VIP-only), QR-PDF unbegrenzt. Nach Ablauf Datei weg, Historie-Eintrag bleibt. Erneuerung nur nach Bestätigung.
+
+---
+
+## D-025: Benachrichtigungen: Daily Digest + kritisch sofort; VIP Ruhezeiten nur für E-Mail
+**Status:** beschlossen  
+**Warum:** Relevanz ohne Spam; VIP erhält Steuerbarkeit.  
+**Konsequenz:** Digest täglich; kritische Events sofort (u.a. Approvals, essenzielle Löschungen/Plausi-Checks, Abläufe, Unfalltrust nötig, To-dos ab Gelb). VIP kann Ruhezeiten für E-Mail setzen; Free nicht.
+
+---
+
+## D-026: Blog/News Content-Workflow: Entwurf → Review → Publish (Publish final durch Superadmin)
+**Status:** beschlossen  
+**Warum:** Qualitätssicherung + klare Verantwortlichkeit.  
+**Konsequenz:** Moderator erstellt/editiert Entwürfe, Admin reviewed, Superadmin veröffentlicht final. Moderator bleibt strikt auf Blog/News begrenzt.
+
+---
+
+## D-027: Import ist 2-stufig (Validate → Run) mit Report; Dubletten werden übersprungen
+**Status:** beschlossen  
+**Warum:** Fehler müssen vor dem Schreiben sichtbar sein; Transparenz für Datenqualität.  
+**Konsequenz:** Pflicht: Validate-Preview, danach Run. Report ist verpflichtend. Dubletten werden skippt und im Report ausgewiesen.
+
+---
+
+## D-028: Add-on Gate mit Grandfathering ist verbindlich (Neu = addon_first_enabled_at == NULL)
+**Status:** beschlossen  
+**Warum:** Keine Funktionsverschlechterung für Bestandsfahrzeuge; Gate nur für Neu-Aktivierungen.  
+**Konsequenz:** Gate/Paywall greift nur, wenn `addon_first_enabled_at` NULL ist. Sonst bleibt volle Nutzbarkeit erhalten, auch bei Re-Aktivierung. Admin-Schalter: neu erlauben, neu kostenpflichtig, optional admin-only.

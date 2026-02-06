@@ -1,7 +1,7 @@
 # docs/06_WORK_RULES.md
 # LifeTimeCircle – Service Heft 4.0
 **Arbeitsregeln (Chat/Umsetzung) – SoT**  
-Stand: 2026-02-05
+Stand: **2026-02-06** (Europe/Berlin)
 
 Ziel: maximal konkret, produktionsreif, keine Demos, keine Lücken.
 
@@ -12,23 +12,46 @@ Ziel: maximal konkret, produktionsreif, keine Demos, keine Lücken.
 - nicht nachfragen außer zwingend (sonst Defaultannahme)
 
 ## Code-Regeln
-- Keine ZIPs. Nur Code.
-- Code immer: vollständiger Dateipfad + kompletter Dateiinhalt.
+- Keine ZIPs.
+- Wenn Code/Dateien: immer **vollständiger Dateipfad + kompletter Dateiinhalt**.
 - Keine Platzhalter.
 - Keine halben Snippets.
-- Wenn zu lang: Block 1/n … n/n.
+- Wenn zu lang: **Block 1/n … n/n**.
 
-## Security / Policy
-- Default: deny-by-default + least privilege
-- RBAC serverseitig enforced
-- Moderator strikt nur Blog/News (überall sonst 403)
-- Keine PII/Secrets in Logs/Responses
+## Source of Truth (SoT)
+- **./docs** ist SoT (keine Altpfade, keine Parallel-Spezifikationen).
+- Immer zuerst lesen/prüfen: `docs/99_MASTER_CHECKPOINT.md`
+- Produkt-Spezifikation (bindend): `docs/02_PRODUCT_SPEC_UNIFIED.md`
 
-## Public-QR Pflichttext (exakt)
+## Konflikt-Priorität (wenn etwas widerspricht)
+1) `docs/99_MASTER_CHECKPOINT.md`
+2) `docs/02_PRODUCT_SPEC_UNIFIED.md`
+3) `docs/03_RIGHTS_MATRIX.md`
+4) `docs/01_DECISIONS.md`
+5) `server/` (Implementierung)
+6) Backlog/sonstiges
+
+## Security / Policy (nicht verhandelbar)
+- Default: **deny-by-default + least privilege**
+- RBAC **serverseitig enforced** + **object-level checks**
+- **Moderator strikt nur Blog/News** (sonst überall 403)
+- **Keine PII/Secrets** in Logs/Responses/Exports
+
+## Doku-Disziplin (damit nichts vergessen geht)
+Jede Feature-/Policy-/Flow-Änderung erfordert Update in `./docs`:
+- `docs/99_MASTER_CHECKPOINT.md` (Status + Referenzen/PRs/Scripts)
+- `docs/01_DECISIONS.md` (wenn neue Entscheidung/Regel)
+- `docs/03_RIGHTS_MATRIX.md` (wenn Rollen/Rechte/Flows betroffen)
+- `docs/02_PRODUCT_SPEC_UNIFIED.md` (wenn Userflow/Produktlogik betroffen)
+
+## Env-Hinweis
+- Export/Redaction/HMAC braucht `LTC_SECRET_KEY` (>=16).
+- Tests/DEV setzen ihn explizit.
+
+## Arbeitsmodus
+- Default: **Repo-Root**
+- Nicht nachfragen außer zwingend; sonst Defaultannahmen treffen und direkt liefern:
+  - Commands (rg/Select-String/PowerShell) so, dass sie im Repo-Root laufen
+
+## Public-QR Pflichttext (exakt, unverändert)
 „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
-## Git / Workflow
-- Feature-Branch
-- PR nach main
-- CI muss grün sein (inkl. RBAC-Guard-Tests)
-- Branch Protection: PR-only, strict up-to-date, required checks, linear history
