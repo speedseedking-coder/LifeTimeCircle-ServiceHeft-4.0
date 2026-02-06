@@ -12,18 +12,39 @@ Projekt:
 
 ---
 
-## Aktueller Stand (main)
-✅ Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent)
-✅ PR #58 gemerged: `chore(web): silence npm cache clean --force warning (stderr redirect)`
-✅ Web Smoke Toolkit: `server/scripts/ltc_web_toolkit.ps1` silenced `npm cache clean --force` via `2>$null`
-✅ Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+## Produkt-Spezifikation (Unified) — SoT
+- **Ab jetzt nur noch „LifeTimeCircle · Service Heft (Unified)“** (kein Parallelzweig „2.0“)
+- Vollständige Spezifikation: `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- Spezifikation ist erweitert/finalisiert (E2E-Flow, Trust/Unfalltrust, PII, Module, Transfer/Dealer, PDFs/TTL, Notifications, Import, Packaging) – siehe `docs/02_PRODUCT_SPEC_UNIFIED.md`
 
-✅ PR #54 gemerged: `fix(web): add mandatory Public QR disclaimer`
-✅ Public QR: Pflichttext (exakt) in `packages/web/src/pages/PublicQrPage.tsx`
-✅ Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)
-✅ PR #53 gemerged: `chore(web): add web smoke toolkit script`
-✅ Public QR Landing: `packages/web/src/pages/PublicQrPage.tsx` + App-Route `/qr/<vehicleId>`
-✅ Script: `server/scripts/ltc_web_toolkit.ps1` (quiet kill-node; optional -Clean; npm ci + build)
+---
+
+## Aktueller Stand (main)
+✅ PR #54: `fix(web): add mandatory Public QR disclaimer`
+- Pflichttext ist exakt in `packages/web/src/pages/PublicQrPage.tsx`:
+  - „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+- Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)
+
+✅ PR #53: `chore(web): add web smoke toolkit script`
+- Script: `server/scripts/ltc_web_toolkit.ps1`
+  - quiet kill-node
+  - optional `-Clean`
+  - `npm ci` + `npm run build`
+
+✅ PR #57: `docs: master checkpoint 2026-02-06 (PR #53/#54)`
+- Script: `server/scripts/patch_master_checkpoint_pr53_pr54.ps1` (idempotent; Single-Quotes fix für Backticks)
+
+✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
+- `server/scripts/ltc_web_toolkit.ps1` enthält:
+  - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
+- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+
+✅ PR #59: `docs: master checkpoint add PR #58`
+- Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM, newline/trailing newline stabil)
+
+✅ Docs Refresh: Unified Final Spec (SoT Alignment)
+- Updates: `docs/02_PRODUCT_SPEC_UNIFIED.md`, `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/06_WORK_RULES.md`
+- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (idempotent)
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)  
@@ -62,7 +83,6 @@ Paths / URLs:
 
 Gotchas:
 - API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
-- Vite nicht mit `q` beenden, wenn Web laufen soll.
 - In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). Für Commands extra Tab.
 
 Start (2 Tabs/Fenster A=API, B=WEB):
@@ -74,12 +94,11 @@ Start (2 Tabs/Fenster A=API, B=WEB):
   - `cd C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\packages\web`
   - `npm install` (einmalig)
   - `npm run dev`
-  - Browser: `http://127.0.0.1:5173/` (oder `o`+Enter in Vite)
+  - Browser: `http://127.0.0.1:5173/`
 
-Checks:
-- `Test-NetConnection 127.0.0.1 -Port 8000`
-- `Test-NetConnection 127.0.0.1 -Port 5173`
-- `Invoke-WebRequest "http://127.0.0.1:5173/api/public/site" -UseBasicParsing | Select-Object StatusCode`
+Web Smoke (Build):
+- Root:
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_web_toolkit.ps1 -Smoke -Clean`
 
 ---
 
@@ -87,18 +106,8 @@ Checks:
 Thema:
 - FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
 
-Ursache:
-- Documents-Router wurde in `server/app/main.py` doppelt registriert:
-  - einmal via `documents_router` (`from app.routers.documents import router as documents_router`)
-  - zusätzlich nochmal über `from app.routers import documents` (und dann `documents.router`)
-
 Fix (PR #36):
 - `server/app/main.py`: Documents-Router **nur 1x** via `include_router(...)`
-- `server/app/routers/__init__.py`: Exporte bereinigt (documents nicht mehr im `__all__` / nicht mehr importiert)
-
-Verifikation (lokal):
-- Route-Dedupe-Check: `DUP_ROUTES_COUNT = 0` (via `from app.main import app`, unique route signature check)
-- `curl http://127.0.0.1:8000/openapi.json` triggert keine Duplicate-Warnungen mehr im Server-Fenster
 
 ---
 
@@ -107,49 +116,22 @@ Public Router:
 - `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
 - `GET /news` + `GET /news/` + `GET /news/{slug}`
 
-Files:
-- `server/app/routers/blog.py`
-- `server/app/routers/news.py`
-- `server/app/routers/__init__.py`
-- `server/app/main.py` → `app.include_router(blog.router)` + `app.include_router(news.router)`
-
 ---
 
 ## P0: Actor Source of Truth — DONE (main)
-**Ziel:** Actor-Identität/Claims sind **serverseitig** die Quelle der Wahrheit (kein Client-Trust, kein inkonsistentes Actor-Mapping).
-
 Regeln:
-- Actor wird serverseitig zentral bestimmt (einheitlicher Pfad für alle Router/Dependencies).
-- Ohne Actor → **401** (unauth).
-- DEV/Test: optionaler Header-Override ist **gated** (nur in DEV/Test erlaubt, nicht in Produktion).
-
-Files (repräsentativ):
-- `server/app/auth/actor.py`
-- `server/scripts/patch_actor_source_of_truth_p0.ps1`
-
----
-
-## P0: VIP Business Staff-Limit + SUPERADMIN Gate — DONE (main)
-**Ziel:** VIP-Gewerbe kann nicht unkontrolliert Staff-Accounts aufblasen; sensitive Staff-Verwaltung ist least-privilege.
-
-Regeln:
-- VIP-Gewerbe: **max. 2 Staff-Accounts**.
-- Staff-Zuordnung/Freigabe/Erhöhung/Änderung: **nur `superadmin`**.
-
-Files (repräsentativ):
-- `server/app/admin/routes.py`
-- `server/tests/test_vip_business_staff_limit.py`
+- Actor wird serverseitig zentral bestimmt.
+- Ohne Actor → **401**.
+- DEV/Test: Header-Override ist **gated** (nicht in Produktion).
 
 ---
 
 ## P0: Uploads Quarantäne (Documents) — DONE (main)
-**Ziel:** Uploads werden serverseitig **niemals** automatisch ausgeliefert, bevor Admin-Freigabe erfolgt.
-
 Workflow:
 - Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
-- Admin kann `scan_status` setzen: `CLEAN` oder `INFECTED`
+- Admin setzt `scan_status`: `CLEAN` oder `INFECTED`
 - `INFECTED` erzwingt `approval_status=REJECTED`
-- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409 not_scanned_clean**)
+- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409**)
 
 Download-Regeln:
 - **User/VIP/Dealer**: nur wenn `APPROVED` **und** Scope/Owner passt (object-level)
@@ -170,17 +152,14 @@ Regeln:
 ## RBAC (SoT)
 - Default: **deny-by-default**
 - **Actor required**: ohne Actor → **401**
-- **Actor SoT**: Actor wird serverseitig zentral bestimmt; DEV/Test-Header nur gated
 - **Moderator**: strikt nur **Blog/News**; sonst überall **403**
 
-### Allowlist für MODERATOR (ohne 403)
+Allowlist Moderator (ohne 403):
 - `/auth/*`
 - `/health`
 - `/public/*`
 - `/blog/*`
 - `/news/*`
-
-Alles andere: **403**.
 
 ---
 
