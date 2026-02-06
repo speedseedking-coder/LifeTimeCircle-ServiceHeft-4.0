@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.auth.routes import router as auth_router
 from app.admin.routes import router as admin_router
@@ -38,8 +38,7 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json" if settings.env != "prod" else None,
         lifespan=lifespan,
     )
-
-    # Router
+# Router
     app.include_router(auth_router)
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
@@ -75,3 +74,14 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+
+# LTC-AUTO: root-redirect begin
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/public/site")
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
+# LTC-AUTO: root-redirect end
