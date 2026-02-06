@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 type HealthResult = {
   ok: boolean;
   detail?: string;
@@ -51,9 +50,9 @@ export default function App() {
   return (
     <div className="container">
       <div className="card">
-        <div className="h1">LifeTimeCircle – Service Heft 4.0 (Web)</div>
+        <div className="h1">LifeTimeCircle â€“ Service Heft 4.0 (Web)</div>
         <div className="muted">
-          Vite läuft auf <b>127.0.0.1:5173</b>. Proxy: <b>/api → 127.0.0.1:8000</b>.
+          Vite lÃ¤uft auf <b>127.0.0.1:5173</b>. Proxy: <b>/api â†’ 127.0.0.1:8000</b>.
         </div>
 
         <hr />
@@ -62,12 +61,12 @@ export default function App() {
           <div className="card">
             <div className="badge">
               <span>API</span>
-              <b>{health ? (health.ok ? "OK" : "FAIL") : "…"}</b>
+              <b>{health ? (health.ok ? "OK" : "FAIL") : "â€¦"}</b>
             </div>
 
             <div className="kv">
               <div>Letzter Check</div>
-              <div>{lastChecked || "—"}</div>
+              <div>{lastChecked || "â€”"}</div>
 
               <div>Proxy</div>
               <div><code>/api</code></div>
@@ -82,7 +81,7 @@ export default function App() {
 
             <div style={{ marginTop: 12, display: "flex", gap: 10, alignItems: "center" }}>
               <button onClick={() => void refresh()} disabled={loading}>
-                {loading ? "Prüfe…" : "Neu prüfen"}
+                {loading ? "PrÃ¼feâ€¦" : "Neu prÃ¼fen"}
               </button>
               <span className="muted" style={{ fontSize: 13 }}>
                 Build-Time: {nowIso}
@@ -130,9 +129,9 @@ export default function App() {
             <hr />
 
             <div className="muted" style={{ fontSize: 14 }}>
-              Wenn Web läuft, aber API-Check FAIL:
+              Wenn Web lÃ¤uft, aber API-Check FAIL:
               <ul>
-                <li>API läuft auf <code>127.0.0.1:8000</code></li>
+                <li>API lÃ¤uft auf <code>127.0.0.1:8000</code></li>
                 <li>Vite Proxy ist aktiv (<code>/api</code>)</li>
                 <li>Firewall/AV blockiert Localhost nicht</li>
               </ul>
@@ -143,3 +142,4 @@ export default function App() {
     </div>
   );
 }
+
