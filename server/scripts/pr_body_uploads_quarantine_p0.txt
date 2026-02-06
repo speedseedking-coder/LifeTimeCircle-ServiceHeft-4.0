@@ -1,0 +1,11 @@
+SoT:
+- docs/99_MASTER_CHECKPOINT.md (Uploads Quarantine-by-default; Export redaction: nur APPROVED)
+- docs/03_RIGHTS_MATRIX.md (3b Quarantine Workflow: approve/reject nur admin/superadmin; moderator strikt nur Blog/News)
+- docs/01_DECISIONS.md (D-001 deny-by-default; D-002/D-011 moderator; D-016 uploads quarantine)
+
+Merge-Gates:
+- pytest grün (inkl. RBAC-Guard Tests)
+- keine StaticFiles-Mounts/öffentlichen Uploads
+- /documents/* hat forbid_moderator
+- Download/Content für user/vip/dealer nur bei APPROVED
+- admin/quarantine + approve/reject nur admin/superadmin

@@ -1,0 +1,189 @@
+[
+  {
+    "path": "static/assets/css/base.css",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/css/components.css",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/css/pages/auth.css",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/css/pages/hub.css",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/css/pages/serviceheft4.css",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/api.client.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/app.bootstrap.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/auth.client.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/hub.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/modules/planned.module.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/modules/public-check.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/modules/serviceheft4.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/modules/vehicle-id-qr.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/router.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/utils/dom.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/utils/format.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  },
+  {
+    "path": "static/assets/js/utils/storage.js",
+    "size_bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "group": "code-asset",
+    "license_hints": [],
+    "header_spdx": "",
+    "header_keywords": [],
+    "header_has_copyright": false,
+    "notes": "Kein Lizenzhinweis gefunden; Quelle/Lizenz manuell nachziehen."
+  }
+]

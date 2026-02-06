@@ -1,0 +1,12 @@
+dev.db
+storage/
+
+
+# local dumps
+server/data/
+server/scripts/dump_*.ps1
+dump_*.ps1
+# documents quarantine p0
+data/documents.sqlite
+storage/documents/
+storage/documents/**

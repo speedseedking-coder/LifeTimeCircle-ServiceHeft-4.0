@@ -57,4 +57,4 @@ Zweck: Eindeutige Modulübersicht + Tier-Zuordnung (Free/VIP Normal/VIP Gewerbe)
 ## 3) Rollen-/Feature-Sonderregeln (Reminder)
 - Übergabe/Verkauf-QR & interner Verkauf: nur VIP/Dealer.
 - Moderator: nur Blog/News; kein Export; kein Audit; keine PII.
-- VIP-Gewerbe: max. 2 Mitarbeiterplätze; Freigabe nur admin.
+- VIP-Gewerbe: max. 2 Mitarbeiterplätze; Freigabe nur SUPERADMIN.

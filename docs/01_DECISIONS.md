@@ -1,80 +1,63 @@
+# docs/01_DECISIONS.md
 # LifeTimeCircle – Service Heft 4.0
-**Decisions Log (verbindliche Entscheidungen)**  
-Stand: 2026-01-29
+**Entscheidungen / SoT (Decisions Log)**  
+Stand: 2026-02-05
 
-> Regel: Nur Dinge, die wirklich entschieden sind, kommen hier rein.  
-> Alles andere gehört in Backlog/Offen.
+> Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
+> Regel: Wenn etwas nicht explizit erlaubt ist → **deny-by-default**.
 
-## D-001 | Projektname/Überbegriff
-**Datum:** 2026-01-27  
-**Entscheidung:** Projekt/Überbegriff lautet künftig: **„LifeTimeCircle - ServiceHeft 4.0“**.
+---
 
-## D-002 | Produkt-Titel
-**Datum:** 2026-01-27  
-**Entscheidung:** Produkt-Titel: **„Service Heft 4.0“**.
+## D-001: RBAC serverseitig enforced (deny-by-default + least privilege)
+**Status:** beschlossen  
+**Warum:** Client kann manipuliert werden; Rechte müssen im Backend sicher sein.  
+**Konsequenz:** Alle Router haben Dependencies/Gates; Tests prüfen Guard-Coverage.
 
-## D-003 | Branding / Schreibweise
-**Datum:** 2026-01-27  
-**Entscheidung:** Brand: **„LifeTimeCircle“** (zusammengeschrieben).
+---
 
-## D-004 | Anmeldung / Verifizierung
-**Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung via **E-Mail-Login** und **Verifizierung** (Code/Link).
+## D-002: Moderator strikt nur Blog/News
+**Status:** beschlossen  
+**Warum:** Minimierung von Datenzugriff, keine PII, keine Exports.  
+**Konsequenz:** Moderator bekommt überall sonst **403** via Router-Dependency `forbid_moderator`.
 
-## D-005 | AGB & Datenschutz Pflicht
-**Datum:** 2026-01-27  
-**Entscheidung:** Anmeldung nur mit bestätigten **AGB** und **Datenschutz** (Version + Timestamp speichern).
+---
 
-## D-006 | Produktionsreife (keine Demo)
-**Datum:** 2026-01-27  
-**Entscheidung:** Umsetzung **produktionsreif**, kein Demo-Charakter.
+## D-003: Export redacted (PII minimieren, Dokumente nur approved)
+**Status:** beschlossen  
+**Warum:** Exports sind riskant (Datenabfluss).  
+**Konsequenz:** Redaction-Store filtert Dokument-Refs nur auf `APPROVED`.
 
-## D-007 | Verkauf/Übergabe-QR & interner Verkauf eingeschränkt
-**Datum:** 2026-01-27  
-**Entscheidung:** Übergabe/Verkauf nur **VIP** und **Dealer**.
+---
 
-## D-008 | Public-QR Mini-Check: Ampelsystem & Bedeutung
-**Datum:** 2026-01-27  
-**Entscheidung:** Ampel **Rot/Orange/Gelb/Grün** bewertet **nur** Dokumentations-/Nachweisqualität (nie technischen Zustand).  
-**Pflicht-Disclaimer (Public, exakte Copy):**  
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+## D-004: Uploads Quarantäne-by-default
+**Status:** beschlossen  
+**Warum:** Uploads sind Angriffspfad (Malware, PII, ungewollte Inhalte).  
+**Konsequenz:** Neu hochgeladene Dokumente sind `PENDING/QUARANTINED`; Auslieferung/Export nur bei `APPROVED`.
 
-## D-009 | Public-QR Mini-Check: Kriterien
-**Datum:** 2026-01-27  
-**Entscheidung:** Kriterien:
-- Historie vorhanden
-- Verifizierungsgrad (T1/T2/T3)
-- Aktualität/Regelmäßigkeit
-- Unfalltrust: **Grün** bei Unfall nur bei **Abschluss + Belegen**
+---
 
-## D-010 | VIP-Gewerbe Mitarbeiterplätze
-**Datum:** 2026-01-27  
-**Entscheidung:** VIP-Gewerbe: max **2** Staff. Freigabe nur **SUPERADMIN**.
+## D-005: Admin-Only Quarantäne Review (Approve/Reject/List)
+**Status:** beschlossen  
+**Warum:** Review ist sicherheitskritisch; least privilege.  
+**Konsequenz:** Nur `admin/superadmin` dürfen Quarantäne-Liste sehen und Approve/Reject ausführen.
 
-## D-011 | Moderatoren: Zugriff
-**Datum:** 2026-01-27  
-**Entscheidung:** MODERATOR nur Blog/News; keine PII; kein Export; kein Audit.
+---
 
-## D-012 | Landingpage Layout-Standard
-**Datum:** 2026-01-25  
-**Entscheidung:** Login-Panel Default **links**.
+## D-006: Actor required liefert 401 (unauth) statt 403
+**Status:** beschlossen  
+**Warum:** Semantik sauber: unauth → 401, auth-but-forbidden → 403.  
+**Konsequenz:** `require_actor` wirft 401, nicht 403.
 
-## D-013 | Blogbase + Newsletter
-**Datum:** 2026-01-27  
-**Entscheidung:** Blogbase (Admin-News) + Newsletter.
+---
 
-## D-014 | Projekt-Kontakt-E-Mail
-**Datum:** 2026-01-27  
-**Entscheidung:** Kontakt: **lifetimecircle@online.de**
+## D-007: Upload-Scan Hook + Approve nur bei CLEAN
+**Status:** beschlossen  
+**Warum:** Quarantäne ohne Scan ist zu schwach; Freigabe nur nach Scan.  
+**Konsequenz:** `scan_status` Feld + `approve` nur wenn `CLEAN`, sonst 409; Admin-Rescan Endpoint; INFECTED auto-reject.
 
-## D-015 | Security Baseline: deny-by-default + least privilege + serverseitiges RBAC
-**Datum:** 2026-01-29  
-**Entscheidung:** Standard ist **deny-by-default** und **least privilege**. Rechte werden **serverseitig** erzwungen.
+---
 
-## D-016 | Logs/Audit/PII: keine Secrets/keine Klartext-PII, Pseudonymisierung via HMAC
-**Datum:** 2026-01-29  
-**Entscheidung:** In Logs/Audit/Exports keine Secrets, keine Klartext-PII. Pseudonymisierung via **HMAC** (kein unsalted SHA).
-
-## D-017 | Export-Regel: Standard redacted, Full Export nur SUPERADMIN + Audit + TTL/Limit + Verschlüsselung
-**Datum:** 2026-01-29  
-**Entscheidung:** Export default **redacted**. Full Export nur **SUPERADMIN** + **Audit** + **TTL/Limit** + **Verschlüsselung**.
+## D-008: Sale/Transfer Status nur für Initiator oder Redeemer (object-level RBAC)
+**Status:** beschlossen  
+**Warum:** `tid` ist erratbar/teilbar; Status darf nicht für beliebige `vip|dealer` lesbar sein (ID-Leak via `initiator_user_id` / `redeemed_by_user_id`).  
+**Konsequenz:** `GET /sale/transfer/status/{tid}` zusätzlich zum Role-Gate (`vip|dealer`) nur wenn Actor **Initiator** oder **Redeemer** ist; sonst **403**. Tests müssen das explizit abdecken.

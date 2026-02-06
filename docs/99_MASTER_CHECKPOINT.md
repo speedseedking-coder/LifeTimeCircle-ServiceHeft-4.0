@@ -1,615 +1,150 @@
-\# 99\_MASTER\_CHECKPOINT — LifeTimeCircle / Service Heft 4.0
+﻿# LifeTimeCircle â€“ Service Heft 4.0
+**MASTER CHECKPOINT (SoT)**  
+Stand: **2026-02-06** (Europe/Berlin)
 
-Stand: 2026-01-30 (Europe/Berlin)  
-
-Ziel: produktionsreif (keine Demo), stabiler MVP → danach Ausbau  
-
-Kontakt: lifetimecircle@online.de  
-
-Source of Truth (Docs): C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\  (keine Altpfade/Altversionen)
-
-
-
----
-
-
-
-\## 0) Projektidentität (FIX)
-
-\- Brand: \*\*LifeTimeCircle\*\*
-
-\- Produkt/Modul: \*\*Service Heft 4.0\*\*
-
-\- Design-Regel: Look nicht „wild“ ändern — Fokus auf Module/Komponenten \& Aktualität
-
-\- Grundsatz: \*\*kein Demo-Modus\*\* (keine Demo-Shortcuts bei Security/Privacy/RBAC)
-
-
+Projekt:
+- Brand: **LifeTimeCircle**
+- Modul: **Service Heft 4.0**
+- Ziel: **produktionsreif (keine Demo)**
+- Security: **deny-by-default + least privilege**, RBAC **serverseitig enforced**
+- Source of Truth: **./docs** (keine Altpfade/Altversionen)
 
 ---
 
-
-
-\## 1) Nicht verhandelbare Leitplanken (FIX)
-
-
-
-\### 1.1 Security/Policy (serverseitig)
-
-\- \*\*deny-by-default\*\* + \*\*least privilege\*\*
-
-\- \*\*RBAC serverseitig enforced\*\* (UI ist nie Sicherheitsinstanz)
-
-\- \*\*keine Secrets in Logs\*\*
-
-\- \*\*keine Klartext-PII\*\* in Logs/Audit/Exports
-
-\- Pseudonymisierung: \*\*HMAC\*\* (kein unsalted SHA)
-
-\- Uploads: \*\*Allowlist + Limits + Quarantine by default\*\*, Freigabe nach Scan oder Admin-Approval, \*\*keine öffentlichen Uploads\*\*
-
-\- Exports: \*\*redacted default\*\*; \*\*Full Export nur SUPERADMIN\*\* + Audit + TTL/Limit + Verschlüsselung
-
-
-
-\### 1.2 Public-QR (öffentlich)
-
-\- Public-QR bewertet \*\*ausschließlich Nachweis-/Dokumentationsqualität\*\*, \*\*nie technischen Zustand\*\*
-
-\- Public Response: \*\*keine Metrics/Counts/Percentages/Zeiträume\*\*
-
-\- \*\*Disclaimer ist Pflicht\*\* (Public-UI-Copy, ohne Abwandlung):
-
-&nbsp; > „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
-
-
-\### 1.3 Business-Gating
-
-\- \*\*Verkauf/Übergabe-QR \& interner Verkauf\*\*: nur \*\*VIP\*\* \& \*\*DEALER\*\* (gewerblich)
-
-\- VIP-Gewerbe: \*\*max. 2 Staff\*\*; Freigabe nur \*\*SUPERADMIN\*\*
-
-
+## Aktueller Stand (main)
+✅ PR #43 gemerged: Web Trust-Ampel Pflichttext im UI + CI/web workflow_dispatch
+âœ… P0 Uploads-QuarantÃ¤ne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**  
+âœ… Fix Windows-SQLite-Locks: Connections sauber schlieÃŸen (Tempdir/cleanup stabil)  
+âœ… PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`  
+- `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)  
+âœ… PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`  
+- Runtime-Scan Ã¼ber alle registrierten Routes, Moderator auÃŸerhalb Allowlist â†’ **403**  
+âœ… PR #33: **Public: blog/news endpoints**  
+- Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`  
+- Router wired in `server/app/main.py`  
+- RBAC-Tests/Allowlist entsprechend erweitert  
+âœ… PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`  
+- Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)  
+âœ… PR #40: `Add web skeleton + root redirect + docs updates`
+- Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
+- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
+- API Root Redirect: `GET /` â†’ 307 â†’ `/public/site`
+- `GET /favicon.ico` â†’ 204
+âœ… Tests grÃ¼n: `poetry run pytest -q`
 
 ---
 
+## Web Frontend (Vite + React + TS) â€” DONE (main)
+Paths / URLs:
+- API: `http://127.0.0.1:8000`  (/, /public/site, /docs, /redoc)
+- Web: `http://127.0.0.1:5173`
+- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
 
+Gotchas:
+- API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
+- Vite nicht mit `q` beenden, wenn Web laufen soll.
+- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). FÃ¼r Commands extra Tab.
 
-\## 2) Rollenmodell (RBAC) (FIX)
+Start (2 Tabs/Fenster A=API, B=WEB):
+- A (API):
+  - `cd C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server`
+  - `$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"`
+  - `poetry run uvicorn app.main:app --reload`
+- B (WEB):
+  - `cd C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\packages\web`
+  - `npm install` (einmalig)
+  - `npm run dev`
+  - Browser: `http://127.0.0.1:5173/` (oder `o`+Enter in Vite)
 
-Rollen:
-
-\- `public`  (nur Public-QR Mini-Check)
-
-\- `user`    (eigene Fahrzeuge + eigene Einträge/Dokumente)
-
-\- `vip`     (erweiterte Features/Sicht, Transfer/Verkauf möglich)
-
-\- `dealer`  (gewerblich; VIP-nah; Transfer/Verkauf; ggf. Multi-User)
-
-\- `moderator` (nur Blog/News; keine PII; kein Export; kein Audit)
-
-\- `admin` / `superadmin` (Governance; `superadmin` = High-Risk-Gates)
-
-
-
-Sonderregeln:
-
-\- VIP-Gewerbe: max. 2 Staff, Freigabe nur SUPERADMIN
-
-\- Moderator: strikt Blog/News-only (keine Vehicles/Entries/Documents/Verification; kein Export; kein Audit-Read)
-
-
-
----
-
-
-
-\## 3) Auth \& Consent (Pflicht, FIX)
-
-\- Login: E-Mail Login + Verifizierung (OTP oder Magic-Link)
-
-\- Verifizierung: \*\*One-time\*\*, \*\*TTL\*\*, \*\*Rate-Limits\*\*, \*\*Anti-Enumeration\*\*
-
-\- Consent-Gate: AGB + Datenschutz \*\*Pflicht\*\*
-
-&nbsp; - Speichern: \*\*Version + Timestamp\*\* (auditierbar)
-
-&nbsp; - Ohne gültige Zustimmung: \*\*kein produktiver Zugriff\*\*
-
-\- Tokens/Codes/Links: \*\*niemals im Klartext loggen\*\*
-
-
+Checks:
+- `Test-NetConnection 127.0.0.1 -Port 8000`
+- `Test-NetConnection 127.0.0.1 -Port 5173`
+- `Invoke-WebRequest "http://127.0.0.1:5173/api/public/site" -UseBasicParsing | Select-Object StatusCode`
 
 ---
 
+## OpenAPI / Router Wiring â€” DONE (main)
+Thema:
+- FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
 
+Ursache:
+- Documents-Router wurde in `server/app/main.py` doppelt registriert:
+  - einmal via `documents_router` (`from app.routers.documents import router as documents_router`)
+  - zusÃ¤tzlich nochmal Ã¼ber `from app.routers import documents` (und dann `documents.router`)
 
-\## 4) Produktkern / MVP-Module (Scope)
+Fix (PR #36):
+- `server/app/main.py`: Documents-Router **nur 1x** via `include_router(...)`
+- `server/app/routers/__init__.py`: Exporte bereinigt (documents nicht mehr im `__all__` / nicht mehr importiert)
 
-
-
-\### 4.1 MVP (Kern)
-
-1\) \*\*Service Heft 4.0\*\*
-
-&nbsp;  - Fahrzeugprofil (VIN/WID + Fahrzeug-ID/QR)
-
-&nbsp;  - Timeline/Einträge (Service/Wartung/Reparatur/Umbau/Unfall/Prüfung)
-
-&nbsp;  - Dokumente/Nachweise (Upload + Metadaten + Sichtbarkeit)
-
-&nbsp;  - Trust-Level pro Eintrag/Quelle: \*\*T1/T2/T3\*\* (Definition offen, siehe §5)
-
-2\) \*\*Public-QR Mini-Check\*\*
-
-&nbsp;  - Ampel Rot/Orange/Gelb/Grün (nur Dokuqualität, ohne Metrics)
-
-&nbsp;  - Disclaimer (exakt)
-
-3\) \*\*Frontpage/Hub\*\*
-
-&nbsp;  - Erklärtext + Headerbar (Module/Tools)
-
-&nbsp;  - „Zutrittsknopf“
-
-&nbsp;  - Login-Panel: Default links (rechts optional)
-
-4\) \*\*Blog/News\*\*
-
-&nbsp;  - Admin erstellt/veröffentlicht
-
-&nbsp;  - Moderator: nur Blog/News verwalten (strikt)
-
-5\) \*\*Admin-Minimum (Governance)\*\*
-
-&nbsp;  - Userliste (redacted)
-
-&nbsp;  - Rolle setzen
-
-&nbsp;  - Moderatoren akkreditieren
-
-&nbsp;  - VIP-Gewerbe-2-Staff-Freigabe (SUPERADMIN Gate)
-
-&nbsp;  - Audit (ohne PII)
-
-
-
-\### 4.2 Zusatzmodule (VIP/Dealer; später)
-
-\- Verkauf/Übergabe-QR (nur VIP/Dealer)
-
-\- Interner Verkauf (nur VIP/Dealer)
-
-\- Gewerbe-Module: MasterClipboard, Direktannahme, OBD-Gateway, GPS-Probefahrt (siehe §8)
-
-
+Verifikation (lokal):
+- Route-Dedupe-Check: `DUP_ROUTES_COUNT = 0` (via `from app.main import app`, unique route signature check)
+- `curl http://127.0.0.1:8000/openapi.json` triggert keine Duplicate-Warnungen mehr im Server-Fenster
 
 ---
 
+## Public: Blog/News â€” DONE (main)
+Public Router:
+- `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
+- `GET /news` + `GET /news/` + `GET /news/{slug}`
 
-
-\## 5) Trustscore / T-Level (Definitionen \& Status)
-
-
-
-\### 5.1 Ampel (Public-QR)
-
-Stufen: \*\*Rot / Orange / Gelb / Grün\*\*  
-
-Bewertet: \*\*Dokumentation \& Verifizierungsgrad\*\*, nicht Technikzustand.
-
-
-
-Kriterien (high-level, ohne Metrics):
-
-\- Historie vorhanden (Einträge/Belege)
-
-\- Verifizierungsgrad: \*\*T3/T2/T1\*\*
-
-\- Aktualität/Regelmäßigkeit der Dokumentation
-
-\- Unfalltrust: \*\*Grün bei Unfall nur mit Abschluss + Belegen\*\*
-
-
-
-Unfallregel:
-
-\- „Grün trotz Unfall“ nur, wenn Unfall \*\*abgeschlossen\*\* und \*\*mit Belegen dokumentiert\*\* (Definition „abgeschlossen“ ist offen → Backlog)
-
-
-
-\### 5.2 T1/T2/T3 (OFFEN → Backlog)
-
-\- T3 = höchster Verifizierungsgrad (Beleg/Quelle verifiziert)
-
-\- T2 = mittlerer Verifizierungsgrad
-
-\- T1 = niedrigster Verifizierungsgrad
-
-Konkrete Belegarten/Prüfer/Regeln sind \*\*P0-Entscheidung\*\*, bevor Trustscore „hart“ finalisiert wird.
-
-
+Files:
+- `server/app/routers/blog.py`
+- `server/app/routers/news.py`
+- `server/app/routers/__init__.py`
+- `server/app/main.py` â†’ `app.include_router(blog.router)` + `app.include_router(news.router)`
 
 ---
 
+## P0: Uploads QuarantÃ¤ne (Documents) â€” DONE (main)
+**Ziel:** Uploads werden serverseitig **niemals** automatisch ausgeliefert, bevor Admin-Freigabe erfolgt.
 
+Workflow:
+- Upload â†’ `approval_status=QUARANTINED`, `scan_status=PENDING`
+- Admin kann `scan_status` setzen: `CLEAN` oder `INFECTED`
+- `INFECTED` erzwingt `approval_status=REJECTED`
+- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409 not_scanned_clean**)
 
-\## 6) Rechte-Matrix (Kurzfassung, implementierbar)
-
-\- Public-QR: alle Rollen dürfen Ampel sehen; \*\*Zustandsbewertung niemand\*\*
-
-\- Service Heft: `user/vip/dealer/admin` im eigenen Scope; fremd nur „berechtigt“; `moderator` nie
-
-\- Dokumente/Bilder: Inhalte nur im Scope; „VIP-only Bildansicht“ nur `vip/dealer/admin`
-
-\- Blog/News: lesen alle; schreiben `moderator/admin`; löschen: moderator ggf. nur eigene Posts, admin alles
-
-\- Newsletter: Opt-in/out `user/vip/dealer/admin`; Versand nur `admin`
-
-\- Admin/Governance: nur `admin/superadmin` (High-Risk: Full Export + Staff-Freigaben = superadmin)
-
-
+Download-Regeln:
+- **User/VIP/Dealer**: nur wenn `APPROVED` **und** Scope/Owner passt (object-level)
+- **Admin/Superadmin**: darf auch QUARANTINED/PENDING downloaden (Review)
 
 ---
 
+## Sale/Transfer Status (ID-Leak Fix) â€” DONE (main)
+Endpoint:
+- `GET /sale/transfer/status/{transfer_id}`
 
-
-\## 7) Roadmap (MVP in 3 Sprints)
-
-Sprint A — Fundament (PFLICHT)
-
-\- Auth + Verifizierung + Consent-Gate
-
-\- Rollenmodell + serverseitige Guards überall
-
-\- Admin-Minimum (Rollen/Governance)
-
-Sprint B — Service Heft Kern
-
-\- Vehicle + Entries + Uploads + T-Level Speicherung
-
-Sprint C — Public \& Wachstum
-
-\- Public-QR Mini-Check (Policy-konform)
-
-\- Blog/Newsletter (simpel → ausbauen)
-
-\- Moderator-Portal (Blog/News-only)
-
-
+Regeln:
+- Role-Gate: nur `vip|dealer` (alle anderen **403**)
+- ZusÃ¤tzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
 
 ---
 
+## RBAC (SoT)
+- Default: **deny-by-default**
+- **Actor required**: ohne Actor â†’ **401**
+- **Moderator**: strikt nur **Blog/News**; sonst Ã¼berall **403**
 
+### Allowlist fÃ¼r MODERATOR (ohne 403)
+- `/auth/*`
+- `/health`
+- `/public/*`
+- `/blog/*`
+- `/news/*`
 
-\## 8) Modul-Landschaft (Produktstory / Zuteilung)
-
-
-
-\### 8.1 Free (Basic)
-
-\- Autokauf-Co-Pilot (Container/Startpunkt; VIP-Module verborgen)
-
-\- Checklisten „Ankauf privat“ nur Papier/PDF
-
-\- QR-Fahrzeug-ID (für Fahrzeuganlage notwendig)
-
-\- Digitaler Fahrzeugschein (codiert/geschützt; nur eingeloggter User)
-
-\- Fahrzeugbewertung ohne KI (Freitext/Sprachbeschreibung; kein echter Fahrzeugwert)
-
-\- Frontschadencheck „Front zerschossen“ (Spaß)
-
-
-
-\### 8.2 VIP Privat/Sammler
-
-\- KI-Fahrzeugbewertung (KI-gestützt, Detailabfrage)
-
-\- Galerie-Sammler (Hypercars/Sport/Luxus/Oldtimer/Militaria; Doku-Historie)
-
-\- Geräusch- \& Schwingungsanalyse (Handyaufnahme/Sensorik)
-
-
-
-\### 8.3 VIP Gewerbe / Dealer
-
-\- Direktannahme-Workflow
-
-\- \*\*MasterClipboard\*\* (Sprachaufnahme → Triage → Monitor/Tafel)
-
-\- GPS-Probefahrt-Nachweis (anonymisiert; Durchführer = Mitarbeiter-ID)
-
-\- OBD-Gateway Integration (GPS + OBD gekoppelt)
-
-\- OBD-Diagnose einzeln
-
-\- Händlernetzwerk/Weiterleitung
-
-\- Interner Fahrzeugankauf (nur ServiceHeft 4.0)
-
-\- Rechnungsprüfer, Reimport-Identitätscheck, VIN/WID-Validierung
-
-\- Lichteinstellungs-Check per Foto
-
-\- KI-Agenten (Assistenz/Automation; strikt policy-konform)
-
-
-
-\### 8.4 MasterClipboard (Funktionskern, FINAL-Beschreibung)
-
-\- Zweck: Fahrzeugannahme standardisieren + Triage + Team-Transparenz (Monitor/Tafel)
-
-\- Input: Sprachaufnahme (Begutachtung)
-
-\- Verarbeitung: Speech-to-Text + Schlüsselwort-/Mängel-Erkennung + Kategorisierung
-
-\- Status:
-
-&nbsp; - Mängelliste (akzeptiert)
-
-&nbsp; - Mangel prüfen (zu prüfen)
-
-&nbsp; - abgelehnt (mit Reason)
-
-\- Kategorien (Beispiele): Fahrwerk, Motor/Antrieb, Getriebe, Unterboden, Bremsen, Lenkung, Elektrik, Karosserie/Lack, Glas/Beleuchtung, Innenraum, Reifen/Felgen, Klima/Heizung, Diagnose
-
-\- Identitäten: Fahrzeug-ID/QR; Durchführer nur via Mitarbeiter-ID (keine Klarnamen)
-
-
-
-\### 8.5 Modul-Repos (Regel: keine Policy-Drift)
-
-\- Core-Policies liegen \*\*nur\*\* im Core-Repo `docs/` und `docs/policies/`.
-
-\- Modul-Repos (z. B. `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-Modules\\...`) enthalten:
-
-&nbsp; - CONTEXT\_PACK.md
-
-&nbsp; - MODULE\_SPEC.md
-
-&nbsp; - API\_CONTRACT.md
-
-
+Alles andere: **403**.
 
 ---
 
-
-
-\## 9) Repo/Setup (lokal) — IST
-
-\- Repo: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0`
-
-\- Server: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\server`
-
-\- Node/Packages: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\packages\\lifetimecircle-core`
-
-
-
-Top-Level (bekannt): `docs/ server/ static/ storage/ tools/ scripts/`
-
-
-
-ZIP-Regel (für Uploads/Checkpoints):
-
-\- Rein: `docs/ server/ static/ tools/ scripts/ .env.example README\* CHANGELOG\*`
-
-\- Nicht rein: `server\\data\\app.db`, `.venv`, `\_\_pycache\_\_`, `.pytest\_cache`, Logs, Build-Artefakte
-
-
+## Public-QR Trust-Ampel (Pflichttext)
+â€žDie Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.â€œ
 
 ---
 
-
-
-\## 10) Backend IST-Stand (Server — FastAPI/Poetry/SQLite)
-
-Status (zuletzt):
-
-\- Auth E-Mail Challenge (DEV OTP optional) läuft
-
-\- Sessions/Token-Check funktioniert
-
-\- Audit Tail Script zeigt Events ohne PII
-
-\- RBAC-Guard integriert
-
-\- Deprecation-Fixes (FastAPI lifespan, utcnow → timezone-aware) gepatcht
-
-\- Pytest war zwischendurch grün (Snapshots: 5/5 bis 10 passed; danach Admin-Routes/Tests ergänzt)
-
-
-
-Wichtige Bereiche/Dateien (Server):
-
-\- `app/auth/\*`
-
-\- `settings.py` (env/secret validation)
-
-\- `crypto.py` (token\_hash / HMAC)
-
-\- `storage.py` (sqlite auth storage)
-
-\- `rbac.py` (get\_current\_user + require\_roles; 401/403 sauber)
-
-\- `deps.py` (Compatibility layer)
-
-\- `app/routers/masterclipboard`
-
-\- `scripts/`
-
-&nbsp; - `uvicorn\_run.ps1` (Start; verlangt LTC\_SECRET\_KEY >= 32)
-
-&nbsp; - `patch\_\*` (Patch-Skripte)
-
-&nbsp; - `audit\_tail.py` (letzte Events, ohne PII)
-
-
-
-Run/Tests (PowerShell):
-
-\- Tests:
-
-&nbsp; - `cd server`
-
-&nbsp; - `poetry run pytest`
-
-\- Admin Route-Check:
-
-&nbsp; - `poetry run python -c "from app.main import create\_app; app=create\_app(); print(\[r.path for r in app.routes if getattr(r,'path',None) and r.path.startswith('/admin')])"`
-
-\- Start (DEV):
-
-&nbsp; - `$env:LTC\_SECRET\_KEY="dev-only-change-me-please-change-me-32chars-XXXX"`
-
-&nbsp; - `$env:LTC\_DB\_PATH=".\\\\data\\\\app.db"`
-
-&nbsp; - `$env:LTC\_DEV\_EXPOSE\_OTP="false"`
-
-&nbsp; - `.\\uvicorn\_run.ps1`
-
-
-
-Hinweis (Windows):
-
-\- ENV gilt pro PowerShell-Fenster (bei neuem Fenster Variablen neu setzen).
-
-\- Port 8000 freimachen:
-
-&nbsp; - `netstat -ano | findstr :8000`
-
-&nbsp; - `taskkill /PID 20900 /F`  (Beispiel; PID aus netstat nehmen)
-
-
-
----
-
-
-
-\## 11) Admin-Rollenverwaltung (P0)
-
-Ziel-Endpoints (admin-only):
-
-\- `GET /admin/users` (Liste, redacted; keine PII)
-
-\- `POST /admin/users/{user\_id}/role` (Role setzen)
-
-Audit: minimal, ohne Klartext-PII
-
-
-
-Typischer Fehler:
-
-\- Admin-Tests 404 → Router nicht gemountet (include fehlt in `main.py`)
-
-
-
----
-
-
-
-\## 12) Offene Entscheidungen (Produkt/Regeln) — MUSS vor „final“
-
-\- T1/T2/T3 Definition (Belegarten, Prüfer, Regeln)
-
-\- Trust-Ampel Logik: Mindestbedingungen je Stufe (ohne Metrics, aber deterministisch)
-
-\- Unfall „abgeschlossen“: Definition + Pflichtbelege
-
-\- Übergabe-/Verkaufsflow (inkl. Käufer ohne Account)
-
-\- Newsletter-Workflow (Send-only vs Feedback/Reply + Moderation)
-
-
-
----
-
-
-
-\## 13) Backlog (Epics) — Reihenfolge (hart sinnvoll)
-
-\- EPIC-02 Auth/Consent
-
-\- EPIC-03 RBAC
-
-\- EPIC-04 Admin-Minimum
-
-\- EPIC-05 Service Heft Kern
-
-\- EPIC-06 Public-QR Mini-Check
-
-\- EPIC-08 Landingpage/Navigation
-
-\- EPIC-07 Blog/Newsletter
-
-\- EPIC-09 Verkauf/Übergabe
-
-\- EPIC-10 Betrieb/Qualität/Produktion
-
-
-
----
-
-
-
-\## 14) Definition of Done — Gate vor Abgabe (MUSS)
-
-\- Navigation/Buttons/Empty States ok
-
-\- RBAC serverseitig (keine UI-only Security)
-
-\- Public-QR: ohne Metrics + Disclaimer
-
-\- Logs/Audit/Export konform (keine PII/Secrets, HMAC)
-
-\- Upload-Quarantine \& Allowlist aktiv
-
-\- Keine Pfad-/Altversion-Konflikte (Docs SoT = `...\\docs`)
-
-
-
----
-
-
-
-\## 15) Nächste konkrete Aktion (P0) — „Plan der Wahrheit“
-
-1\) Admin-Router sauber in App registrieren (404 Fix) → Tests grün
-
-2\) RBAC-Hardening pro Modul (MasterClipboard: dealer/vip/admin; user/mod/public blocken)
-
-3\) Danach: Cleanup (bak/init-Schrott) + Commit + optional Tag „checkpoint“
-
-
-
----
-
-
-
-\## 16) Verworfen / Nur Option (NICHT IST)
-
-\- NestJS/Prisma/Postgres/Redis/BullMQ/S3/ClamAV als Stack ist \*\*keine aktuelle IST-Basis\*\* dieses Repos.
-
-&nbsp; Falls später entschieden: als eigene DECISION + Migrationsplan aufnehmen (und dann erst SoT umstellen).
-
-
-
----
-
-ENDE 99\_MASTER\_CHECKPOINT
-
-
----
-
-## 3) Falls du „die alte Master-Version“ überschrieben hast (Git-Rettung)
-Wenn die alte Datei **einmal committed** war, bekommst du sie so zurück:
+## Tests / Lokal ausfÃ¼hren
+> Env-Hinweis: Export/Redaction/HMAC benÃ¶tigt `LTC_SECRET_KEY` (>=16). FÃ¼r DEV/Tests explizit setzen.
 
 ```powershell
-cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0"
-git log -- docs\99_MASTER_CHECKPOINT.md
-# dann eine Commit-ID nehmen und z.B.:
-git checkout <COMMIT_ID> -- docs\99_MASTER_CHECKPOINT.md
-
-
+cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
+$env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+poetry run pytest -q

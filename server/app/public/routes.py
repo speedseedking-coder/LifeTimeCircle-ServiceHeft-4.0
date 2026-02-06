@@ -9,11 +9,7 @@ from pydantic import BaseModel, Field
 router = APIRouter(prefix="/public", tags=["public"])
 
 
-DISCLAIMER_TEXT = (
-    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. "
-    "Sie ist keine Aussage über den technischen Zustand des Fahrzeugs."
-)
-
+DISCLAIMER_TEXT = "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs."
 
 class PublicQrResponse(BaseModel):
     trust_light: str = Field(..., description="rot|orange|gelb|gruen")
@@ -34,3 +30,4 @@ def get_public_qr(vehicle_id: str) -> PublicQrResponse:
     hint = "Dokumentation vorhanden, aber Nachweise sind teilweise unvollständig."
 
     return PublicQrResponse(trust_light=trust_light, hint=hint, disclaimer=DISCLAIMER_TEXT)
+

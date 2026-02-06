@@ -17,12 +17,8 @@ Stand: 2026-01-29 (Europe/Berlin)
 - **vip**: erweiterte Features (inkl. Verkauf/Übergabe-QR)
 - **dealer**: gewerblich (VIP-nah), Übergabe/Verkauf, ggf. Multi-User
 - **moderator**: nur Blog/News (keine PII, kein Export, kein Audit)
-- **admin (SUPERADMIN)**: Vollzugriff + Freigaben + Governance (hochrisiko)
-
-Hinweis: „admin“ wird im System als **SUPERADMIN** behandelt (hochrisiko-Aktionen nur dort).
-
+- **admin**: Vollzugriff + Freigaben + Governance (hochrisiko)
 ---
-
 ## 1) Datenklassen & Grundschutz
 ### Datenklassen
 - **Public-Daten:** Public-QR Anzeige (Trust-Ampel + textliche Indikatoren, keine Halterdaten)
@@ -98,7 +94,7 @@ Hinweis: „admin“ wird im System als **SUPERADMIN** behandelt (hochrisiko-Akt
 
 ## 5) Service Heft Kern Policies (P-SH-*)
 ### P-SH-001 | Fahrzeug anlegen/suchen (VIN/WID)
-**Regel:** Fahrzeuge können von user/vip/dealer/admin angelegt werden; public/moderator nicht.  
+**Regel:** Fahrzeuge können von user/vip/dealer angelegt werden; public/moderator nicht.  
 **Validierung:** VIN/WID Eingabe strikt validieren; Fehlertexte ohne Datenleak.
 
 ### P-SH-002 | Einträge & Verifizierungslevel (T1/T2/T3)
@@ -152,7 +148,7 @@ Audit-Events mindestens für:
 - Consent Pflicht, Version+Timestamp
 
 ### Modul M-03 | Service Heft 4.0 Kern (Fahrzeug/Timeline/Dokumente)
-- user/vip/dealer/admin: ja
+- user/vip/dealer: ja
 - public/moderator: nein
 - Rechte gemäß Matrix
 
@@ -167,12 +163,12 @@ Audit-Events mindestens für:
 - Newsletter Versand: nur admin
 
 ### Modul M-06 | Verkauf/Übergabe-QR & Interner Verkauf (VIP/Dealer)
-- Sichtbar/nutzbar: vip/dealer/admin
+- Sichtbar/nutzbar: vip/dealer
 - Audit: Pflicht
 - Versteckt für user/public/moderator
 
 ### Modul M-07 | VIP-Bereich: Checklisten & Ankauf privat (PDF/Papier only)
-- Sichtbar: vip/dealer/admin
+- Sichtbar: vip/dealer
 - Ausgabe: nur PDF-Download/Print-Ansicht (keine editierbaren Online-Checklisten für Free)
 - Moderator/public: nie
 
@@ -188,4 +184,10 @@ Audit-Events mindestens für:
 
 
 > Hinweis: Es werden keine Kennzahlen/Counts/Prozente/Zeiträume ausgewiesen.
+
+
+
+
+
+
 

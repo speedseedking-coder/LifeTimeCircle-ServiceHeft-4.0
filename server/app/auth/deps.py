@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from fastapi import Depends
@@ -16,24 +15,23 @@ def require_user(user: AuthContext = Depends(get_current_user)) -> AuthContext:
     "Normale" eingeloggte Nutzer: user/vip/dealer/admin
     (moderator + public werden hier bewusst ausgeschlossen).
     """
-    return require_roles("user", "vip", "dealer", "admin")(user=user)  # type: ignore[arg-type]
+    return require_roles("user", "vip", "dealer", "admin", "superadmin")(user=user)  # type: ignore[arg-type]
 
 
 def require_vip_or_dealer(user: AuthContext = Depends(get_current_user)) -> AuthContext:
     """
-    Für Funktionen wie Verkauf/Übergabe-QR etc. (VIP/Dealer/Admin).
+    Für Funktionen wie Verkauf/Übergabe-QR etc. (VIP/Dealer).
     """
-    return require_roles("vip", "dealer", "admin")(user=user)  # type: ignore[arg-type]
+    return require_roles("vip", "dealer")(user=user)  # type: ignore[arg-type]
 
 
 def require_dealer(user: AuthContext = Depends(get_current_user)) -> AuthContext:
-    return require_roles("dealer", "admin")(user=user)  # type: ignore[arg-type]
+    return require_roles("dealer", "admin", "superadmin")(user=user)  # type: ignore[arg-type]
 
 
 def require_moderator(user: AuthContext = Depends(get_current_user)) -> AuthContext:
-    return require_roles("moderator", "admin")(user=user)  # type: ignore[arg-type]
+    return require_roles("moderator", "admin", "superadmin")(user=user)  # type: ignore[arg-type]
 
 
 def require_admin(user: AuthContext = Depends(get_current_user)) -> AuthContext:
-    return require_roles("admin")(user=user)  # type: ignore[arg-type]
-
+    return require_roles("admin", "superadmin")(user=user)  # type: ignore[arg-type]  # type: ignore[arg-type]

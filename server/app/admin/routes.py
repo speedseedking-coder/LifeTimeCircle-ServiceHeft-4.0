@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+from app.guards import forbid_moderator
+
+>>>>>>> origin/main
 import json
 import sqlite3
 import uuid
@@ -13,7 +18,7 @@ from app.auth.rbac import AuthContext, require_roles
 from app.auth.settings import load_settings
 
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(dependencies=[Depends(forbid_moderator)], prefix="/admin", tags=["admin"])
 
 # Wichtig: SUPERADMIN existiert als Rolle (für High-Risk-Gates)
 ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin", "superadmin"}

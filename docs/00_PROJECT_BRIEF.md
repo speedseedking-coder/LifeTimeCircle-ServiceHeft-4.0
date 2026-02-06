@@ -26,10 +26,11 @@ Ampel: Rot/Orange/Gelb/Grün – bewertet ausschließlich Dokumentations-/Nachwe
 - vip: erweitert, Übergabe/Verkauf möglich
 - dealer: gewerblich, Übergabe/Verkauf möglich
 - moderator: nur Blog/News (keine PII, kein Export, kein Audit)
-- admin: Governance; Hochrisiko nur mit **SUPERADMIN-Claim**
+- admin: Governance; Hochrisiko nur durch **superadmin**
 
 Sonderregel: VIP-Gewerbe max 2 Staff, Freigabe nur SUPERADMIN.
 
 ## 5) Zugang / Anmeldung
 - E-Mail Login + Verifizierung (OTP/Magic-Link) mit TTL, Rate-Limits, Anti-Enumeration
 - AGB + Datenschutz Pflicht (Version + Timestamp speichern)
+

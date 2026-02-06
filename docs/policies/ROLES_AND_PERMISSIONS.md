@@ -53,7 +53,7 @@
 
 ### 3.4 PublicShare / Public-QR
 - Aktivieren/Deaktivieren/Rotieren:
-  - vip/dealer/admin: erlaubt (nur own/org)
+  - vip/dealer/admin/superadmin: erlaubt (nur own/org)
   - user: optional (Default: verboten, außer Decision erlaubt)
   - moderator/public: verboten
 - Public-View:
@@ -62,7 +62,7 @@
 **Public Output Rules:** siehe TRUSTSCORE_SPEC.md
 
 ### 3.5 Übergabe/Verkauf (QR)
-- vip/dealer/admin: erlaubte Nutzung (own/org), Auditpflicht
+- vip/dealer/admin/superadmin: erlaubte Nutzung (own/org), Auditpflicht
 - user/public/moderator: verboten
 
 ### 3.6 Blog/News
@@ -93,3 +93,4 @@ Jede Route MUST:
 3) Scope prüfen
 4) Objektzustand prüfen (quarantine, revoked, disabled)
 5) AuditEvent schreiben bei sicherheitsrelevanten Aktionen
+

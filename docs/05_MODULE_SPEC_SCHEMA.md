@@ -52,7 +52,7 @@ Module dürfen keine eigenen abweichenden Policies definieren.
 
 5\. \*\*Rollen \& RBAC\*\*
 
-&nbsp;  - erlaubte Rollen (aus Core: public/user/vip/dealer/moderator/admin)
+&nbsp;  - erlaubte Rollen (aus Core: public/user/vip/dealer/moderator/admin/superadmin)
 
 &nbsp;  - Scope-Regel (own/org/shared)
 

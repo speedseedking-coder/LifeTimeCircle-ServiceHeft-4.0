@@ -20,7 +20,7 @@ Stand: 2026-01-29
 
 \- \*\*Tier\*\*: Paketzuordnung (Free / VIP / Dealer/VIP-Gewerbe).
 
-\- \*\*Rolle\*\*: public/user/vip/dealer/moderator/admin (siehe `docs/policies/ROLES\_AND\_PERMISSIONS.md`).
+\- \*\*Rolle\*\*: public/user/vip/dealer/moderator/admin/superadmin (siehe `docs/policies/ROLES\_AND\_PERMISSIONS.md`).
 
 \- \*\*Scope\*\*: own/org/shared/public – zusätzlicher Filter zu Rollenrechten.
 
@@ -44,7 +44,7 @@ Stand: 2026-01-29
 
 \- \*\*Unfalltrust\*\*: Bei Unfall nur Grün, wenn Abschluss + Belege dokumentiert sind.
 
-\- \*\*Transfer / Übergabe-QR\*\*: Besitz-/Übergabe-Flow; nur vip/dealer/admin; Auditpflicht.
+\- \*\*Transfer / Übergabe-QR\*\*: Besitz-/Übergabe-Flow; nur vip/dealer; Auditpflicht.
 
 \- \*\*AuditEvent\*\*: Sicherheits-/Governance-Event (redacted, keine PII/Secrets).
 
@@ -53,6 +53,7 @@ Stand: 2026-01-29
 \- \*\*Redacted Export\*\*: Export ohne PII/Secrets; Default.
 
 \- \*\*Full Export\*\*: Nur admin; verschlüsselt; TTL/Limit; Auditpflicht.
+
 
 
 

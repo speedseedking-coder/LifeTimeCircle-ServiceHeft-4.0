@@ -58,7 +58,7 @@ Definition of Done (kurz):
 
 \*\*Prio:\*\* P0 | \*\*Status:\*\* Planned
 
-\- \[ ] C1: Rollenmodell public/user/vip/dealer/moderator/admin + SUPERADMIN-Claim
+\- \[ ] C1: Rollenmodell public/user/vip/dealer/moderator/admin/superadmin
 
 \- \[ ] C2: Rechte-Matrix serverseitig implementieren (Policy Engine)
 
@@ -147,6 +147,7 @@ Definition of Done (kurz):
 \- \[ ] I2: Quarantine-by-default + Scan/Approval
 
 \- \[ ] I3: Zugriff RBAC, keine public files
+
 
 
 
