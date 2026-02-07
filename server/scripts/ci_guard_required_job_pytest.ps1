@@ -17,34 +17,48 @@ if (-not (Test-Path -LiteralPath $WorkflowPath)) {
   Fail "Workflow nicht gefunden: $WorkflowPath (Repo-Root erwartet)"
 }
 
-$raw = Get-Content -LiteralPath $WorkflowPath -Raw -Encoding UTF8
+# Zeilenbasiert lesen (robust)
+$lines = Get-Content -LiteralPath $WorkflowPath -Encoding UTF8
 
 # 1) jobs: muss existieren
-if ($raw -notmatch "(?m)^\s*jobs\s*:\s*$") {
+if (-not ($lines | Select-String -Pattern '^\s*jobs\s*:\s*$')) {
   Fail "Kein 'jobs:' Block in $WorkflowPath gefunden."
 }
 
-# 2) Required Job-Key 'pytest:' muss existieren (Branch-Protection hängt daran)
-if ($raw -notmatch "(?m)^\s{2}pytest\s*:\s*$") {
+# 2) Required Job-Key 'pytest:' muss existieren
+$pytestIdx = $null
+for ($i = 0; $i -lt $lines.Count; $i++) {
+  if ($lines[$i] -match '^\s{2}pytest\s*:\s*$') {
+    $pytestIdx = $i
+    break
+  }
+}
+if ($null -eq $pytestIdx) {
   Fail "Required Job-Key fehlt: 'jobs: -> pytest:' muss existieren (Branch Protection hängt daran)."
 }
 
-# 3) pytest-Job-Block robust extrahieren:
-#    Ende NICHT bei '2 spaces + irgendwas' (würde Kommentare treffen),
-#    sondern nur bei '2 spaces + <jobId>:' (echter nächster Job-Key)
-$pytestBlockMatch = [regex]::Match(
-  $raw,
-  "(?ms)^\s{2}pytest\s*:\s*$\s*(?<body>.*?)(?=^\s{2}[\w.-]+\s*:\s*$|\z)"
-)
-
-if (-not $pytestBlockMatch.Success) {
-  Fail "Konnte pytest-Job-Block nicht sauber extrahieren (unerwartetes Workflow-Format)."
+# 3) Ende des pytest-Jobs finden: nächster Job-Key auf 2-Space-Indent (z.B. '  web_build:')
+$endIdx = $lines.Count
+for ($k = $pytestIdx + 1; $k -lt $lines.Count; $k++) {
+  if ($lines[$k] -match '^\s{2}[\w.-]+\s*:\s*$') {
+    $endIdx = $k
+    break
+  }
 }
 
-$body = $pytestBlockMatch.Groups["body"].Value
+# 4) Innerhalb des pytest-Jobs nach 'name: pytest' suchen (indent-unabhängig, akzeptiert Quotes)
+$hasName = $false
+for ($j = $pytestIdx + 1; $j -lt $endIdx; $j++) {
+  $line = $lines[$j]
 
-# 4) Empfehlung: explizit 'name: pytest' im pytest-Job (akzeptiert Quotes)
-if ($body -notmatch "(?m)^\s{4,}name\s*:\s*['""]?pytest['""]?\s*$") {
+  # Match NICHT an '- name:' in steps (weil dort ein '-' steht)
+  if ($line -match "^\s*name\s*:\s*['""]?pytest['""]?\s*(#.*)?$") {
+    $hasName = $true
+    break
+  }
+}
+
+if (-not $hasName) {
   Write-Host "WARN: Im pytest-Job fehlt 'name: pytest'. Empfohlen für maximal stabile Check-Run-Namen." -ForegroundColor Yellow
 }
 
