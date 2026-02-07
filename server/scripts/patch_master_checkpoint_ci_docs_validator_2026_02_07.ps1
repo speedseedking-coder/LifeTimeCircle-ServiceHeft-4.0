@@ -26,6 +26,14 @@ function Write-Text([string]$path, [string]$text, [string]$nl) {
   Set-Content -LiteralPath $path -Value $text -Encoding UTF8
 }
 
+function Norm([string]$s) {
+  if ($null -eq $s) { return "" }
+  # remove BOM/zero-width, normalize NBSP
+  $s = ($s -replace '\p{Cf}', '')
+  $s = ($s -replace [char]0x00A0, ' ')
+  return $s
+}
+
 $repo = Resolve-RepoRoot
 $fp   = Join-Path $repo "docs/99_MASTER_CHECKPOINT.md"
 
@@ -36,10 +44,11 @@ $lines = $raw -split "\r?\n", -1
 $today = "2026-02-07"
 $changed = $false
 
-# 1) Stand: **YYYY-MM-DD** (Suffix wie " (Europe/Berlin)" bleibt erhalten)
+# 1) Stand: **YYYY-MM-DD** (Suffix bleibt erhalten)
 $standIdx = -1
 for ($i=0; $i -lt $lines.Count; $i++) {
-  if ($lines[$i] -match '^\s*Stand:\s*\*\*(\d{4}-\d{2}-\d{2})\*\*(.*)$') {
+  $n = Norm $lines[$i]
+  if ($n -match '^\s*Stand:\s*\*\*(\d{4}-\d{2}-\d{2})\*\*(.*)$') {
     $standIdx = $i
     $suffix = $Matches[2]
     $newLine = "Stand: **$today**$suffix"
@@ -48,26 +57,24 @@ for ($i=0; $i -lt $lines.Count; $i++) {
   }
 }
 
-if ($standIdx -lt 0) {
-  # fallback insert after first header line
-  $insertAt = 1
-  if ($lines.Count -lt 1) { $insertAt = 0 }
-  $before = @()
-  if ($insertAt -gt 0 -and $lines.Count -ge $insertAt) { $before = @($lines[0..($insertAt-1)]) }
-  $after = @()
-  if ($insertAt -lt $lines.Count) { $after = @($lines[$insertAt..($lines.Count-1)]) }
-  $lines = @($before + @("Stand: **$today**") + $after)
-  $changed = $true
-}
-
-# 2) Header finden
+# 2) Insert-Point: bevorzugt "## Aktueller Stand" (egal ob (main) o.ä.)
 $hdr = -1
 for ($i=0; $i -lt $lines.Count; $i++) {
-  if ($lines[$i] -match '^\s*##\s+Aktueller Stand\s*\(main\)\s*$') { $hdr = $i; break }
+  $n = Norm $lines[$i]
+  if ($n -match '^\s*##\s+Aktueller\s+Stand\b') { $hdr = $i; break }
 }
-if ($hdr -lt 0) { throw "Header not found: '## Aktueller Stand (main)'" }
 
-# 3) Entry (nur einmal)
+# Fallback: wenn Header fehlt -> nach Stand-Zeile einfügen (oder ganz oben)
+$insertBase = -1
+if ($hdr -ge 0) {
+  $insertBase = $hdr + 1
+} elseif ($standIdx -ge 0) {
+  $insertBase = $standIdx + 1
+} else {
+  $insertBase = 0
+}
+
+# 3) Entry nur einmal
 $needle = "PR #65 gemerged"
 $already = (($lines -join "`n") -match [regex]::Escape($needle))
 
@@ -79,8 +86,8 @@ if (-not $already) {
     '✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)'
   )
 
-  $insertAt = $hdr + 1
-  while ($insertAt -lt $lines.Count -and $lines[$insertAt] -eq '') { $insertAt++ }
+  $insertAt = $insertBase
+  while ($insertAt -lt $lines.Count -and (Norm $lines[$insertAt]) -eq '') { $insertAt++ }
 
   $before = @()
   if ($insertAt -gt 0) { $before = @($lines[0..($insertAt-1)]) }
