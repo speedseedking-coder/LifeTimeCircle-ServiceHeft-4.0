@@ -28,8 +28,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: packages/web/package-lock.json
-      - name: Web build (toolkit)
-        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./server/scripts/ltc_web_toolkit.ps1 -Smoke -Clean
+      - name: Web build (packages/web)
+        working-directory: packages/web
+        run: |
+          npm ci
+          npm run build
   pytest:
     runs-on: ubuntu-latest
     defaults:
@@ -46,6 +49,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: server/poetry.lock
 
       - name: Install Poetry
         run: |
