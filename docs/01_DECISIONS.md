@@ -1,10 +1,10 @@
 # docs/01_DECISIONS.md
-# LifeTimeCircle – Service Heft 4.0
+# LifeTimeCircle â€“ Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
 Stand: **2026-02-06**
 
 > Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
-> Regel: Wenn etwas nicht explizit erlaubt ist → **deny-by-default**.
+> Regel: Wenn etwas nicht explizit erlaubt ist ’ **deny-by-default**.
 
 ---
 
@@ -45,7 +45,7 @@ Stand: **2026-02-06**
 
 ## D-006: Actor required liefert 401 (unauth) statt 403
 **Status:** beschlossen  
-**Warum:** Semantik sauber: unauth → 401, auth-but-forbidden → 403.  
+**Warum:** Semantik sauber: unauth ’ 401, auth-but-forbidden ’ 403.  
 **Konsequenz:** `require_actor` wirft 401, nicht 403.
 
 ---
@@ -120,7 +120,7 @@ Stand: **2026-02-06**
 
 ---
 
-## D-017: End-to-End Nutzerfluss ist bindend (Landing → Eintritt → Rollenwahl → Signup → Consent → VIN → Einträge)
+## D-017: End-to-End Nutzerfluss ist bindend (Landing ’ Eintritt ’ Rollenwahl ’ Signup ’ Consent ’ VIN ’ Einträge)
 **Status:** beschlossen  
 **Warum:** Ohne durchgängigen Flow entsteht Fragmentierung; Onboarding muss sofort produktiven Wert liefern.  
 **Konsequenz:** Web/Backend müssen den E2E-Flow unterstützen; Spezifikation liegt in `docs/02_PRODUCT_SPEC_UNIFIED.md`.
@@ -130,7 +130,7 @@ Stand: **2026-02-06**
 ## D-018: Gewerbe-Typen sind Taxonomie für „durchgeführt von“
 **Status:** beschlossen  
 **Warum:** Vergleichbarkeit/Filterbarkeit der Historie; konsistente Darstellung (Werkstatt vs. Gesetzliches vs. Eigenleistung).  
-**Konsequenz:** „durchgeführt von“ nutzt feste Kategorien: Fachwerkstatt, Händler, Autohaus, Reifenservice, Tuning-Fachbetrieb, Sonstiges, Gesetzliches (TÜV/Gutachten/Wertgutachten), Eigenleistung.
+**Konsequenz:** „durchgeführt von“ nutzt feste Kategorien: Fachwerkstatt, Händler, Autohaus, Reifenservice, Tuning-Fachbetrieb, Sonstiges, Gesetzliches (TÃœV/Gutachten/Wertgutachten), Eigenleistung.
 
 ---
 
@@ -165,7 +165,7 @@ Stand: **2026-02-06**
 ## D-023: PII-Workflow ist blockierend für T3, Admin-Override auditpflichtig, Auto-Löschung Default 30 Tage
 **Status:** beschlossen  
 **Warum:** DSGVO/PII Risiko minimieren; Trust darf nicht T3 erreichen, solange PII ungeklärt ist.  
-**Konsequenz:** PII suspected/confirmed → nur Owner/Admin sichtbar, T3 blockiert. Admin-Override nur mit Audit. PII confirmed ohne Bereinigung → Auto-Löschung nach Default 30 Tagen.
+**Konsequenz:** PII suspected/confirmed ’ nur Owner/Admin sichtbar, T3 blockiert. Admin-Override nur mit Audit. PII confirmed ohne Bereinigung ’ Auto-Löschung nach Default 30 Tagen.
 
 ---
 
@@ -183,14 +183,14 @@ Stand: **2026-02-06**
 
 ---
 
-## D-026: Blog/News Content-Workflow: Entwurf → Review → Publish (Publish final durch Superadmin)
+## D-026: Blog/News Content-Workflow: Entwurf ’ Review ’ Publish (Publish final durch Superadmin)
 **Status:** beschlossen  
 **Warum:** Qualitätssicherung + klare Verantwortlichkeit.  
 **Konsequenz:** Moderator erstellt/editiert Entwürfe, Admin reviewed, Superadmin veröffentlicht final. Moderator bleibt strikt auf Blog/News begrenzt.
 
 ---
 
-## D-027: Import ist 2-stufig (Validate → Run) mit Report; Dubletten werden übersprungen
+## D-027: Import ist 2-stufig (Validate ’ Run) mit Report; Dubletten werden übersprungen
 **Status:** beschlossen  
 **Warum:** Fehler müssen vor dem Schreiben sichtbar sein; Transparenz für Datenqualität.  
 **Konsequenz:** Pflicht: Validate-Preview, danach Run. Report ist verpflichtend. Dubletten werden skippt und im Report ausgewiesen.
@@ -201,3 +201,9 @@ Stand: **2026-02-06**
 **Status:** beschlossen  
 **Warum:** Keine Funktionsverschlechterung für Bestandsfahrzeuge; Gate nur für Neu-Aktivierungen.  
 **Konsequenz:** Gate/Paywall greift nur, wenn `addon_first_enabled_at` NULL ist. Sonst bleibt volle Nutzbarkeit erhalten, auch bei Re-Aktivierung. Admin-Schalter: neu erlauben, neu kostenpflichtig, optional admin-only.
+
+## D-003: CI Required Status Check Context muss exakt dem GitHub-Context entsprechen
+**Status:** beschlossen  
+**Warum:** Branch Protection blockiert PRs mit "Expected", wenn der Required Context nicht exakt dem gemeldeten Status-Context entspricht (z.B. Workflow-Job heißt `CI/pytest`, nicht `pytest`).  
+**Konsequenz:** Required status checks auf `CI/pytest` setzen; bei Änderungen am Workflow immer Context-Namen verifizieren (`gh api .../required_status_checks/contexts`).  
+**Hinweis (PowerShell):** Kein Bash Here-Doc; JSON an `gh api` via `--input -` per Pipe übergeben.
