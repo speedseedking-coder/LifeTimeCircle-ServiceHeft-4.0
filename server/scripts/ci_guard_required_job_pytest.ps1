@@ -25,7 +25,7 @@ if (-not ($lines | Select-String -Pattern '^\s*jobs\s*:\s*$')) {
   Fail "Kein 'jobs:' Block in $WorkflowPath gefunden."
 }
 
-# 2) Required Job-Key 'pytest:' muss existieren
+# 2) Required Job-Key 'pytest:' muss existieren (2-space indent unter jobs)
 $pytestIdx = $null
 for ($i = 0; $i -lt $lines.Count; $i++) {
   if ($lines[$i] -match '^\s{2}pytest\s*:\s*$') {
@@ -47,11 +47,10 @@ for ($k = $pytestIdx + 1; $k -lt $lines.Count; $k++) {
 }
 
 # 4) Innerhalb des pytest-Jobs nach 'name: pytest' suchen (indent-unabhängig, akzeptiert Quotes)
+#    Wichtig: NICHT '- name:' in steps matchen (da steht ein '-' vor name)
 $hasName = $false
 for ($j = $pytestIdx + 1; $j -lt $endIdx; $j++) {
   $line = $lines[$j]
-
-  # Match NICHT an '- name:' in steps (weil dort ein '-' steht)
   if ($line -match "^\s*name\s*:\s*['""]?pytest['""]?\s*(#.*)?$") {
     $hasName = $true
     break
