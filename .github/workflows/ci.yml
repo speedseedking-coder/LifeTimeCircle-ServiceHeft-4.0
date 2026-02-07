@@ -35,7 +35,7 @@ jobs:
           npm run build
 
   # Required Check: dieser Job MUSS "pytest" heißen (Job-Key) + idealerweise name: pytest
-  pytest:
+  pytest2:
     name: pytest
     runs-on: ubuntu-latest
 
@@ -82,3 +82,5 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/patch_docs_unified_final_refresh.ps1
+
+
