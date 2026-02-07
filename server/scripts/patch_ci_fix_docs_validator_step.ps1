@@ -29,126 +29,107 @@ function Write-Text([string]$path, [string]$text) {
 
 function Normalize-Line([string]$s) {
   if ($null -eq $s) { return "" }
-  $s = ($s -replace '\p{Cf}', '')           # BOM/zero-width
-  $s = ($s -replace [char]0x00A0, ' ')      # NBSP -> space
+  $s = ($s -replace '\p{Cf}', '')       # BOM/zero-width
+  $s = ($s -replace [char]0x00A0, ' ')  # NBSP -> space
   return $s
 }
 
-function Find-StepMatches([string[]]$lines) {
-  $hits = @()
+function Find-FirstStepIndex([System.Collections.Generic.List[string]]$lines) {
   for ($i=0; $i -lt $lines.Count; $i++) {
     $n = (Normalize-Line $lines[$i]).ToLowerInvariant()
-    if ($n -like '*- name:*' -and $n -like '*ltc docs unified validator*') {
-      $hits += $i
-    }
+    if ($n -like '*- name:*' -and $n -like '*ltc docs unified validator*') { return $i }
   }
-  return $hits   # <-- FIX: KEIN Komma, sonst nested array
+  return -1
 }
 
-function Get-Indent([string]$line) {
-  $n = Normalize-Line $line
+function Get-StepIndent([System.Collections.Generic.List[string]]$lines, [int]$idx) {
+  $n = Normalize-Line $lines[$idx]
   if ($n -match '^(\s*)-\s*name\s*:') { return $Matches[1] }
   if ($n -match '^(\s*)-') { return $Matches[1] }
   return "      "
 }
 
-function Find-StepEnd([string[]]$lines, [int]$startIdx, [string]$stepIndent) {
-  $end = $lines.Count - 1
-  $re = "^" + [regex]::Escape($stepIndent) + "-\s+"
-  for ($j=$startIdx+1; $j -lt $lines.Count; $j++) {
-    $n = Normalize-Line $lines[$j]
-    if ($n -match $re) { return ($j - 1) }
+function Get-StepEnd([System.Collections.Generic.List[string]]$lines, [int]$startIdx, [string]$indent) {
+  $re = "^" + [regex]::Escape($indent) + "-\s+"
+  for ($i=$startIdx+1; $i -lt $lines.Count; $i++) {
+    $n = Normalize-Line $lines[$i]
+    if ($n -match $re) { return ($i - 1) }
   }
-  return $end
+  return ($lines.Count - 1)
 }
 
 $repo = Resolve-RepoRoot
 $wf = Join-Path $repo ".github/workflows/ci.yml"
 $raw = Read-Text $wf
 $nl = ($raw -match "`r`n") ? "`r`n" : "`n"
-$lines = $raw -split "\r?\n", -1
 
-$hits = @(Find-StepMatches $lines)
-if ($hits.Count -eq 0) { throw "Step not found: LTC docs unified validator in $wf" }
+# split -> List
+$parts = $raw -split "\r?\n", -1
+$list = [System.Collections.Generic.List[string]]::new()
+$list.AddRange($parts)
 
-# keep first; if duplicates exist, remove later (bottom->top)
-$keep = [int]$hits[0]
-if ($hits.Count -gt 1) {
-  for ($h = $hits.Count - 1; $h -ge 1; $h--) {
-    $idx = [int]$hits[$h]
-    $indent = Get-Indent $lines[$idx]
-    $end = Find-StepEnd $lines $idx $indent
+$idx = Find-FirstStepIndex $list
+if ($idx -lt 0) { throw "Step not found: LTC docs unified validator in $wf" }
 
-    $before = @()
-    if ($idx -gt 0) { $before = @($lines[0..($idx-1)]) }
-    $after = @()
-    if ($end + 1 -le $lines.Count - 1) { $after = @($lines[($end+1)..($lines.Count-1)]) }
-    $lines = @($before + $after)
-  }
-  $hits2 = @(Find-StepMatches $lines)
-  if ($hits2.Count -eq 0) { throw "Internal error: step disappeared after dedupe." }
-  $keep = [int]$hits2[0]
-}
+$indent = Get-StepIndent $list $idx
+$keyIndent = $indent + "  "
 
-$stepIndent = Get-Indent $lines[$keep]
-$keyIndent  = $stepIndent + "  "
-$end = Find-StepEnd $lines $keep $stepIndent
-
-# Wichtig: Job defaults.run.working-directory ist "server" -> docs step MUSS root sein
 $wdWanted  = $keyIndent + 'working-directory: ${{ github.workspace }}'
 $runWanted = $keyIndent + 'run: pwsh -NoProfile -ExecutionPolicy Bypass -File "$GITHUB_WORKSPACE/server/scripts/patch_docs_unified_final_refresh.ps1"'
 
 $changed = $false
 
-# ensure working-directory
+# Step-End (vor Änderungen)
+$end = Get-StepEnd $list $idx $indent
+
+# ensure working-directory (insert directly after name)
 $wdIdx = -1
-for ($i=$keep+1; $i -le $end; $i++) {
-  $n = Normalize-Line $lines[$i]
-  if ($n -match '^\s*working-directory\s*:') { $wdIdx = $i; break }
+for ($i=$idx+1; $i -le $end; $i++) {
+  if ((Normalize-Line $list[$i]) -match '^\s*working-directory\s*:') { $wdIdx = $i; break }
 }
 if ($wdIdx -ge 0) {
-  if ($lines[$wdIdx] -ne $wdWanted) { $lines[$wdIdx] = $wdWanted; $changed = $true }
+  if ($list[$wdIdx] -ne $wdWanted) { $list[$wdIdx] = $wdWanted; $changed = $true }
 } else {
-  $lines = @($lines[0..$keep] + @($wdWanted) + $lines[($keep+1)..($lines.Count-1)])
+  $list.Insert($idx + 1, $wdWanted)
   $changed = $true
 }
 
-# recompute end after possible insert
-$end = Find-StepEnd $lines $keep $stepIndent
+# Step-End neu (nach Insert)
+$end = Get-StepEnd $list $idx $indent
 
 # ensure run (replace pipe-block if needed)
 $runIdx = -1
-for ($i=$keep+1; $i -le $end; $i++) {
-  $n = Normalize-Line $lines[$i]
-  if ($n -match '^\s*run\s*:') { $runIdx = $i; break }
+for ($i=$idx+1; $i -le $end; $i++) {
+  if ((Normalize-Line $list[$i]) -match '^\s*run\s*:') { $runIdx = $i; break }
 }
+
 if ($runIdx -ge 0) {
-  $n0 = Normalize-Line $lines[$runIdx]
+  $n0 = Normalize-Line $list[$runIdx]
   $isPipe = ($n0 -match '^\s*run\s*:\s*\|\s*$')
-  if ($lines[$runIdx] -ne $runWanted) { $lines[$runIdx] = $runWanted; $changed = $true }
+  if ($list[$runIdx] -ne $runWanted) { $list[$runIdx] = $runWanted; $changed = $true }
 
   if ($isPipe) {
+    # remove YAML block lines that are more indented than keyIndent
     $rmFrom = $runIdx + 1
     $rmTo = $rmFrom - 1
-    for ($t=$rmFrom; $t -le $end; $t++) {
-      if ($lines[$t].StartsWith($keyIndent + "  ")) { $rmTo = $t; continue }
+    for ($t=$rmFrom; $t -le $end -and $t -lt $list.Count; $t++) {
+      if ($list[$t].StartsWith($keyIndent + "  ")) { $rmTo = $t; continue }
       break
     }
     if ($rmTo -ge $rmFrom) {
-      $before = @($lines[0..($rmFrom-1)])
-      $after = @()
-      if ($rmTo + 1 -le $lines.Count - 1) { $after = @($lines[($rmTo+1)..($lines.Count-1)]) }
-      $lines = @($before + $after)
+      for ($t=$rmTo; $t -ge $rmFrom; $t--) { $list.RemoveAt($t) }
       $changed = $true
     }
   }
 } else {
-  $insertAt = $keep + 1
-  $lines = @($lines[0..$insertAt] + @($runWanted) + $lines[($insertAt+1)..($lines.Count-1)])
+  # insert run after working-directory if it sits right after name, else after name
+  $insertAt = $idx + 1
+  if ($insertAt -lt $list.Count -and $list[$insertAt] -eq $wdWanted) { $insertAt = $insertAt + 1 }
+  $list.Insert($insertAt, $runWanted)
   $changed = $true
 }
 
-$newRaw = ($lines -join $nl)
+$newRaw = ($list.ToArray() -join $nl)
 if (-not $changed -or $newRaw -eq $raw) {
   Write-Host "OK: no changes needed."
   exit 0
