@@ -193,3 +193,6 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 
+
+- Guard-Test (PR #77): Umbenennung CI-Job pytest → pytest2 ⇒ Required Check pytest wird nicht reported ⇒ Branch Protection blockt Merge (UI).
+
