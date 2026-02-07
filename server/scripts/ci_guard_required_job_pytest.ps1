@@ -25,7 +25,7 @@ if (-not ($lines | Select-String -Pattern '^\s*jobs\s*:\s*$')) {
   Fail "Kein 'jobs:' Block in $WorkflowPath gefunden."
 }
 
-# 2) Required Job-Key 'pytest:' muss existieren
+# 2) Required Job-Key 'pytest:' muss existieren (2-space indent unter jobs)
 $pytestIdx = $null
 for ($i = 0; $i -lt $lines.Count; $i++) {
   if ($lines[$i] -match '^\s{2}pytest\s*:\s*$') {
@@ -37,16 +37,6 @@ if ($null -eq $pytestIdx) {
   Fail "Required Job-Key fehlt: 'jobs: -> pytest:' muss existieren (Branch Protection hängt daran)."
 }
 
-<<<<<<< HEAD
-# 3) pytest-Job-Block extrahieren
-$pytestBlockMatch = [regex]::Match(
-  $raw,
-  "(?ms)^\s{2}pytest\s*:\s*$\s*(?<body>.*?)(^\s{2}\S|\z)"
-)
-
-if (-not $pytestBlockMatch.Success) {
-  Fail "Konnte pytest-Job-Block nicht sauber extrahieren (unerwartetes Workflow-Format)."
-=======
 # 3) Ende des pytest-Jobs finden: nächster Job-Key auf 2-Space-Indent (z.B. '  web_build:')
 $endIdx = $lines.Count
 for ($k = $pytestIdx + 1; $k -lt $lines.Count; $k++) {
@@ -54,19 +44,13 @@ for ($k = $pytestIdx + 1; $k -lt $lines.Count; $k++) {
     $endIdx = $k
     break
   }
->>>>>>> origin/main
 }
 
 # 4) Innerhalb des pytest-Jobs nach 'name: pytest' suchen (indent-unabhängig, akzeptiert Quotes)
+#    Wichtig: NICHT '- name:' in steps matchen (da steht ein '-' vor name)
 $hasName = $false
 for ($j = $pytestIdx + 1; $j -lt $endIdx; $j++) {
   $line = $lines[$j]
-
-<<<<<<< HEAD
-# 4) Empfehlung: explizit 'name: pytest' (robust: beliebige Einrückung im pytest-Block)
-if ($body -notmatch "(?m)^\s+name\s*:\s*['""]?pytest['""]?\s*$") {
-=======
-  # Match NICHT an '- name:' in steps (weil dort ein '-' steht)
   if ($line -match "^\s*name\s*:\s*['""]?pytest['""]?\s*(#.*)?$") {
     $hasName = $true
     break
@@ -74,7 +58,6 @@ if ($body -notmatch "(?m)^\s+name\s*:\s*['""]?pytest['""]?\s*$") {
 }
 
 if (-not $hasName) {
->>>>>>> origin/main
   Write-Host "WARN: Im pytest-Job fehlt 'name: pytest'. Empfohlen für maximal stabile Check-Run-Namen." -ForegroundColor Yellow
 }
 
