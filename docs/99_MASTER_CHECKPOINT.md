@@ -1,11 +1,8 @@
-✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
-✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
-✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)
-✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
-# docs/99_MASTER_CHECKPOINT.md
+
 # LifeTimeCircle – Service Heft 4.0
-**MASTER CHECKPOINT (SoT)**
+**MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-07** (Europe/Berlin)
+
 Projekt:
 - Brand: **LifeTimeCircle**
 - Modul: **Service Heft 4.0**
@@ -23,13 +20,42 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
+- Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhängen (Consent wird separat getestet)
+- Fix: Collect-time Crash (NameError) durch kaputte/teilweise Einfügungen rund um `_require_consent` beseitigt
+- Files:
+  - `server/tests/test_vehicles_entries_api_p0.py` (Consent-Token-Snippets entfernt; `_ensure_consent()` = No-Op)
+  - `server/scripts/patch_vehicle_tests_bypass_consent_dependency_p0.ps1` (idempotent)
+- Tests grün: `poetry run pytest -q`
+
+✅ PR #83 **gemerged** (Squash): `CI Guard Conflict Fix (pytest job detection)`
+- Problem: CI/pytest failte wegen Merge-Conflict-Markern (`<<<<<<< >>>>>>>`) in `server/scripts/ci_guard_required_job_pytest.ps1`
+- Fix: Conflict-Marker entfernt + Job-Name-Erkennung für `name: pytest` stabilisiert
+- Lokal verifiziert:
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ci_guard_required_job_pytest.ps1`
+  - Output: `OK: CI Guard – required job 'pytest' ist vorhanden.`
+
+✅ PR #75 **gemerged** (Auto-Merge squash): `Docs: CI context + UTF-8 encoding fix (SoT)`
+- Fix für Mojibake/UTF-8 in SoT-Dokumenten:
+  - `docs/99_MASTER_CHECKPOINT.md`
+  - `docs/01_DECISIONS.md`
+- Script:
+  - `server/scripts/fix_docs_encoding_utf8.ps1` (byte-level repair, UTF-8 safe)
+- Branch Protection nachhaltig gefixt:
+  - Required status checks auf **Job-Name `pytest`** gesetzt (statt irreführendem Context wie `CI/pytest` oder UI-Label `CI/pytest (pull_request)`)
+  - Wichtig: Commit Status API kann leer sein; **Check-Runs** sind maßgeblich:
+    - `gh api "repos/$repo/commits/$sha/check-runs" --jq ".check_runs[].name"`
+
+✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
+- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: ${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+- Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)
+- CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
+
 ✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
 - Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
 - Updates: `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/04_REPO_STRUCTURE.md`, `docs/06_WORK_RULES.md`, `docs/99_MASTER_CHECKPOINT.md`
 - Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (Validator; idempotent; keine Änderungen an bestehenden Docs)
 
-✅ PR #61 gemerged: `fix(scripts): make docs unified refresh patch script parseable + safe`
-- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` ist jetzt parsebar und prüft Pflicht-Disclaimer + Kernanker (keine Doc-Rewrites)
 ✅ PR #54: `fix(web): add mandatory Public QR disclaimer`
 - Pflichttext ist exakt in `packages/web/src/pages/PublicQrPage.tsx`:
   - „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
@@ -185,5 +211,3 @@ Allowlist Moderator (ohne 403):
 cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
-
-
