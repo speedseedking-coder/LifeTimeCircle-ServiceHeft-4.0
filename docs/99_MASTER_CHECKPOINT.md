@@ -1,7 +1,7 @@
 
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-07** (Europe/Berlin)
+Stand: **2026-02-08** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -20,6 +20,10 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #87 gemerged: chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)
+- Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
+- Hinweis: Vite 7 benötigt Node.js >= 20.19
+
 ✅ PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
 - Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhängen (Consent wird separat getestet)
 - Fix: Collect-time Crash (NameError) durch kaputte/teilweise Einfügungen rund um `_require_consent` beseitigt
