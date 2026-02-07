@@ -27,28 +27,37 @@ function Write-Text([string]$path, [string]$text, [string]$nl) {
 }
 
 $repo = Resolve-RepoRoot
-$fp   = Join-Path $repo 'docs/99_MASTER_CHECKPOINT.md'
+$fp   = Join-Path $repo "docs/99_MASTER_CHECKPOINT.md"
 
 $raw  = Read-Text $fp
 $nl   = ($raw -match "`r`n") ? "`r`n" : "`n"
 $lines = $raw -split "\r?\n", -1
 
-$today = '2026-02-07'
+$today = "2026-02-07"
+$changed = $false
 
-# 1) Stand: **YYYY-MM-DD** setzen (oder einfügen, falls fehlt)
+# 1) Stand: **YYYY-MM-DD** (Suffix wie " (Europe/Berlin)" bleibt erhalten)
 $standIdx = -1
 for ($i=0; $i -lt $lines.Count; $i++) {
-  if ($lines[$i] -match '^\s*Stand:\s*\*\*\d{4}-\d{2}-\d{2}\*\*\s*$') { $standIdx = $i; break }
-}
-if ($standIdx -ge 0) {
-  $lines[$standIdx] = "Stand: **$today**"
-} else {
-  # fallback: nach Titelblock einfügen
-  $insert = 0
-  for ($i=0; $i -lt [Math]::Min($lines.Count, 30); $i++) {
-    if ($lines[$i] -match '^\s*#\s+') { $insert = $i + 1 }
+  if ($lines[$i] -match '^\s*Stand:\s*\*\*(\d{4}-\d{2}-\d{2})\*\*(.*)$') {
+    $standIdx = $i
+    $suffix = $Matches[2]
+    $newLine = "Stand: **$today**$suffix"
+    if ($lines[$i] -ne $newLine) { $lines[$i] = $newLine; $changed = $true }
+    break
   }
-  $lines = @($lines[0..$insert] + @("Stand: **$today**") + $lines[($insert+1)..($lines.Count-1)])
+}
+
+if ($standIdx -lt 0) {
+  # fallback insert after first header line
+  $insertAt = 1
+  if ($lines.Count -lt 1) { $insertAt = 0 }
+  $before = @()
+  if ($insertAt -gt 0 -and $lines.Count -ge $insertAt) { $before = @($lines[0..($insertAt-1)]) }
+  $after = @()
+  if ($insertAt -lt $lines.Count) { $after = @($lines[$insertAt..($lines.Count-1)]) }
+  $lines = @($before + @("Stand: **$today**") + $after)
+  $changed = $true
 }
 
 # 2) Header finden
@@ -58,8 +67,8 @@ for ($i=0; $i -lt $lines.Count; $i++) {
 }
 if ($hdr -lt 0) { throw "Header not found: '## Aktueller Stand (main)'" }
 
-# 3) Entry (NUR wenn noch nicht vorhanden)
-$needle = 'PR #65 gemerged'
+# 3) Entry (nur einmal)
+$needle = "PR #65 gemerged"
 $already = (($lines -join "`n") -match [regex]::Escape($needle))
 
 if (-not $already) {
@@ -70,19 +79,24 @@ if (-not $already) {
     '✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)'
   )
 
-  # direkt nach Header einfügen, aber nach evtl. Leerzeile
   $insertAt = $hdr + 1
   while ($insertAt -lt $lines.Count -and $lines[$insertAt] -eq '') { $insertAt++ }
 
-  $lines = @(
-    $lines[0..($insertAt-1)] +
-    $entry +
-    $lines[$insertAt..($lines.Count-1)]
-  )
+  $before = @()
+  if ($insertAt -gt 0) { $before = @($lines[0..($insertAt-1)]) }
+  $after = @()
+  if ($insertAt -lt $lines.Count) { $after = @($lines[$insertAt..($lines.Count-1)]) }
+
+  $lines = @($before + $entry + $after)
+  $changed = $true
 }
 
-$out = ($lines -join $nl)
-Write-Text $fp $out $nl
+$newRaw = ($lines -join $nl)
+if (-not $changed -or $newRaw -eq $raw) {
+  Write-Host "OK: no changes needed."
+  exit 0
+}
 
-Write-Host 'OK: master checkpoint updated.'
+Write-Text $fp $newRaw $nl
+Write-Host "OK: master checkpoint updated."
 Write-Host "File: $fp"
