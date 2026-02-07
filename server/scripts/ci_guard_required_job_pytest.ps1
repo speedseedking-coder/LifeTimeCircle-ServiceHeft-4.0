@@ -40,7 +40,9 @@ if (-not $pytestBlockMatch.Success) {
 }
 
 $body = $pytestBlockMatch.Groups["body"].Value
-if ($body -notmatch "(?m)^\s{4}name\s*:\s*pytest\s*$") {
+
+# akzeptiert auch name: "pytest" oder name: 'pytest'
+if ($body -notmatch "(?m)^\s{4}name\s*:\s*['""]?pytest['""]?\s*$") {
   Write-Host "WARN: Im pytest-Job fehlt 'name: pytest'. Empfohlen für maximal stabile Check-Run-Namen." -ForegroundColor Yellow
 }
 
