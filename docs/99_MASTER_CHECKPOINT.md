@@ -186,3 +186,4 @@ cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 
+
