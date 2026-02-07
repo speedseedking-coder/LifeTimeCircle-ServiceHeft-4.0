@@ -29,9 +29,8 @@ function Write-Text([string]$path, [string]$text) {
 
 function Normalize-Line([string]$s) {
   if ($null -eq $s) { return "" }
-  # remove Unicode format chars (BOM/zero-width), normalize NBSP to space
-  $s = ($s -replace '\p{Cf}', '')
-  $s = ($s -replace [char]0x00A0, ' ')
+  $s = ($s -replace '\p{Cf}', '')           # BOM/zero-width
+  $s = ($s -replace [char]0x00A0, ' ')      # NBSP -> space
   return $s
 }
 
@@ -43,13 +42,12 @@ function Find-StepMatches([string[]]$lines) {
       $hits += $i
     }
   }
-  return $hits
+  return ,$hits   # <-- WICHTIG: immer Array zurückgeben (auch bei 1 Element)
 }
 
 function Get-Indent([string]$line) {
   $n = Normalize-Line $line
   if ($n -match '^(\s*)-\s*name\s*:') { return $Matches[1] }
-  # fallback: take everything before first '-'
   if ($n -match '^(\s*)-') { return $Matches[1] }
   return "      "
 }
@@ -70,34 +68,36 @@ $raw = Read-Text $wf
 $nl = ($raw -match "`r`n") ? "`r`n" : "`n"
 $lines = $raw -split "\r?\n", -1
 
-$hits = Find-StepMatches $lines
+$hits = @(Find-StepMatches $lines) # <-- zusätzlich: Array erzwingen
 if ($hits.Count -eq 0) { throw "Step not found: LTC docs unified validator in $wf" }
 
-# 1) Dedupe: keep first, remove any later duplicates (remove from bottom to top)
+# Dedupe: keep first, remove later duplicates
 $keep = [int]$hits[0]
 if ($hits.Count -gt 1) {
   for ($h = $hits.Count - 1; $h -ge 1; $h--) {
     $idx = [int]$hits[$h]
     $indent = Get-Indent $lines[$idx]
     $end = Find-StepEnd $lines $idx $indent
+
     $before = @()
     if ($idx -gt 0) { $before = @($lines[0..($idx-1)]) }
     $after = @()
     if ($end + 1 -le $lines.Count - 1) { $after = @($lines[($end+1)..($lines.Count-1)]) }
     $lines = @($before + $after)
   }
-  # recompute keep index after deletions
-  $hits2 = Find-StepMatches $lines
+
+  $hits2 = @(Find-StepMatches $lines)
+  if ($hits2.Count -eq 0) { throw "Internal error: step disappeared after dedupe." }
   $keep = [int]$hits2[0]
 }
 
-# 2) Patch kept step
 $stepIndent = Get-Indent $lines[$keep]
 $keyIndent  = $stepIndent + "  "
 $end = Find-StepEnd $lines $keep $stepIndent
 
+# Ziel: absoluter Pfad (unabhängig von defaults.working-directory)
 $wdWanted  = $keyIndent + 'working-directory: ${{ github.workspace }}'
-$runWanted = $keyIndent + 'run: pwsh -NoProfile -ExecutionPolicy Bypass -File "${{ github.workspace }}/server/scripts/patch_docs_unified_final_refresh.ps1"'
+$runWanted = $keyIndent + 'run: pwsh -NoProfile -ExecutionPolicy Bypass -File "$GITHUB_WORKSPACE/server/scripts/patch_docs_unified_final_refresh.ps1"'
 
 $changed = $false
 
@@ -110,10 +110,8 @@ for ($i=$keep+1; $i -le $end; $i++) {
 if ($wdIdx -ge 0) {
   if ($lines[$wdIdx] -ne $wdWanted) { $lines[$wdIdx] = $wdWanted; $changed = $true }
 } else {
-  # insert directly after name line
   $lines = @($lines[0..$keep] + @($wdWanted) + $lines[($keep+1)..($lines.Count-1)])
   $changed = $true
-  $end += 1
 }
 
 # recompute end after possible insert
@@ -131,7 +129,6 @@ if ($runIdx -ge 0) {
   if ($lines[$runIdx] -ne $runWanted) { $lines[$runIdx] = $runWanted; $changed = $true }
 
   if ($isPipe) {
-    # remove block lines more indented than keyIndent
     $rmFrom = $runIdx + 1
     $rmTo = $rmFrom - 1
     for ($t=$rmFrom; $t -le $end; $t++) {
@@ -147,9 +144,7 @@ if ($runIdx -ge 0) {
     }
   }
 } else {
-  # insert run after working-directory if present, else after name
   $insertAt = $keep + 1
-  if ($lines[$insertAt] -eq $wdWanted) { $insertAt = $insertAt } else { $insertAt = $keep }
   $lines = @($lines[0..$insertAt] + @($runWanted) + $lines[($insertAt+1)..($lines.Count-1)])
   $changed = $true
 }
