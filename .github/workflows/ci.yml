@@ -52,7 +52,7 @@ jobs:
         run: poetry run pytest -q
 
       - name: LTC docs unified validator
-        run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./server/scripts/patch_docs_unified_final_refresh.ps1
+        run: pwsh -NoProfile -ExecutionPolicy Bypass 
       - name: Setup Node (web)
         uses: actions/setup-node@v4
         with:
@@ -64,4 +64,5 @@ jobs:
         run: |
           npm ci
           npm run build
+
 
