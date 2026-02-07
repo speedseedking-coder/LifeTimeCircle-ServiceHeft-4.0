@@ -29,10 +29,12 @@ if ($raw -notmatch "(?m)^\s{2}pytest\s*:\s*$") {
   Fail "Required Job-Key fehlt: 'jobs: -> pytest:' muss existieren (Branch Protection hängt daran)."
 }
 
-# 3) Empfehlung: explizit 'name: pytest' im pytest-Job (stabiler Check-Run-Name)
+# 3) pytest-Job-Block robust extrahieren:
+#    Ende NICHT bei '2 spaces + irgendwas' (würde Kommentare treffen),
+#    sondern nur bei '2 spaces + <jobId>:' (echter nächster Job-Key)
 $pytestBlockMatch = [regex]::Match(
   $raw,
-  "(?ms)^\s{2}pytest\s*:\s*$\s*(?<body>.*?)(^\s{2}\S|\z)"
+  "(?ms)^\s{2}pytest\s*:\s*$\s*(?<body>.*?)(?=^\s{2}[\w.-]+\s*:\s*$|\z)"
 )
 
 if (-not $pytestBlockMatch.Success) {
@@ -41,8 +43,8 @@ if (-not $pytestBlockMatch.Success) {
 
 $body = $pytestBlockMatch.Groups["body"].Value
 
-# akzeptiert auch name: "pytest" oder name: 'pytest'
-if ($body -notmatch "(?m)^\s{4}name\s*:\s*['""]?pytest['""]?\s*$") {
+# 4) Empfehlung: explizit 'name: pytest' im pytest-Job (akzeptiert Quotes)
+if ($body -notmatch "(?m)^\s{4,}name\s*:\s*['""]?pytest['""]?\s*$") {
   Write-Host "WARN: Im pytest-Job fehlt 'name: pytest'. Empfohlen für maximal stabile Check-Run-Namen." -ForegroundColor Yellow
 }
 
