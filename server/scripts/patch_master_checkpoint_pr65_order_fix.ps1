@@ -19,7 +19,7 @@ function Norm([string]$s) {
   if ($null -eq $s) { return "" }
   $s = ($s -replace '\p{Cf}', '')       # BOM/zero-width
   $s = ($s -replace [char]0x00A0, ' ')  # NBSP
-  $s = ($s -replace '\s+', ' ')         # collapse whitespace
+  $s = ($s -replace '\s+', ' ')
   return $s.Trim()
 }
 
@@ -38,54 +38,58 @@ $block = @(
   '✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)'
 )
 
-# 0) already ok?
-function FindHeader([string[]]$arr) {
-  for ($i=0; $i -lt $arr.Count; $i++) {
-    $n = (Norm $arr[$i]).ToLowerInvariant()
-    if ($n -like "##*aktueller*stand*") { return $i }
-  }
-  return -1
-}
+# Header-LineNumber via ripgrep (1-based)
+$rgLine = rg -n '^\s*##\s+Aktueller\s+Stand\b' $fp | Select-Object -First 1
+if (-not $rgLine) { throw "Header not found by rg: '## Aktueller Stand...' in $fp" }
 
-$hdr0 = FindHeader $lines
-if ($hdr0 -lt 0) { throw "Header not found: '## ... Aktueller ... Stand ...' in $fp" }
+# parse "25:## Aktueller Stand (main)"
+$colon = $rgLine.IndexOf(':')
+if ($colon -lt 1) { throw "Unexpected rg output: $rgLine" }
+$hdrLineNo = [int]($rgLine.Substring(0, $colon))   # 1-based
+$hdrIdx0   = $hdrLineNo - 1                        # 0-based in original $lines
 
-$after0 = $hdr0 + 1
-while ($after0 -lt $lines.Count -and (Norm $lines[$after0]) -eq "") { $after0++ }
-
-if ($after0 -lt $lines.Count) {
-  $n0 = (Norm $lines[$after0]).ToLowerInvariant()
-  if ($n0 -like "*pr #65 gemerged*") {
-    Write-Host "OK: PR#65 block already under 'Aktueller Stand'."
-    exit 0
-  }
-}
-
-# 1) remove block lines anywhere (exact or keyed ✅-lines)
+# Build block set
 $blockSet = New-Object 'System.Collections.Generic.HashSet[string]'
 foreach ($b in $block) { [void]$blockSet.Add((Norm $b)) }
 
-$keys = @("pr #65 gemerged", "ltc docs unified validator", "patch_ci_fix_docs_validator_step.ps1", "docs unified validator", "ci grün auf")
+# Count how many block-lines occur BEFORE the header (so we can adjust index after removal)
+$removedBefore = 0
+for ($i=0; $i -lt $hdrIdx0; $i++) {
+  if ($blockSet.Contains((Norm $lines[$i]))) { $removedBefore++ }
+}
 
+# Remove block lines anywhere (exact via Norm)
 $list = New-Object 'System.Collections.Generic.List[string]'
-$removed = 0
+$removedTotal = 0
 foreach ($l in $lines) {
-  $n  = (Norm $l)
-  $lc = $n.ToLowerInvariant()
-
-  $isExact = $blockSet.Contains($n)
-  $isKeyed = ($n.StartsWith("✅") -and ($keys | ForEach-Object { $lc.Contains($_) } | Where-Object { $_ } | Select-Object -First 1))
-
-  if ($isExact -or $isKeyed) { $removed++; continue }
+  if ($blockSet.Contains((Norm $l))) { $removedTotal++; continue }
   $list.Add($l)
 }
 
-# 2) find header after cleanup
-$hdr = FindHeader ($list.ToArray())
-if ($hdr -lt 0) { throw "Header not found after cleanup: '## ... Aktueller ... Stand ...' in $fp" }
+# New header index after removal
+$hdrIdx = $hdrIdx0 - $removedBefore
+if ($hdrIdx -lt 0 -or $hdrIdx -ge $list.Count) { throw "Computed header index out of range after cleanup." }
 
-# 3) insert under header (after blank lines)
-$insertAt = $hdr + 1
+# sanity check: header line should still mention "Aktueller Stand"
+if (-not ((Norm $list[$hdrIdx]).ToLowerInvariant().Contains("aktueller stand"))) {
+  # fallback: find it by substring
+  $hdrIdx = -1
+  for ($i=0; $i -lt $list.Count; $i++) {
+    if ((Norm $list[$i]).ToLowerInvariant().Contains("aktueller stand")) { $hdrIdx = $i; break }
+  }
+  if ($hdrIdx -lt 0) { throw "Header not found in cleaned content." }
+}
+
+# If already directly under header -> ok
+$next = $hdrIdx + 1
+while ($next -lt $list.Count -and (Norm $list[$next]) -eq "") { $next++ }
+if ($next -lt $list.Count -and (Norm $list[$next]).ToLowerInvariant().Contains("pr #65 gemerged")) {
+  Write-Host "OK: PR#65 already under 'Aktueller Stand'."
+  exit 0
+}
+
+# Insert directly under header (skip blanks)
+$insertAt = $hdrIdx + 1
 while ($insertAt -lt $list.Count -and (Norm $list[$insertAt]) -eq "") { $insertAt++ }
 
 $toInsert = [string[]]($block + "")
@@ -94,8 +98,8 @@ $list.InsertRange($insertAt, $toInsert)
 $out = ($list.ToArray() -join $nl)
 if (-not $out.EndsWith($nl)) { $out += $nl }
 
-if ($out -eq $raw) { Write-Host "OK: no changes needed. RemovedLines=$removed"; exit 0 }
+if ($out -eq $raw) { Write-Host "OK: no changes needed. RemovedTotal=$removedTotal"; exit 0 }
 
 Set-Content -LiteralPath $fp -Value $out -Encoding UTF8
-Write-Host "OK: moved PR#65 block under 'Aktueller Stand'. RemovedLines=$removed"
+Write-Host "OK: moved PR#65 under 'Aktueller Stand'. RemovedTotal=$removedTotal RemovedBeforeHeader=$removedBefore"
 Write-Host "File: $fp"
