@@ -17,6 +17,22 @@ on:
       - "packages/web/**"
       - ".github/workflows/**"
 jobs:
+  web_smoke_build:
+    name: web smoke build (packages/web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/web/package-lock.json
+      - name: Web build (packages/web)
+        working-directory: packages/web
+        run: |
+          npm ci
+          npm run build
   pytest:
     runs-on: ubuntu-latest
     defaults:
@@ -53,18 +69,5 @@ jobs:
 
       - name: LTC docs unified validator
         working-directory: ${{ github.workspace }}
-        run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/patch_docs_unified_final_refresh.ps1 
-      - name: Setup Node (web)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: packages/web/package-lock.json
-      - name: Web build (packages/web)
-        working-directory: packages/web
-        run: |
-          npm ci
-          npm run build
-
-
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/patch_docs_unified_final_refresh.ps1
 
