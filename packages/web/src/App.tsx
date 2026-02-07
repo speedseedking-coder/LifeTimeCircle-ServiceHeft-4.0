@@ -103,7 +103,7 @@ function ApiBox(props: { path: string; title: string }) {
         {typeof state.status === "number" ? ` â†’ ${state.status}` : ""}
       </div>
       {state.loading ? (
-        <div>LÃ¤dtâ€¦</div>
+        <div>L\u00E4dt\u2026</div>
       ) : (
         <pre style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 13, lineHeight: 1.35 }}>{state.text}</pre>
       )}
@@ -171,7 +171,7 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
       </div>
 
       {state.loading ? (
-        <div>LÃ¤dtâ€¦</div>
+        <div>L\u00E4dt\u2026</div>
       ) : state.error ? (
         <pre style={{ whiteSpace: "pre-wrap", margin: 0, fontSize: 13, lineHeight: 1.35 }}>{state.error}</pre>
       ) : state.items ? (
@@ -218,7 +218,7 @@ const [route, setRoute] = useState<Route>(() => parseHash());
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle â€“ Service Heft 4.0";
+        return "LifeTimeCircle – Service Heft 4.0";
       case "publicSite":
         return "Public Site (API)";
       case "blogList":
