@@ -1,3 +1,7 @@
+✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
+✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)
+✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
 # docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**
@@ -181,3 +185,4 @@ Allowlist Moderator (ohne 403):
 cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
+
