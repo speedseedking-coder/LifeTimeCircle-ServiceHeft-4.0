@@ -1,7 +1,3 @@
-✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
-✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
-✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)
-✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
 # docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**
@@ -23,6 +19,12 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+
+✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
+✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)
+✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
+
 ✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
 - Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
 - Updates: `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/04_REPO_STRUCTURE.md`, `docs/06_WORK_RULES.md`, `docs/99_MASTER_CHECKPOINT.md`

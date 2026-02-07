@@ -8,89 +8,64 @@ function Resolve-RepoRoot {
   $current = (Resolve-Path -LiteralPath $start).Path
   while ($true) {
     if (Test-Path -LiteralPath (Join-Path $current ".git")) { return $current }
-    $p = [System.IO.Directory]::GetParent($current)
+    $p = [System.IO.DirectoryInfo]::new($current).Parent
     if ($null -eq $p) { break }
     $current = $p.FullName
   }
   throw "Repo root not found."
 }
 
-function Norm([string]$s) {
-  if ($null -eq $s) { return "" }
-  $s = ($s -replace '\p{Cf}', '')        # zero-width/BOM
-  $s = ($s -replace '\p{Zs}', ' ')       # alle Space-Separators -> Space
-  $s = ($s -replace [char]0x00A0, ' ')   # NBSP
-  $s = ($s -replace '\s+', ' ')          # collapse
-  return $s.Trim()
-}
-
 $repo = Resolve-RepoRoot
 $fp   = Join-Path $repo "docs/99_MASTER_CHECKPOINT.md"
 if (-not (Test-Path -LiteralPath $fp)) { throw "Missing file: $fp" }
 
-$raw   = Get-Content -LiteralPath $fp -Raw -Encoding UTF8
-$nl    = ($raw -match "`r`n") ? "`r`n" : "`n"
-$lines = $raw -split "\r?\n", -1
+$raw = Get-Content -LiteralPath $fp -Raw -Encoding UTF8
 
-$block = @(
-  '✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`',
-  '✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf',
-  '✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)',
+# Normalize line endings for processing (LF)
+$txt = ($raw -replace "`r`n","`n") -replace "`r","`n"
+
+# Normalize title line (dash/sonderzeichen kill)
+$txt = [regex]::Replace($txt, '(?m)^\#\s+LifeTimeCircle.*$', '# LifeTimeCircle – Service Heft 4.0')
+
+# Normalize "Aktueller Stand" header line
+$txt = [regex]::Replace($txt, '(?m)^\#\#\s+Aktueller\s+Stand.*$', '## Aktueller Stand (main)')
+
+# Canonical PR#65 block (exact lines)
+$blockLines = @(
+  '✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`'
+  '✅ CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root (`working-directory: `${{ github.workspace }}`) und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf'
+  '✅ Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1` (dedupe + workdir=root + run-line fix)'
   '✅ CI grün auf `main`: **pytest** + Docs Unified Validator + Web Build (`packages/web`)'
 )
+$blockText = ($blockLines -join "`n") + "`n"
 
-# Header finden (ohne regex, ohne rg): "##" + enthält "aktueller stand"
-$hdr = -1
-for ($i=0; $i -lt $lines.Count; $i++) {
-  $t = (Norm $lines[$i]).ToLowerInvariant()
-  if ($t.Contains("aktueller stand") -and (Norm $lines[$i]).TrimStart().StartsWith("##")) { $hdr = $i; break }
-}
-if ($hdr -lt 0) { throw "Header not found: '## ... Aktueller Stand ...' in $fp" }
+# 1) Remove PR#65 block anywhere (PR line + next up to 3 ✅ lines)
+$txt = [regex]::Replace(
+  $txt,
+  '(?m)^\s*✅\s*PR\s*#65\b.*\n(?:^\s*✅.*\n){0,3}',
+  ''
+)
 
-# Block-Lineset (exakt) + keyed removal (✅ + keywords)
-$blockSet = New-Object 'System.Collections.Generic.HashSet[string]'
-foreach ($b in $block) { [void]$blockSet.Add((Norm $b)) }
-
-$keys = @("pr #65 gemerged","ltc docs unified validator","patch_ci_fix_docs_validator_step.ps1","ci grün auf")
-$list = New-Object 'System.Collections.Generic.List[string]'
-$removed = 0
-
-foreach ($l in $lines) {
-  $n  = Norm $l
-  $lc = $n.ToLowerInvariant()
-  $isExact = $blockSet.Contains($n)
-  $isKeyed = ($n.StartsWith("✅") -and ($keys | Where-Object { $lc.Contains($_) } | Select-Object -First 1))
-  if ($isExact -or $isKeyed) { $removed++; continue }
-  $list.Add($l)
+# 2) Find Aktueller Stand header (after normalization)
+$hdrMatch = [regex]::Match($txt, '(?m)^##\s+Aktueller\s+Stand\s+\(main\)\s*$')
+if (-not $hdrMatch.Success) {
+  Write-Host "DEBUG: header not found. First 80 lines:" -ForegroundColor Yellow
+  ($txt -split "`n" | Select-Object -First 80) | ForEach-Object { Write-Host $_ }
+  throw "Header not found: '## Aktueller Stand (main)' in $fp"
 }
 
-# Header in bereinigtem Text neu finden
-$hdr2 = -1
-for ($i=0; $i -lt $list.Count; $i++) {
-  $t = (Norm $list[$i]).ToLowerInvariant()
-  if ($t.Contains("aktueller stand") -and (Norm $list[$i]).TrimStart().StartsWith("##")) { $hdr2 = $i; break }
-}
-if ($hdr2 -lt 0) { throw "Header not found after cleanup in $fp" }
-
-# already ok?
-$next = $hdr2 + 1
-while ($next -lt $list.Count -and (Norm $list[$next]) -eq "") { $next++ }
-if ($next -lt $list.Count -and (Norm $list[$next]).ToLowerInvariant().Contains("pr #65 gemerged")) {
-  Write-Host "OK: PR#65 already under 'Aktueller Stand'. RemovedLines=$removed"
-  exit 0
+# 3) If PR#65 already directly under header: stop; else insert under header
+$already = [regex]::IsMatch($txt, '(?ms)^##\s+Aktueller\s+Stand\s+\(main\)\s*\n\s*✅\s*PR\s*#65\b')
+if ($already) {
+  Write-Host "OK: PR#65 already under Aktueller Stand."
+} else {
+  $insertPos = $hdrMatch.Index + $hdrMatch.Length
+  $txt = $txt.Insert($insertPos, "`n$blockText")
+  Write-Host "OK: inserted PR#65 block under Aktueller Stand."
 }
 
-# Insert direkt nach Header (nach Leerzeilen)
-$insertAt = $hdr2 + 1
-while ($insertAt -lt $list.Count -and (Norm $list[$insertAt]) -eq "") { $insertAt++ }
+if (-not $txt.EndsWith("`n")) { $txt += "`n" }
 
-$list.InsertRange($insertAt, [string[]]($block + ""))
-
-$out = ($list.ToArray() -join $nl)
-if (-not $out.EndsWith($nl)) { $out += $nl }
-
-if ($out -eq $raw) { Write-Host "OK: no changes needed. RemovedLines=$removed"; exit 0 }
-
-Set-Content -LiteralPath $fp -Value $out -Encoding UTF8
-Write-Host "OK: moved PR#65 under 'Aktueller Stand'. RemovedLines=$removed"
-Write-Host "File: $fp"
+$enc = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($fp, $txt, $enc)
+Write-Host "Wrote: $fp"
