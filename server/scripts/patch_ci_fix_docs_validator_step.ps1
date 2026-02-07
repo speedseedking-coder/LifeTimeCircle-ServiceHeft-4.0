@@ -42,7 +42,7 @@ function Find-StepMatches([string[]]$lines) {
       $hits += $i
     }
   }
-  return ,$hits   # <-- WICHTIG: immer Array zurückgeben (auch bei 1 Element)
+  return $hits   # <-- FIX: KEIN Komma, sonst nested array
 }
 
 function Get-Indent([string]$line) {
@@ -68,10 +68,10 @@ $raw = Read-Text $wf
 $nl = ($raw -match "`r`n") ? "`r`n" : "`n"
 $lines = $raw -split "\r?\n", -1
 
-$hits = @(Find-StepMatches $lines) # <-- zusätzlich: Array erzwingen
+$hits = @(Find-StepMatches $lines)
 if ($hits.Count -eq 0) { throw "Step not found: LTC docs unified validator in $wf" }
 
-# Dedupe: keep first, remove later duplicates
+# keep first; if duplicates exist, remove later (bottom->top)
 $keep = [int]$hits[0]
 if ($hits.Count -gt 1) {
   for ($h = $hits.Count - 1; $h -ge 1; $h--) {
@@ -85,7 +85,6 @@ if ($hits.Count -gt 1) {
     if ($end + 1 -le $lines.Count - 1) { $after = @($lines[($end+1)..($lines.Count-1)]) }
     $lines = @($before + $after)
   }
-
   $hits2 = @(Find-StepMatches $lines)
   if ($hits2.Count -eq 0) { throw "Internal error: step disappeared after dedupe." }
   $keep = [int]$hits2[0]
@@ -95,7 +94,7 @@ $stepIndent = Get-Indent $lines[$keep]
 $keyIndent  = $stepIndent + "  "
 $end = Find-StepEnd $lines $keep $stepIndent
 
-# Ziel: absoluter Pfad (unabhängig von defaults.working-directory)
+# Wichtig: Job defaults.run.working-directory ist "server" -> docs step MUSS root sein
 $wdWanted  = $keyIndent + 'working-directory: ${{ github.workspace }}'
 $runWanted = $keyIndent + 'run: pwsh -NoProfile -ExecutionPolicy Bypass -File "$GITHUB_WORKSPACE/server/scripts/patch_docs_unified_final_refresh.ps1"'
 
@@ -156,5 +155,5 @@ if (-not $changed -or $newRaw -eq $raw) {
 }
 
 Write-Text $wf $newRaw
-Write-Host "OK: patched CI docs validator step (deduped + workdir=root + correct -File)."
+Write-Host "OK: patched CI docs validator step (workdir=root + correct -File)."
 Write-Host "File: $wf"
