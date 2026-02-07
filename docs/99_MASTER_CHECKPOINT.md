@@ -19,7 +19,13 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
-
+✅ PR #79 **gemerged** (squash): CI: harden required 'pytest' check + add guard (#79)
+- CI-Workflow bereinigt: keine doppelten Job-Keys; Jobs: pytest (required) + web_build
+- Fail-fast Guard gegen Drift/Rename des Required Checks:
+  - Script: server/scripts/ci_guard_required_job_pytest.ps1
+  - CI-Step im pytest Job → bricht ab, wenn jobs: -> pytest: fehlt (sonst Branch-Protection hängt in „Expected/Waiting“)
+- Ergebnis: Branch-Protection bleibt stabil (strict=true + required pytest) und ist lokal verifizierbar via:
+  - server/scripts/verify_ci_branch_protection.ps1
 ✅ PR #74 gemerged: `chore: ignore local tmp scratch folder (#74)`
 ✅ Branch Protection Fix: Required status check Context von `pytest` auf `CI/pytest` korrigiert (verhindert "Expected"/BLOCKED)
 ✅ Verifiziert: required_status_checks.contexts => ["CI/pytest"]
@@ -195,4 +201,5 @@ poetry run pytest -q
 
 
 - Guard-Test (PR #77): Umbenennung CI-Job pytest → pytest2 ⇒ Required Check pytest wird nicht reported ⇒ Branch Protection blockt Merge (UI).
+
 

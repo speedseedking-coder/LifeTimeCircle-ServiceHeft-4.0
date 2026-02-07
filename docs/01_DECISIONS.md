@@ -207,3 +207,13 @@ Stand: **2026-02-06**
 **Warum:** Branch Protection blockiert PRs mit "Expected", wenn der Required Context nicht exakt dem gemeldeten Status-Context entspricht (z.B. Workflow-Job heißt `CI/pytest`, nicht `pytest`).  
 **Konsequenz:** Required status checks auf `CI/pytest` setzen; bei Änderungen am Workflow immer Context-Namen verifizieren (`gh api .../required_status_checks/contexts`).  
 **Hinweis (PowerShell):** Kein Bash Here-Doc; JSON an `gh api` via `--input -` per Pipe übergeben.
+---
+
+## D-030: CI Guard verhindert Drift/Rename des Required Checks pytest
+**Status:** beschlossen  
+**Warum:** Branch Protection required checks hängen am stabilen **Check-Run/Job-Namen** (pytest). Wenn der Job-Key/Name driftet/umbenannt wird, zeigt GitHub oft „Expected/Waiting“ und blockt Merges.  
+**Konsequenz:**  
+- CI führt vor Tests einen Guard aus: server/scripts/ci_guard_required_job_pytest.ps1  
+- Guard bricht CI ab, wenn jobs: -> pytest: im Workflow fehlt (Fail-fast statt „hängen“)  
+- Required Check bleibt stabil: Branch Protection strict=true + required pytest
+
