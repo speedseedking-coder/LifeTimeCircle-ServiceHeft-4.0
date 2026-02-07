@@ -218,7 +218,7 @@ const [route, setRoute] = useState<Route>(() => parseHash());
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle - Service Heft 4.0";
+        return "LifeTimeCircle – Service Heft 4.0";
       case "publicSite":
         return "Public Site (API)";
       case "blogList":
