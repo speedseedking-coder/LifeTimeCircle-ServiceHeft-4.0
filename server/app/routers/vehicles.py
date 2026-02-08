@@ -28,7 +28,6 @@ def _role_of(actor: Any) -> str:
 
 
 def _actor_id(actor: Any) -> Any:
-    # Actor SoT: avoid trusting client; actor is server-built
     return getattr(actor, "user_id", None) or getattr(actor, "id", None) or getattr(actor, "subject", None)
 
 
@@ -51,7 +50,6 @@ def _mask_vin(vin: str) -> str:
 
 
 def _get_vehicle_model() -> Type[Any]:
-    # tolerant lookup across repo iterations
     candidates = [
         ("app.models.vehicle", "Vehicle"),
         ("app.models.vehicles", "Vehicle"),
@@ -268,7 +266,6 @@ def create_vehicle(
     if aid is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
 
-    # Paywall (SoT D-011): role=user max 1 vehicle; vip/dealer/admin/superadmin allowed.
     if role == "user":
         existing = db.query(Vehicle).filter(owner_col == aid).count()
         if existing >= 1:
@@ -325,7 +322,6 @@ def list_vehicles(
 
     q = db.query(Vehicle)
 
-    # object-level
     if role not in {"admin", "superadmin"}:
         q = q.filter(owner_col == aid)
 
