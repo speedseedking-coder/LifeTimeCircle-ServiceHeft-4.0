@@ -20,6 +20,9 @@ Projekt:
 ---
 
 ## Aktueller Stand (main)
+✅ PR #89 gemerged: chore(web): declare node engine >=20.19.0 (vite 7)
+- packages/web/package.json: ngines.node auf >=20.19.0 gesetzt (Vite 7 Requirement / verhindert lokale Mismatch-Setups)
+
 ✅ PR #87 gemerged: chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)
 - Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
 - Hinweis: Vite 7 benötigt Node.js >= 20.19
