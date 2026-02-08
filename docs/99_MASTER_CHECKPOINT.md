@@ -24,7 +24,8 @@ Projekt:
 ✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
 - Branch: $marker  
 - Neu: /vehicles Router (Create/List/Get), object-level, Moderator 403, VIN nur masked  
-- Neu: equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
+- Neu: 
+equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
 - Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
 ✅ PR #89 gemerged: chore(web): declare node engine >=20.19.0 (vite 7)
 - packages/web/package.json: nengines.node auf >=20.19.0 gesetzt (Vite 7 Requirement / verhindert lokale Mismatch-Setups)
