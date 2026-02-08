@@ -1,6 +1,7 @@
 # server/scripts/patch_vehicles_router_mvp_p0.ps1
 # RUN (Repo-Root):
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\patch_vehicles_router_mvp_p0.ps1
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -69,7 +70,7 @@ if (!(Test-Path "server/app/main.py")) {
   throw "Expected server/app/main.py not found. Run from Repo-Root."
 }
 
-# --- derive imports from an existing working router (consent.py) ---
+# --- derive imports from existing working router (consent.py) ---
 $consentPath = "server/app/routers/consent.py"
 $requireActorImport = Find-FromImportLine -Path $consentPath -Symbol "require_actor"
 if (-not $requireActorImport) { $requireActorImport = "from app.auth.actor import require_actor" }
@@ -112,7 +113,6 @@ def _role_of(actor: Any) -> str:
 
 
 def _actor_id(actor: Any) -> Any:
-    # Actor SoT: avoid trusting client; actor is server-built
     return getattr(actor, "user_id", None) or getattr(actor, "id", None) or getattr(actor, "subject", None)
 
 
@@ -135,7 +135,6 @@ def _mask_vin(vin: str) -> str:
 
 
 def _get_vehicle_model() -> Type[Any]:
-    # tolerant lookup across repo iterations
     candidates = [
         ("app.models.vehicle", "Vehicle"),
         ("app.models.vehicles", "Vehicle"),
@@ -307,7 +306,6 @@ def create_vehicle(
     if aid is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
 
-    # Paywall (SoT D-011): role=user max 1 vehicle; vip/dealer/admin/superadmin allowed.
     if role == "user":
         existing = db.query(Vehicle).filter(owner_col == aid).count()
         if existing >= 1:
@@ -363,7 +361,6 @@ def list_vehicles(
 
     q = db.query(Vehicle)
 
-    # object-level
     if role not in {"admin", "superadmin"}:
         q = q.filter(owner_col == aid)
 
@@ -468,31 +465,10 @@ Update-FileIfChanged -Path $mainPath -NewContent $mainNorm
 $rmPath = "docs/03_RIGHTS_MATRIX.md"
 if (Test-Path $rmPath) {
   $rm = (_AsText (Get-Content $rmPath -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
-
   $rm = [regex]::Replace($rm, "(?m)^Stand:\s*\*\*\d{4}-\d{2}-\d{2}\*\*\s*$", "Stand: **2026-02-08**")
-
-  $lines = $rm -split "`n"
-  for ($i=0; $i -lt $lines.Length; $i++) {
-    $line = $lines[$i]
-
-    if ($line -match '^\|\s*`/consent/\*`') {
-      $lines[$i] = ($line -replace '(^\|\s*`/consent/\*`\s*\|.*\|)\s*[^|]+\s*\|\s*$', '$1 ❌ 403 |')
-      continue
-    }
-    if ($line -match '^\|\s*`/profile/\*`') {
-      $lines[$i] = ($line -replace '(^\|\s*`/profile/\*`\s*\|.*\|)\s*[^|]+\s*\|\s*$', '$1 ❌ 403 |')
-      continue
-    }
-    if ($line -match '^\|\s*`/support/feedback`') {
-      $lines[$i] = ($line -replace '(^\|\s*`/support/feedback`\s*\|.*\|)\s*[^|]+\s*\|\s*$', '$1 ❌ 403 |')
-      continue
-    }
-  }
-
-  $rm2 = ($lines -join "`n")
-  Update-FileIfChanged -Path $rmPath -NewContent $rm2
+  Update-FileIfChanged -Path $rmPath -NewContent $rm
 } else {
   Write-Host "WARN: docs/03_RIGHTS_MATRIX.md not found (skipped)"
 }
 
-Write-Host "DONE: vehicles router + main wiring + rights-matrix alignment."
+Write-Host "DONE: vehicles router + main wiring (+ stand update)."
