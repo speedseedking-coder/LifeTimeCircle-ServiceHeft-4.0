@@ -1,4 +1,4 @@
-
+﻿
 Block 6/6 — `docs/04_REPO_STRUCTURE.md`
 ```md
 # docs/04_REPO_STRUCTURE.md
@@ -89,7 +89,8 @@ git status -sb
 cd .\server
 $env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
-
+py -3.11 -m poetry run pytest -q
 # Web Smoke (build)
 cd ..
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_web_toolkit.ps1 -Smoke -Clean
+
