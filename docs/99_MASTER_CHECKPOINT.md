@@ -1,4 +1,4 @@
-
+﻿
 ✅ PR #95 **gemerged**: `chore/ci-helper-script`
 - `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
 
@@ -234,3 +234,4 @@ Allowlist Moderator (ohne 403):
 cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
+py -3.11 -m poetry run pytest -q
