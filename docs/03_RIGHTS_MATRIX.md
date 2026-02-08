@@ -91,7 +91,7 @@ Regel:
 ## 6) Profil / Entitlements (UI: Profiladmin / E-Rolle)
 | Route-Group | superadmin | admin | dealer | vip | user | moderator |
 |---|---:|---:|---:|---:|---:|---:|
-| `/profile/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/profile/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 | `/entitlements/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 
 Hinweis:

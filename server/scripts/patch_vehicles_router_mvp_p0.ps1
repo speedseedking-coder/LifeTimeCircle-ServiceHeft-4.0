@@ -1,3 +1,88 @@
+# server/scripts/patch_vehicles_router_mvp_p0.ps1
+# RUN (Repo-Root):
+#   pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\patch_vehicles_router_mvp_p0.ps1
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function _AsText {
+  param([AllowNull()][object]$Value)
+  if ($null -eq $Value) { return "" }
+  return [string]$Value
+}
+
+function Write-Utf8NoBomFile {
+  param(
+    [Parameter(Mandatory=$true)][string]$Path,
+    [AllowNull()][object]$Content
+  )
+  $dir = Split-Path -Parent $Path
+  if ($dir -and !(Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+
+  $text = (_AsText $Content).Replace("`r`n","`n")
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($Path, $text, $utf8NoBom)
+}
+
+function Update-FileIfChanged {
+  param(
+    [Parameter(Mandatory=$true)][string]$Path,
+    [AllowNull()][object]$NewContent
+  )
+
+  $old = ""
+  if (Test-Path $Path) {
+    $tmp = Get-Content $Path -Raw -ErrorAction SilentlyContinue
+    $old = (_AsText $tmp)
+  }
+
+  $newText = (_AsText $NewContent)
+
+  if ($old.Replace("`r`n","`n") -eq $newText.Replace("`r`n","`n")) {
+    Write-Host "OK: unchanged $Path"
+    return
+  }
+
+  Write-Utf8NoBomFile -Path $Path -Content $newText
+  Write-Host "OK: updated $Path"
+}
+
+function Find-FromImportLine {
+  param(
+    [Parameter(Mandatory=$true)][string]$Path,
+    [Parameter(Mandatory=$true)][string]$Symbol
+  )
+  if (!(Test-Path $Path)) { return $null }
+  $txt = (_AsText (Get-Content $Path -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
+  if (-not $txt) { return $null }
+
+  $pattern = "(?m)^\s*from\s+[A-Za-z0-9_\.]+\s+import\s+.*\b$([regex]::Escape($Symbol))\b.*$"
+  $m = [regex]::Match($txt, $pattern)
+  if ($m.Success) { return $m.Value.Trim() }
+  return $null
+}
+
+# --- Repo-Root check ---
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+Set-Location $repoRoot
+
+if (!(Test-Path "server/app/main.py")) {
+  throw "Expected server/app/main.py not found. Run from Repo-Root."
+}
+
+# --- derive imports from existing working router (consent.py) ---
+$consentPath = "server/app/routers/consent.py"
+$requireActorImport = Find-FromImportLine -Path $consentPath -Symbol "require_actor"
+if (-not $requireActorImport) { $requireActorImport = "from app.auth.actor import require_actor" }
+
+$forbidModeratorImport = Find-FromImportLine -Path $consentPath -Symbol "forbid_moderator"
+if (-not $forbidModeratorImport) { $forbidModeratorImport = "from app.auth.rbac import forbid_moderator" }
+
+$getDbImport = Find-FromImportLine -Path $consentPath -Symbol "get_db"
+if (-not $getDbImport) { $getDbImport = "from app.db import get_db" }
+
+# --- 1) vehicles router (MVP) ---
+$vehiclesPy = @"
 from __future__ import annotations
 
 import re
@@ -9,9 +94,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.auth.actor import require_actor
-from app.guards import forbid_moderator
-from app.deps import get_db
+$requireActorImport
+$forbidModeratorImport
+$getDbImport
 
 
 VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{11,17}$")  # excludes I,O,Q
@@ -146,50 +231,6 @@ class VehicleOut(BaseModel):
 router = APIRouter(prefix="/vehicles", tags=["vehicles"], dependencies=[Depends(forbid_moderator)])
 
 
-
-def require_consent(db: Session, actor: Any) -> None:
-    """
-    Consent-Gate (SoT D-010): blockiert Produkt-Flow ohne gültige Pflicht-Consents.
-    - bevorzugt DB-basiert via app.services.consent_store.has_required_consents(db, user_id)
-    - fallback via app.consent_store wrapper (env_consent_version/get_consent_status)
-    Deny-by-default: wenn Prüfung nicht möglich oder nicht erfüllt -> 403 consent_required.
-    """
-    uid = _actor_id(actor)
-    if uid is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
-
-    uid_s = str(uid)
-
-    # primary: services/consent_store.py
-    try:
-        from app.services.consent_store import has_required_consents  # type: ignore
-        if has_required_consents(db, uid_s):
-            return
-    except Exception:
-        pass
-
-    # fallback: app.consent_store wrapper (db_path + version)
-    try:
-        import app.consent_store as cs  # type: ignore
-        required_version = cs.env_consent_version()
-        st = cs.get_consent_status(cs.env_db_path(), uid_s, required_version)
-        ok = False
-        if isinstance(st, dict):
-            ok = bool(st.get("ok") or st.get("has_required") or st.get("accepted"))
-        else:
-            ok = bool(getattr(st, "ok", False) or getattr(st, "has_required", False) or getattr(st, "accepted", False))
-        if ok:
-            return
-    except Exception:
-        pass
-
-    # deny (try include consent_version if available)
-    try:
-        import app.consent_store as cs  # type: ignore
-        v = cs.env_consent_version()
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={"code": "consent_required", "consent_version": v})
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={"code": "consent_required"})
 def _enforce_role(actor: Any) -> str:
     role = _role_of(actor)
     if role not in ALLOWED_ROLES:
@@ -255,7 +296,6 @@ def create_vehicle(
     actor: Any = Depends(require_actor),
 ) -> VehicleOut:
     role = _enforce_role(actor)
-    require_consent(db, actor)
     Vehicle = _get_vehicle_model()
 
     owner_name, owner_col = _find_owner_col(Vehicle)
@@ -310,7 +350,6 @@ def list_vehicles(
     actor: Any = Depends(require_actor),
 ) -> list[VehicleOut]:
     role = _enforce_role(actor)
-    require_consent(db, actor)
     Vehicle = _get_vehicle_model()
     aid = _actor_id(actor)
     if aid is None:
@@ -339,7 +378,6 @@ def get_vehicle(
     actor: Any = Depends(require_actor),
 ) -> VehicleOut:
     role = _enforce_role(actor)
-    require_consent(db, actor)
     Vehicle = _get_vehicle_model()
     aid = _actor_id(actor)
     if aid is None:
@@ -367,3 +405,80 @@ def get_vehicle(
         return _to_out(v)
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
+"@
+
+# --- do NOT overwrite vehicles.py if it already exists with a /vehicles router (prevents clobbering consent gate etc.) ---
+$vehPath = "server/app/routers/vehicles.py"
+$vehExisting = ""
+if (Test-Path $vehPath) {
+  $vehExisting = (_AsText (Get-Content $vehPath -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
+}
+if ($vehExisting -match 'APIRouter\s*\(\s*prefix\s*=\s*"/vehicles"' -or $vehExisting -match 'prefix="/vehicles"' -or $vehExisting -match 'prefix\s*=\s*"/vehicles"') {
+  Write-Host "OK: skip overwrite $vehPath (already has /vehicles router)"
+} else {
+  Update-FileIfChanged -Path "server/app/routers/vehicles.py" -NewContent $vehiclesPy
+}
+
+# --- 2) Wire router in server/app/main.py ---
+$mainPath = "server/app/main.py"
+$mainNorm = (_AsText (Get-Content $mainPath -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
+
+$importLine = "from app.routers.vehicles import router as vehicles_router"
+if ($mainNorm -notmatch [regex]::Escape($importLine)) {
+  $lines = $mainNorm -split "`n"
+  $insertAt = -1
+  for ($i=0; $i -lt $lines.Length; $i++) {
+    if ($lines[$i] -match '^\s*from\s+app\.routers\.' ) { $insertAt = $i }
+  }
+  if ($insertAt -ge 0) {
+    $newLines = @()
+    for ($i=0; $i -lt $lines.Length; $i++) {
+      $newLines += $lines[$i]
+      if ($i -eq $insertAt) { $newLines += $importLine }
+    }
+    $mainNorm = ($newLines -join "`n")
+  } else {
+    $mainNorm = $importLine + "`n" + $mainNorm
+  }
+}
+
+$includeLine = "    app.include_router(vehicles_router)"
+if ($mainNorm -notmatch [regex]::Escape($includeLine)) {
+  $lines = $mainNorm -split "`n"
+  $newLines = @()
+  $inserted = $false
+  foreach ($ln in $lines) {
+    $newLines += $ln
+    if (-not $inserted -and $ln -match '^\s*app\.include_router\(consent_router\)\s*$') {
+      $newLines += $includeLine
+      $inserted = $true
+    }
+  }
+  if (-not $inserted) {
+    $newLines = @()
+    $inserted2 = $false
+    foreach ($ln in ($mainNorm -split "`n")) {
+      $newLines += $ln
+      if (-not $inserted2 -and $ln -match '^\s*app\.include_router\(export_vehicle_router\)\s*$') {
+        $newLines += $includeLine
+        $inserted2 = $true
+      }
+    }
+    if (-not $inserted2) { $newLines += $includeLine }
+  }
+  $mainNorm = ($newLines -join "`n")
+}
+
+Update-FileIfChanged -Path $mainPath -NewContent $mainNorm
+
+# --- 3) Docs fix: moderator allowlist alignment (SoT D-002) ---
+$rmPath = "docs/03_RIGHTS_MATRIX.md"
+if (Test-Path $rmPath) {
+  $rm = (_AsText (Get-Content $rmPath -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
+  $rm = [regex]::Replace($rm, "(?m)^Stand:\s*\*\*\d{4}-\d{2}-\d{2}\*\*\s*$", "Stand: **2026-02-08**")
+  Update-FileIfChanged -Path $rmPath -NewContent $rm
+} else {
+  Write-Host "WARN: docs/03_RIGHTS_MATRIX.md not found (skipped)"
+}
+
+Write-Host "DONE: vehicles router + main wiring (+ stand update)."
