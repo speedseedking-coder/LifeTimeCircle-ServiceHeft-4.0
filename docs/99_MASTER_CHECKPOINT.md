@@ -1,4 +1,13 @@
 
+✅ PR #95 **gemerged**: `chore/ci-helper-script`
+- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
+
+✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
+- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
+
+✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
+
+
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-08** (Europe/Berlin)

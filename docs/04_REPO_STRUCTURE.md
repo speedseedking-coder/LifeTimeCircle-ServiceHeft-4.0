@@ -4,7 +4,7 @@ Block 6/6 — `docs/04_REPO_STRUCTURE.md`
 # docs/04_REPO_STRUCTURE.md
 # LifeTimeCircle – Service Heft 4.0
 **Repo-Struktur / Source of Truth (SoT)**  
-Stand: **2026-02-06**
+Stand: **2026-02-08**
 
 > Ziel: klare Pfade, keine Altversionen, keine Duplikate.  
 > **./docs** ist Source of Truth.
