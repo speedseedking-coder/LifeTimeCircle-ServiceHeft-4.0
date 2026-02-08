@@ -31,16 +31,18 @@ function Ensure-StandDate([string]$text, [string]$date) {
   return $text
 }
 
-function Ensure-Py311PoetryFallback([string]$text, [string]$nl) {
+function Ensure-InsertAfterPoetryRun([string]$text, [string]$nl) {
   if ($text -match '(?m)^\s*py\s+-3\.11\s+-m\s+poetry\s+run\s+pytest\s+-q\s*$') { return $text }
 
   $lines = $text -split "\r\n|\n", 0, "SimpleMatch"
   for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i].TrimEnd() -eq 'poetry run pytest -q') {
+    $m = [regex]::Match($lines[$i], '^(?<indent>\s*)poetry\s+run\s+pytest\s+-q\s*$')
+    if ($m.Success) {
+      $indent = $m.Groups['indent'].Value
       $out = New-Object System.Collections.Generic.List[string]
       for ($j = 0; $j -lt $lines.Count; $j++) {
         $out.Add($lines[$j])
-        if ($j -eq $i) { $out.Add('py -3.11 -m poetry run pytest -q') }
+        if ($j -eq $i) { $out.Add($indent + 'py -3.11 -m poetry run pytest -q') }
       }
       return ($out.ToArray() -join $nl)
     }
@@ -52,11 +54,18 @@ function Ensure-PRBlock([string]$text, [string]$nl) {
   if ($text -match '(?m)^\s*✅\s+PR\s+#95\b') { return $text }
 
   $lines = $text -split "\r\n|\n", 0, "SimpleMatch"
+
+  # robust: "## Aktueller Stand ..." (Suffix egal, Whitespace egal)
   $idx = -1
   for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i] -eq '## Aktueller Stand (main)') { $idx = $i; break }
+    if ($lines[$i].Trim() -match '^##\s+Aktueller\s+Stand\b') { $idx = $i; break }
   }
-  if ($idx -lt 0) { throw "Master Checkpoint: '## Aktueller Stand (main)' nicht gefunden." }
+  # fallback: erstes H2
+  if ($idx -lt 0) {
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+      if ($lines[$i].Trim() -match '^##\s+\S') { $idx = $i; break }
+    }
+  }
 
   $insert = @(
     '',
@@ -71,9 +80,14 @@ function Ensure-PRBlock([string]$text, [string]$nl) {
   )
 
   $newLines = New-Object System.Collections.Generic.List[string]
-  for ($i = 0; $i -le $idx; $i++) { $newLines.Add($lines[$i]) }
-  foreach ($l in $insert) { $newLines.Add($l) }
-  for ($i = $idx + 1; $i -lt $lines.Count; $i++) { $newLines.Add($lines[$i]) }
+  if ($idx -ge 0) {
+    for ($i = 0; $i -le $idx; $i++) { $newLines.Add($lines[$i]) }
+    foreach ($l in $insert) { $newLines.Add($l) }
+    for ($i = $idx + 1; $i -lt $lines.Count; $i++) { $newLines.Add($lines[$i]) }
+  } else {
+    foreach ($l in $insert) { $newLines.Add($l) }
+    foreach ($line in $lines) { $newLines.Add($line) }
+  }
 
   return ($newLines.ToArray() -join $nl)
 }
@@ -98,13 +112,13 @@ Patch-File (Join-Path $root 'docs/99_MASTER_CHECKPOINT.md') {
   param($t, $nl)
   $t = Ensure-StandDate $t '2026-02-08'
   $t = Ensure-PRBlock $t $nl
-  $t = Ensure-Py311PoetryFallback $t $nl
+  $t = Ensure-InsertAfterPoetryRun $t $nl
   return $t
 }
 
 Patch-File (Join-Path $root 'docs/04_REPO_STRUCTURE.md') {
   param($t, $nl)
   $t = Ensure-StandDate $t '2026-02-08'
-  $t = Ensure-Py311PoetryFallback $t $nl
+  $t = Ensure-InsertAfterPoetryRun $t $nl
   return $t
 }
