@@ -14,10 +14,7 @@ function Resolve-RepoRoot {
   throw "Repo-Root nicht gefunden (erwarte .git oder docs/). Bitte im Repo-Root ausführen."
 }
 
-function Get-NewLine([string]$text) {
-  if ($text -match "`r`n") { return "`r`n" }
-  return "`n"
-}
+function Detect-NL([string]$t) { if ($t -match "`r`n") { "`r`n" } else { "`n" } }
 
 function Write-Utf8NoBom([string]$path, [string]$content) {
   $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
@@ -31,71 +28,69 @@ function Ensure-StandDate([string]$text, [string]$date) {
   return $text
 }
 
-function Ensure-InsertAfterPoetryRun([string]$text, [string]$nl) {
-  if ($text -match '(?m)^\s*py\s+-3\.11\s+-m\s+poetry\s+run\s+pytest\s+-q\s*$') { return $text }
-
-  $lines = $text -split "\r\n|\n", 0, "SimpleMatch"
-  for ($i = 0; $i -lt $lines.Count; $i++) {
-    $m = [regex]::Match($lines[$i], '^(?<indent>\s*)poetry\s+run\s+pytest\s+-q\s*$')
-    if ($m.Success) {
-      $indent = $m.Groups['indent'].Value
-      $out = New-Object System.Collections.Generic.List[string]
-      for ($j = 0; $j -lt $lines.Count; $j++) {
-        $out.Add($lines[$j])
-        if ($j -eq $i) { $out.Add($indent + 'py -3.11 -m poetry run pytest -q') }
-      }
-      return ($out.ToArray() -join $nl)
-    }
+function Remove-PRLines([string[]]$lines) {
+  $filtered = New-Object System.Collections.Generic.List[string]
+  foreach ($l in $lines) {
+    if ($l -match '^\s*✅\s+PR\s+#95\b') { continue }
+    if ($l -match '^\s*✅\s+PR\s+#94\b') { continue }
+    if ($l -match '^\s*✅\s+PR\s+#93\b') { continue }
+    if ($l -match '^\s*-\s*`server/scripts/patch_ci_add_web_build_job\.ps1`') { continue }
+    if ($l -match '^\s*-\s*`server/poetry\.lock`') { continue }
+    $filtered.Add($l)
   }
-  return $text
+  # führende Leerzeilen entfernen
+  while ($filtered.Count -gt 0 -and [string]::IsNullOrWhiteSpace($filtered[0])) { $filtered.RemoveAt(0) }
+  return ,$filtered.ToArray()
 }
 
-function Ensure-PRBlock([string]$text, [string]$nl) {
-  if ($text -match '(?m)^\s*✅\s+PR\s+#95\b') { return $text }
-
-  $lines = $text -split "\r\n|\n", 0, "SimpleMatch"
-
-  # robust: "## Aktueller Stand ..." (Suffix egal, Whitespace egal)
+function Insert-PRBlockAfterAktuellerStand([string[]]$lines) {
   $idx = -1
   for ($i = 0; $i -lt $lines.Count; $i++) {
     if ($lines[$i].Trim() -match '^##\s+Aktueller\s+Stand\b') { $idx = $i; break }
   }
-  # fallback: erstes H2
-  if ($idx -lt 0) {
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-      if ($lines[$i].Trim() -match '^##\s+\S') { $idx = $i; break }
-    }
-  }
+  if ($idx -lt 0) { throw "docs/99_MASTER_CHECKPOINT.md: '## Aktueller Stand' nicht gefunden." }
 
-  $insert = @(
-    '',
-    '✅ PR #95 **gemerged**: `chore/ci-helper-script`',
-    '- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)',
-    '',
-    '✅ PR #94 **gemerged**: `chore/poetry-lock-py311`',
-    '- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün',
-    '',
-    '✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`',
-    ''
+  $block = @(
+    "",
+    "✅ PR #95 **gemerged**: `chore/ci-helper-script`",
+    "- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)",
+    "",
+    "✅ PR #94 **gemerged**: `chore/poetry-lock-py311`",
+    "- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün",
+    "",
+    "✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`",
+    ""
   )
 
-  $newLines = New-Object System.Collections.Generic.List[string]
-  if ($idx -ge 0) {
-    for ($i = 0; $i -le $idx; $i++) { $newLines.Add($lines[$i]) }
-    foreach ($l in $insert) { $newLines.Add($l) }
-    for ($i = $idx + 1; $i -lt $lines.Count; $i++) { $newLines.Add($lines[$i]) }
-  } else {
-    foreach ($l in $insert) { $newLines.Add($l) }
-    foreach ($line in $lines) { $newLines.Add($line) }
-  }
+  $out = New-Object System.Collections.Generic.List[string]
+  for ($i = 0; $i -le $idx; $i++) { $out.Add($lines[$i]) }
+  foreach ($b in $block) { $out.Add($b) }
+  for ($i = $idx + 1; $i -lt $lines.Count; $i++) { $out.Add($lines[$i]) }
+  return ,$out.ToArray()
+}
 
-  return ($newLines.ToArray() -join $nl)
+function Ensure-Py311AfterPoetryRun([string[]]$lines) {
+  $out = New-Object System.Collections.Generic.List[string]
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    $line = $lines[$i]
+    $out.Add($line)
+
+    $m = [regex]::Match($line, '^(?<ind>\s*)poetry\s+run\s+pytest\s+-q\s*$')
+    if ($m.Success) {
+      $ind = $m.Groups['ind'].Value
+      $next = if ($i + 1 -lt $lines.Count) { $lines[$i + 1] } else { "" }
+      if ($next -notmatch '^\s*py\s+-3\.11\s+-m\s+poetry\s+run\s+pytest\s+-q\s*$') {
+        $out.Add($ind + 'py -3.11 -m poetry run pytest -q')
+      }
+    }
+  }
+  return ,$out.ToArray()
 }
 
 function Patch-File([string]$path, [scriptblock]$mutator) {
   if (!(Test-Path $path)) { throw "Nicht gefunden: $path" }
   $orig = Get-Content -Raw -Encoding UTF8 $path
-  $nl = Get-NewLine $orig
+  $nl = Detect-NL $orig
   $text = & $mutator $orig $nl
   $text = $text.TrimEnd("`r","`n") + $nl
   if ($text -ne $orig) {
@@ -108,17 +103,24 @@ function Patch-File([string]$path, [scriptblock]$mutator) {
 
 $root = Resolve-RepoRoot
 
-Patch-File (Join-Path $root 'docs/99_MASTER_CHECKPOINT.md') {
+Patch-File (Join-Path $root "docs/99_MASTER_CHECKPOINT.md") {
   param($t, $nl)
-  $t = Ensure-StandDate $t '2026-02-08'
-  $t = Ensure-PRBlock $t $nl
-  $t = Ensure-InsertAfterPoetryRun $t $nl
-  return $t
+
+  $t = Ensure-StandDate $t "2026-02-08"
+  $lines = $t -split "\r\n|\n"
+  $lines = Remove-PRLines $lines
+  $lines = Insert-PRBlockAfterAktuellerStand $lines
+  $lines = Ensure-Py311AfterPoetryRun $lines
+
+  ($lines -join $nl)
 }
 
-Patch-File (Join-Path $root 'docs/04_REPO_STRUCTURE.md') {
+Patch-File (Join-Path $root "docs/04_REPO_STRUCTURE.md") {
   param($t, $nl)
-  $t = Ensure-StandDate $t '2026-02-08'
-  $t = Ensure-InsertAfterPoetryRun $t $nl
-  return $t
+
+  $t = Ensure-StandDate $t "2026-02-08"
+  $lines = $t -split "\r\n|\n"
+  $lines = Ensure-Py311AfterPoetryRun $lines
+
+  ($lines -join $nl)
 }
