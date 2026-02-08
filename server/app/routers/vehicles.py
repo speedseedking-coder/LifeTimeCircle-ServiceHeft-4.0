@@ -339,6 +339,7 @@ def get_vehicle(
     actor: Any = Depends(require_actor),
 ) -> VehicleOut:
     role = _enforce_role(actor)
+    require_consent(db, actor)
     Vehicle = _get_vehicle_model()
     aid = _actor_id(actor)
     if aid is None:
