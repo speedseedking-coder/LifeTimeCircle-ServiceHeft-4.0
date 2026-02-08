@@ -407,7 +407,17 @@ def get_vehicle(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
 "@
 
-Update-FileIfChanged -Path "server/app/routers/vehicles.py" -NewContent $vehiclesPy
+# --- do NOT overwrite vehicles.py if it already exists with a /vehicles router (prevents clobbering consent gate etc.) ---
+$vehPath = "server/app/routers/vehicles.py"
+$vehExisting = ""
+if (Test-Path $vehPath) {
+  $vehExisting = (_AsText (Get-Content $vehPath -Raw -ErrorAction SilentlyContinue)).Replace("`r`n","`n")
+}
+if ($vehExisting -match 'APIRouter\s*\(\s*prefix\s*=\s*"/vehicles"' -or $vehExisting -match 'prefix="/vehicles"' -or $vehExisting -match 'prefix\s*=\s*"/vehicles"') {
+  Write-Host "OK: skip overwrite $vehPath (already has /vehicles router)"
+} else {
+  Update-FileIfChanged -Path "server/app/routers/vehicles.py" -NewContent $vehiclesPy
+}
 
 # --- 2) Wire router in server/app/main.py ---
 $mainPath = "server/app/main.py"
