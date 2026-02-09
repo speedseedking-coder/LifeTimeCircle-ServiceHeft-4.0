@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional, Tuple, Type
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -218,7 +218,7 @@ def _ensure_servicebook_if_needed(db: Session, actor: Any, vehicle: Any) -> None
     _set_if_present(sb_kwargs, sb_cols, ("owner_user_id", "owner_id", "user_id", "created_by_user_id"), aid)
 
     if "created_at" in sb_cols and sb_cols["created_at"].default is None and sb_cols["created_at"].server_default is None:
-        sb_kwargs["created_at"] = datetime.utcnow()
+        sb_kwargs["created_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
     sb = Servicebook(**sb_kwargs)
     db.add(sb)
@@ -292,7 +292,7 @@ def create_vehicle(
         _set_if_present(kwargs, cols, ("nickname", "display_name", "name"), payload.nickname)
 
     if "created_at" in cols and cols["created_at"].default is None and cols["created_at"].server_default is None:
-        kwargs["created_at"] = datetime.utcnow()
+        kwargs["created_at"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
     v = Vehicle(**kwargs)
     db.add(v)
