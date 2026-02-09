@@ -217,3 +217,37 @@ Stand: **2026-02-06**
 - Guard bricht CI ab, wenn jobs: -> pytest: im Workflow fehlt (Fail-fast statt „hängen“)  
 - Required Check bleibt stabil: Branch Protection strict=true + required pytest
 
+
+## DEC-2026-02-09 – Web Pages Scaffold ist MVP-Standard + IST-ZUSTAND Voll-Check als Merge-Gate
+
+**Status:** angenommen  
+**Datum:** 2026-02-09  
+**Kontext / Anlass:** PR #103 („feat/web pages scaffold“) wurde erfolgreich gemerged. CI war vollständig grün und der lokale Voll-Check bestätigt den erwarteten Projektzustand.
+
+### Entscheidung
+1) **Web-Pages-Scaffold (App + Pages) ist ab jetzt Mindeststandard** für das Web-Paket:
+   - `packages/web/src/pages/*` enthält: Auth, Consent, Vehicles, VehicleDetail, Documents, PublicQr.
+2) **Merge-Gate besteht aus CI + lokalem IST-ZUSTAND Voll-Check**:
+   - CI muss grün sein (mindestens): `CI/pytest`, `CI/web_build`, `CI/web/web_build`.
+   - Lokal muss nach dem Merge laufen: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1`
+3) **Public-QR Pflichttext wird als SoT-konform verifiziert** und muss weiterhin exakt vorhanden sein:
+   - verifiziert in `packages/web/src/components/TrustAmpelDisclaimer.tsx`
+   - verifiziert in `packages/web/src/pages/PublicQrPage.tsx`
+4) **API-Client-Policy wird aktiv geprüft**:
+   - Bearer/401/POST Muster vorhanden (api.ts),
+   - keine dev/actor header im Web-Client.
+
+### Evidenz (nachweisbar)
+- PR #103: CI Checks grün (3/3): `CI/pytest`, `CI/web_build`, `CI/web/web_build`.
+- Lokaler IST-ZUSTAND Voll-Check (`ltc_verify_ist_zustand.ps1`) grün inkl.:
+  - Repo clean + sync (main, HEAD fb44fc5)
+  - SoT-Pflichtdateien vorhanden
+  - Web Pages vorhanden (inkl. PublicQrPage)
+  - Pflicht-Disclaimer exakt gefunden (2 Stellen)
+  - pytest grün (mit `LTC_SECRET_KEY`)
+  - `npm ci` + `npm run build` grün
+
+### Konsequenzen
+- PRs gelten erst als „fertig“, wenn **CI grün** UND **lokaler IST-ZUSTAND Voll-Check grün**.
+- Public-QR bleibt datenarm; Pflicht-Disclaimer darf nicht verändert werden.
+
