@@ -1,12 +1,17 @@
+# local runtime / db
 dev.db
+
+# local storage
 storage/
 
-
 # local dumps
-server/data/
-server/scripts/dump_*.ps1
+data/
+scripts/dump_*.ps1
 dump_*.ps1
+
 # documents quarantine p0
 data/documents.sqlite
 storage/documents/
-storage/documents/**
+
+# local env (never commit)
+scripts/_local_env.ps1

@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
-from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
+from app.schemas.documents import DocumentOut
+from app.models.documents import DocumentScanStatus
 
 # singleton store (can be overridden in tests via dependency_overrides)
 _STORE: DocumentsStore = default_store()
