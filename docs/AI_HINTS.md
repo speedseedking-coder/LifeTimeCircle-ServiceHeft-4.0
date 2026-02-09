@@ -1,4 +1,4 @@
-\# Dateiname: docs/AI\_HINTS.md
+﻿\# Dateiname: docs/AI\_HINTS.md
 
 Version: 2026-03 | Last-Update: YYYY-MM-DD
 
