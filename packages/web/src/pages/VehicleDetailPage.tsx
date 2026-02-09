@@ -1,9 +1,12 @@
-﻿import React from "react";
-import { Link, useParams } from "react-router-dom";
+﻿function getVehicleIdFromPath(pathname: string): string {
+  const parts = pathname.split("/").filter(Boolean);
+  const i = parts.indexOf("vehicles");
+  if (i >= 0 && parts[i + 1]) return decodeURIComponent(parts[i + 1]);
+  return "(unknown)";
+}
 
 export default function VehicleDetailPage(): JSX.Element {
-  const params = useParams();
-  const vehicleId = params.vehicleId ?? "(unknown)";
+  const vehicleId = getVehicleIdFromPath(window.location.pathname);
 
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
@@ -20,8 +23,8 @@ export default function VehicleDetailPage(): JSX.Element {
       <section style={{ marginTop: 16 }}>
         <h2>Navigation</h2>
         <ul>
-          <li><Link to="/vehicles">Zurück zur Vehicles-Liste</Link></li>
-          <li><Link to="/documents">Zu Documents</Link></li>
+          <li><a href="/vehicles">Zurück zur Vehicles-Liste</a></li>
+          <li><a href="/documents">Zu Documents</a></li>
         </ul>
       </section>
     </main>

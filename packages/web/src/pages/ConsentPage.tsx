@@ -1,7 +1,4 @@
-﻿import React from "react";
-import { Link } from "react-router-dom";
-
-export default function ConsentPage(): JSX.Element {
+﻿export default function ConsentPage(): JSX.Element {
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
       <h1>Consent</h1>
@@ -20,8 +17,8 @@ export default function ConsentPage(): JSX.Element {
       <section style={{ marginTop: 16 }}>
         <h2>Navigation</h2>
         <ul>
-          <li><Link to="/auth">Zurück zu Auth</Link></li>
-          <li><Link to="/vehicles">Weiter zu Vehicles</Link></li>
+          <li><a href="/auth">Zurück zu Auth</a></li>
+          <li><a href="/vehicles">Weiter zu Vehicles</a></li>
         </ul>
       </section>
     </main>

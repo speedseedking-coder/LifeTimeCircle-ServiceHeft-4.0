@@ -1,7 +1,4 @@
-﻿import React from "react";
-import { Link } from "react-router-dom";
-
-export default function DocumentsPage(): JSX.Element {
+﻿export default function DocumentsPage(): JSX.Element {
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
       <h1>Documents</h1>
@@ -17,8 +14,8 @@ export default function DocumentsPage(): JSX.Element {
       <section style={{ marginTop: 16 }}>
         <h2>Navigation</h2>
         <ul>
-          <li><Link to="/vehicles">Zu Vehicles</Link></li>
-          <li><Link to="/auth">Zu Auth</Link></li>
+          <li><a href="/vehicles">Zu Vehicles</a></li>
+          <li><a href="/auth">Zu Auth</a></li>
         </ul>
       </section>
     </main>

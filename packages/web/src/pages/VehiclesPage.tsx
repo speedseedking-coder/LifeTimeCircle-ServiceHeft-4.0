@@ -1,7 +1,4 @@
-﻿import React from "react";
-import { Link } from "react-router-dom";
-
-export default function VehiclesPage(): JSX.Element {
+﻿export default function VehiclesPage(): JSX.Element {
   const demoVehicles = [
     { id: "demo-1", title: "Demo Fahrzeug 1" },
     { id: "demo-2", title: "Demo Fahrzeug 2" },
@@ -17,7 +14,7 @@ export default function VehiclesPage(): JSX.Element {
         <ul>
           {demoVehicles.map((v) => (
             <li key={v.id}>
-              <Link to={`/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</Link>
+              <a href={`/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</a>
             </li>
           ))}
         </ul>
@@ -26,9 +23,9 @@ export default function VehiclesPage(): JSX.Element {
       <section style={{ marginTop: 16 }}>
         <h2>Navigation</h2>
         <ul>
-          <li><Link to="/documents">Zu Documents</Link></li>
-          <li><Link to="/auth">Zu Auth</Link></li>
-          <li><Link to="/consent">Zu Consent</Link></li>
+          <li><a href="/documents">Zu Documents</a></li>
+          <li><a href="/auth">Zu Auth</a></li>
+          <li><a href="/consent">Zu Consent</a></li>
         </ul>
       </section>
     </main>
