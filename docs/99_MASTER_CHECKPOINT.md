@@ -146,11 +146,11 @@ Gotchas:
 
 Start (2 Tabs/Fenster A=API, B=WEB):
 - A (API):
-  - `cd C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server`
+  - `cd .\server`
   - `$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"`
   - `poetry run uvicorn app.main:app --reload`
 - B (WEB):
-  - `cd C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\packages\web`
+  - `cd .\packages\web`
   - `npm install` (einmalig)
   - `npm run dev`
   - Browser: `http://127.0.0.1:5173/`
@@ -231,7 +231,7 @@ Allowlist Moderator (ohne 403):
 > Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
 
 ```powershell
-cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\server"
+cd ".\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 py -3.11 -m poetry run pytest -q

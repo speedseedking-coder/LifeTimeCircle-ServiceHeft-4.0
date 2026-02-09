@@ -1,4 +1,4 @@
-# server/scripts/patch_vehicles_add_require_consent_p0.ps1
+﻿# server/scripts/patch_vehicles_add_require_consent_p0.ps1
 # RUN (Repo-Root):
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\patch_vehicles_add_require_consent_p0.ps1
 Set-StrictMode -Version Latest
@@ -134,7 +134,7 @@ function Ensure-Call {
     throw "Konnte Insert-Point in $FuncName nicht patchen."
   }
 
-  $Text2 = $Text.Substring(0, $m.Index) + ($m.Value -replace [regex]::Escape($body), [regex]::Escape($body)) # placeholder
+  $Text2 = $Text.Substring(0, $m.Index) + ($m.Value -replace [regex]::Escape($body), [regex]::Escape($body)) # intentionally no-op (kept for patch structure)
   # safer rebuild: replace exact old body with new body in full match
   $full = $m.Value
   $full2 = $full.Replace($body, $body2)

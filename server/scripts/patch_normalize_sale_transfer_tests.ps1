@@ -1,4 +1,4 @@
-# server/scripts/patch_normalize_sale_transfer_tests.ps1
+﻿# server/scripts/patch_normalize_sale_transfer_tests.ps1
 param()
 
 Set-StrictMode -Version Latest
@@ -32,7 +32,7 @@ if (-not $m.Success) { throw "Function not found: test_sale_transfer_status_admi
 $funcText = $m.Value
 $body     = $m.Groups["body"].Value
 
-# ensure token placeholder is tok_adm (if some script left tok_a behind)
+# ensure token example/fixture is tok_adm (if some script left tok_a behind)
 $body2 = $body -replace '\{tok_a\}', '{tok_adm}'
 
 # enforce rs/assert block (indent-safe) -> 403

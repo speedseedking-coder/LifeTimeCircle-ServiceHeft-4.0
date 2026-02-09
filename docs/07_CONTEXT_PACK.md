@@ -1,4 +1,4 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\07\_CONTEXT\_PACK.md
+﻿./docs//07/_CONTEXT/_PACK.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 
@@ -20,9 +20,9 @@ Produktionsreife Umsetzung (keine Demo). Default: deny-by-default + least privil
 
 \### Source of Truth
 
-`C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs`  
+`./docs`  
 
-Policies: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\policies`
+Policies: `./docs/policies`
 
 
 
