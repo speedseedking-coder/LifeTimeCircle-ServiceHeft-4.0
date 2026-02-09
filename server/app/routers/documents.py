@@ -25,8 +25,8 @@ def require_actor(request: Request):
         return actor
 
     # Dev/Smoke: Header-Fallback
-    role = request.headers.get("X-Role") or request.headers.get("x-role")
-    user_id = request.headers.get("X-User-Id") or request.headers.get("x-user-id")
+    role = request.headers.get("X-LTC-ROLE") or request.headers.get("x-ltc-role")
+    user_id = request.headers.get("X-LTC-UID") or request.headers.get("x-ltc-uid")
     if role and user_id:
         return {"role": role, "user_id": user_id}
 
@@ -170,3 +170,4 @@ def admin_reject(
         return store.reject(doc_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="not_found")
+
