@@ -1,4 +1,4 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\06\_TERMS\_GLOSSARY.md
+﻿./docs/06_TERMS_GLOSSARY.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 
