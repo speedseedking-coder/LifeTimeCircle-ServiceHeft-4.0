@@ -1,4 +1,4 @@
-C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\POLICY_INDEX.md
+﻿./docs/policies/POLICY_INDEX.md
 # LifeTimeCircle – ServiceHeft 4.0
 ## Policy Index (verbindlich)
 

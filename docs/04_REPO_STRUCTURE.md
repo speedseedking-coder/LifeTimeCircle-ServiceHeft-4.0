@@ -1,4 +1,4 @@
-
+﻿
 Block 6/6 — `docs/04_REPO_STRUCTURE.md`
 ```md
 # docs/04_REPO_STRUCTURE.md
@@ -78,7 +78,7 @@ LifeTimeCircle-ServiceHeft-4.0/
 
 ## 6) Quick Commands (Windows / Repo-Root)
 ```powershell
-cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0"
+cd "<REPO-ROOT>"
 
 # Sync + Status
 git switch main
