@@ -30,6 +30,8 @@ Projekt:
 
 ## Aktueller Stand (main)
 
+- Neu: docs/00_CODEX_CONTEXT.md (Codex/Agent Briefing / SoT Helper)
+
 ✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
 - Branch: $marker  
 - Neu: /vehicles Router (Create/List/Get), object-level, Moderator 403, VIN nur masked  
