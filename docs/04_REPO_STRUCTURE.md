@@ -1,7 +1,4 @@
-﻿
-Block 6/6 — `docs/04_REPO_STRUCTURE.md`
-```md
-# docs/04_REPO_STRUCTURE.md
+﻿# docs/04_REPO_STRUCTURE.md
 # LifeTimeCircle – Service Heft 4.0
 **Repo-Struktur / Source of Truth (SoT)**  
 Stand: **2026-02-08**
@@ -89,6 +86,7 @@ git status -sb
 cd .\server
 $env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
+py -3.11 -m poetry run pytest -q
 
 # Web Smoke (build)
 cd ..

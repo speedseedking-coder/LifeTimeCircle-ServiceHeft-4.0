@@ -234,3 +234,4 @@ Allowlist Moderator (ohne 403):
 cd ".\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
+py -3.11 -m poetry run pytest -q
