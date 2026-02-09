@@ -1,26 +1,26 @@
-\# docs/00\_CODEX\_CONTEXT.md
+﻿\# docs/00\_CODEX\_CONTEXT.md
 
-\# LifeTimeCircle – Service Heft 4.0 (Codex-Context / Arbeitsbriefing)
+\# LifeTimeCircle â€“ Service Heft 4.0 (Codex-Context / Arbeitsbriefing)
 
 Stand: 2026-02-08
 
 
 
-Ziel dieses Dokuments: Codex/Agenten sollen ohne Rückfragen sofort „richtig“ im Repo arbeiten können.
+Ziel dieses Dokuments: Codex/Agenten sollen ohne RÃ¼ckfragen sofort â€žrichtigâ€œ im Repo arbeiten kÃ¶nnen.
 
 Repo liegt lokal weiterhin unter:
 
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0
+<REPO-ROOT>
 
 
 
 ------------------------------------------------------------
 
-0\) SOURCE OF TRUTH (SoT) + Konflikt-Priorität (bindend)
+0\) SOURCE OF TRUTH (SoT) + Konflikt-PrioritÃ¤t (bindend)
 
 ------------------------------------------------------------
 
-SoT ist ausschließlich ./docs (keine Altpfade/Parallel-Spezifikationen).
+SoT ist ausschlieÃŸlich ./docs (keine Altpfade/Parallel-Spezifikationen).
 
 
 
@@ -40,15 +40,15 @@ Pflicht-Reihenfolge beim Nachschlagen / bei Konflikten:
 
 
 
-Wichtig: Einige SoT-Dateien wurden zeitweise mit „Block x/x … ```md“ Wrappern gespeichert.
+Wichtig: Einige SoT-Dateien wurden zeitweise mit â€žBlock x/x â€¦ ```mdâ€œ Wrappern gespeichert.
 
-Wenn das im Repo noch so ist: Inhalt innerhalb des ```md Codeblocks ist maßgeblich.
+Wenn das im Repo noch so ist: Inhalt innerhalb des ```md Codeblocks ist maÃŸgeblich.
 
 
 
 ------------------------------------------------------------
 
-1\) HARTE INVARIANTEN (Security/Policy) – niemals brechen
+1\) HARTE INVARIANTEN (Security/Policy) â€“ niemals brechen
 
 ------------------------------------------------------------
 
@@ -56,29 +56,29 @@ Wenn das im Repo noch so ist: Inhalt innerhalb des ```md Codeblocks ist maßgebl
 
 \- RBAC serverseitig enforced + object-level checks (Owner/Business/Scope)
 
-\- Moderator strikt nur Blog/News; sonst überall 403
+\- Moderator strikt nur Blog/News; sonst Ã¼berall 403
 
 \- Actor required: ohne Actor -> 401 (unauth), nicht 403
 
 \- Keine PII/Secrets in Logs/Responses/Exports (auch nicht in Debug-Ausgaben)
 
-\- Uploads: Quarantäne-by-default, Approve nur nach Scan CLEAN
+\- Uploads: QuarantÃ¤ne-by-default, Approve nur nach Scan CLEAN
 
-\- Exports: für Nicht-Admins nur redacted; Dokument-Refs nur APPROVED
+\- Exports: fÃ¼r Nicht-Admins nur redacted; Dokument-Refs nur APPROVED
 
-\- Public QR Pflichttext exakt unverändert (siehe unten)
+\- Public QR Pflichttext exakt unverÃ¤ndert (siehe unten)
 
 
 
 Env-Hinweis:
 
-\- Export/Redaction/HMAC braucht LTC\_SECRET\_KEY (>=16) – Tests/DEV setzen ihn explizit.
+\- Export/Redaction/HMAC braucht LTC\_SECRET\_KEY (>=16) â€“ Tests/DEV setzen ihn explizit.
 
 
 
 ------------------------------------------------------------
 
-2\) PRODUKT (Unified) – was gebaut wird
+2\) PRODUKT (Unified) â€“ was gebaut wird
 
 ------------------------------------------------------------
 
@@ -90,7 +90,7 @@ Bindende Produktspezifikation:
 
 Kernidee:
 
-\- Digitales Serviceheft + Nachweis-/Dokumentationsqualität -> Trust-Ampel
+\- Digitales Serviceheft + Nachweis-/DokumentationsqualitÃ¤t -> Trust-Ampel
 
 \- Trust-Ampel ist KEINE technische Zustandsbewertung.
 
@@ -98,13 +98,13 @@ Kernidee:
 
 Pflicht-Disclaimer (Public-QR, exakt):
 
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+â€žDie Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.â€œ
 
 
 
 ------------------------------------------------------------
 
-3\) ROUTING/RBAC (wer darf was) – Einstieg
+3\) ROUTING/RBAC (wer darf was) â€“ Einstieg
 
 ------------------------------------------------------------
 
@@ -120,7 +120,7 @@ Globalregeln (Kurzform):
 
 &nbsp; /auth/\*, /health, /public/\*, /blog/\*, /news/\*
 
-\- Objektbezogene Routen: immer object-level checks zusätzlich zum Role-Gate
+\- Objektbezogene Routen: immer object-level checks zusÃ¤tzlich zum Role-Gate
 
 
 
@@ -154,7 +154,7 @@ Wichtige Route-Gruppen (Details in Rights Matrix):
 
 ------------------------------------------------------------
 
-4\) STATUS (main) – was ist bereits DONE (Referenzen/Dateien)
+4\) STATUS (main) â€“ was ist bereits DONE (Referenzen/Dateien)
 
 ------------------------------------------------------------
 
@@ -198,17 +198,17 @@ D) Docs Encoding Fix (UTF-8)
 
 \- server/scripts/fix\_docs\_encoding\_utf8.ps1
 
-\- Branch Protection: Required Checks auf Job-Name „pytest“
+\- Branch Protection: Required Checks auf Job-Name â€žpytestâ€œ
 
 
 
-E) P0 Uploads Quarantäne (Documents)
+E) P0 Uploads QuarantÃ¤ne (Documents)
 
 \- Workflow: QUARANTINED/PENDING -> Admin scan -> CLEAN/INFECTED -> approve/reject
 
 \- Download-Regeln: user/vip/dealer nur APPROVED + scope + object-level
 
-\- Admin/Superadmin: Review auch QUARANTINED möglich
+\- Admin/Superadmin: Review auch QUARANTINED mÃ¶glich
 
 
 
@@ -222,7 +222,7 @@ F) P0 Actor Source of Truth
 
 G) Moderator hard-block runtime coverage
 
-\- server/tests/test\_moderator\_block\_coverage\_runtime.py (Runtime-Scan über registrierte Routes)
+\- server/tests/test\_moderator\_block\_coverage\_runtime.py (Runtime-Scan Ã¼ber registrierte Routes)
 
 
 
@@ -240,7 +240,7 @@ I) VIP Business Staff-Limit + Superadmin Gate
 
 \- VIP-Gewerbe max. 2 Staff-Accounts
 
-\- Superadmin-only Freigabe/Erhöhung
+\- Superadmin-only Freigabe/ErhÃ¶hung
 
 \- Referenzen: server/app/admin/routes.py, server/tests/test\_vip\_business\_staff\_limit.py
 
@@ -262,7 +262,7 @@ K) Public Blog/News endpoints
 
 ------------------------------------------------------------
 
-5\) PRODUKTLOGIK (E2E) – „was muss funktionieren“
+5\) PRODUKTLOGIK (E2E) â€“ â€žwas muss funktionierenâ€œ
 
 ------------------------------------------------------------
 
@@ -274,37 +274,37 @@ Bindend:
 
 Schnellindex der wichtigsten Spec-Abschnitte:
 
-\- §2 End-to-End Flow (Landing -> Eintritt -> Rollenwahl -> Signup -> Consent -> VIN -> Onboarding)
+\- Â§2 End-to-End Flow (Landing -> Eintritt -> Rollenwahl -> Signup -> Consent -> VIN -> Onboarding)
 
-\- §3 Fahrzeuge/Collections + Paywall (1 gratis, ab 2 serverseitig)
+\- Â§3 Fahrzeuge/Collections + Paywall (1 gratis, ab 2 serverseitig)
 
-\- §5 Entries Pflichtfelder (Datum, Typ, durchgeführt von, Kilometerstand)
+\- Â§5 Entries Pflichtfelder (Datum, Typ, durchgefÃ¼hrt von, Kilometerstand)
 
-\- §6 Upload (Bilder/PDF), Trusted Upload Hash/Checksum, PII-Workflow
+\- Â§6 Upload (Bilder/PDF), Trusted Upload Hash/Checksum, PII-Workflow
 
-\- §7 T1/T2/T3 (Nachträge)
+\- Â§7 T1/T2/T3 (NachtrÃ¤ge)
 
-\- §8 Public Mini-Check (datenarm, VIN maskiert)
+\- Â§8 Public Mini-Check (datenarm, VIN maskiert)
 
-\- §9 Trust-Ampel + To-dos (VIP Top3 vs Non-VIP volle Liste)
+\- Â§9 Trust-Ampel + To-dos (VIP Top3 vs Non-VIP volle Liste)
 
-\- §10 Unfalltrust (Unbekannt deckelt max Orange; Unfall -> Grün nur abgeschlossen + belegt)
+\- Â§10 Unfalltrust (Unbekannt deckelt max Orange; Unfall -> GrÃ¼n nur abgeschlossen + belegt)
 
-\- §11 Oldtimer-/Restauration-Trust (Trust-Ordner)
+\- Â§11 Oldtimer-/Restauration-Trust (Trust-Ordner)
 
-\- §12 Modul-Eingang (Übernehmen/Ablehnen/Später), Spam-Schutz
+\- Â§12 Modul-Eingang (Ãœbernehmen/Ablehnen/SpÃ¤ter), Spam-Schutz
 
-\- §13 Immutable Systemlogs (OBD/GPS)
+\- Â§13 Immutable Systemlogs (OBD/GPS)
 
-\- §14 Transfer/Dealer (klar getrennt)
+\- Â§14 Transfer/Dealer (klar getrennt)
 
-\- §15 PDFs/TTL (Trust 90d, Wartung 30d, Inserat 30d; Historie bleibt)
+\- Â§15 PDFs/TTL (Trust 90d, Wartung 30d, Inserat 30d; Historie bleibt)
 
-\- §16 Notifications (Digest + kritisch sofort; VIP Ruhezeiten E-Mail)
+\- Â§16 Notifications (Digest + kritisch sofort; VIP Ruhezeiten E-Mail)
 
-\- §18 Import (Validate -> Run + Report; Dubletten skip)
+\- Â§18 Import (Validate -> Run + Report; Dubletten skip)
 
-\- §20 Add-ons Gate/Grandfathering: addon\_first\_enabled\_at == NULL -> „neu“ (Paywall erlaubt)
+\- Â§20 Add-ons Gate/Grandfathering: addon\_first\_enabled\_at == NULL -> â€žneuâ€œ (Paywall erlaubt)
 
 
 
@@ -314,17 +314,17 @@ Schnellindex der wichtigsten Spec-Abschnitte:
 
 ------------------------------------------------------------
 
-A) Vor jeder Änderung:
+A) Vor jeder Ã„nderung:
 
 \- docs/99\_MASTER\_CHECKPOINT.md lesen (aktueller Stand, PRs, Scripts)
 
-\- docs/03\_RIGHTS\_MATRIX.md prüfen (RBAC/Allowlist/403/401/Objektchecks)
+\- docs/03\_RIGHTS\_MATRIX.md prÃ¼fen (RBAC/Allowlist/403/401/Objektchecks)
 
-\- docs/01\_DECISIONS.md prüfen (Entscheidungen/Regeln)
+\- docs/01\_DECISIONS.md prÃ¼fen (Entscheidungen/Regeln)
 
 
 
-B) Jede Feature-/Policy-/Flow-Änderung MUSS docs updaten:
+B) Jede Feature-/Policy-/Flow-Ã„nderung MUSS docs updaten:
 
 \- docs/99\_MASTER\_CHECKPOINT.md (Status + PR/Scripts)
 
@@ -342,7 +342,7 @@ C) Logging/Responses:
 
 \- keine ungefilterten Dokument-IDs oder User-IDs in Public-Kontexten
 
-\- Exports redacted für Nicht-Admins
+\- Exports redacted fÃ¼r Nicht-Admins
 
 
 
@@ -350,7 +350,7 @@ D) RBAC-Enforcement:
 
 \- jede Route hat Gate (deny-by-default)
 
-\- Moderator: hard block via Dependency (forbid\_moderator) + Runtime-Scan Test muss weiter grün bleiben
+\- Moderator: hard block via Dependency (forbid\_moderator) + Runtime-Scan Test muss weiter grÃ¼n bleiben
 
 \- object-level checks nicht vergessen (Owner/Business/Scopes)
 
@@ -364,7 +364,7 @@ D) RBAC-Enforcement:
 
 API (Tab A):
 
-\- cd C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\server
+\- cd <REPO-ROOT>\\server
 
 \- $env:LTC\_SECRET\_KEY="dev\_test\_secret\_key\_32\_chars\_minimum\_\_OK"
 
@@ -374,7 +374,7 @@ API (Tab A):
 
 WEB (Tab B):
 
-\- cd C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\packages\\web
+\- cd <REPO-ROOT>\\packages\\web
 
 \- npm install
 
@@ -386,7 +386,7 @@ WEB (Tab B):
 
 Tests:
 
-\- cd C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\server
+\- cd <REPO-ROOT>\\server
 
 \- $env:LTC\_SECRET\_KEY="dev\_test\_secret\_key\_32\_chars\_minimum\_\_OK"
 
@@ -396,7 +396,7 @@ Tests:
 
 Web Build Smoke:
 
-\- cd C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0
+\- cd <REPO-ROOT>
 
 \- pwsh -NoProfile -ExecutionPolicy Bypass -File .\\server\\scripts\\ltc\_web\_toolkit.ps1 -Smoke -Clean
 
@@ -404,7 +404,7 @@ Web Build Smoke:
 
 ------------------------------------------------------------
 
-8\) „WO FINDE ICH WAS“ – Pfad-Mapping (für Codex)
+8\) â€žWO FINDE ICH WASâ€œ â€“ Pfad-Mapping (fÃ¼r Codex)
 
 ------------------------------------------------------------
 
@@ -446,7 +446,7 @@ Scripts:
 
 \- server/scripts/fix\_docs\_encoding\_utf8.ps1
 
-\- server/scripts/patch\_\* (siehe Master Checkpoint für genaue Namen/Zwecke)
+\- server/scripts/patch\_\* (siehe Master Checkpoint fÃ¼r genaue Namen/Zwecke)
 
 
 
@@ -470,21 +470,21 @@ Frontend:
 
 ------------------------------------------------------------
 
-9\) CHECKLISTE für jede Änderung (kurz, strikt)
+9\) CHECKLISTE fÃ¼r jede Ã„nderung (kurz, strikt)
 
 ------------------------------------------------------------
 
-\- Security: deny-by-default, Moderator überall 403 außer Allowlist
+\- Security: deny-by-default, Moderator Ã¼berall 403 auÃŸer Allowlist
 
 \- Actor missing -> 401
 
 \- Object-level checks vorhanden
 
-\- Documents: Quarantäne/Scan/Approve/Download-Regeln unverändert korrekt
+\- Documents: QuarantÃ¤ne/Scan/Approve/Download-Regeln unverÃ¤ndert korrekt
 
 \- Exports redacted + nur APPROVED-Dokumentrefs
 
-\- Tests grün: pytest
+\- Tests grÃ¼n: pytest
 
 \- Docs aktualisiert (Master Checkpoint + ggf. Rights/Decisions/Spec)
 
