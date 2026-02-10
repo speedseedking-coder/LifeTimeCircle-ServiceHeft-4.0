@@ -1,11 +1,11 @@
-{
+﻿{
   "name": "@lifetimecircle/web",
   "private": true,
   "engines": { "node": ">=20.19.0" },
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort"
   },
@@ -21,3 +21,5 @@
     "vite": "^7.3.1"
   }
 }
+
+
