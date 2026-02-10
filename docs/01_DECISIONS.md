@@ -1,4 +1,4 @@
-# docs/01_DECISIONS.md
+﻿# docs/01_DECISIONS.md
 # LifeTimeCircle â€“ Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
 Stand: **2026-02-06**
@@ -218,6 +218,7 @@ Stand: **2026-02-06**
 - Required Check bleibt stabil: Branch Protection strict=true + required pytest
 
 
+<<<<<<< HEAD
 ## DEC-2026-02-09 – Web Pages Scaffold ist MVP-Standard + IST-ZUSTAND Voll-Check als Merge-Gate
 
 **Status:** angenommen  
@@ -250,4 +251,6 @@ Stand: **2026-02-06**
 ### Konsequenzen
 - PRs gelten erst als „fertig“, wenn **CI grün** UND **lokaler IST-ZUSTAND Voll-Check grün**.
 - Public-QR bleibt datenarm; Pflicht-Disclaimer darf nicht verändert werden.
+=======
+>>>>>>> 018a2ca (docs: fix title dash encoding in decisions log)
 
