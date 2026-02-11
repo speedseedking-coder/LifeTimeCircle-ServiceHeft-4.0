@@ -1,4 +1,4 @@
-﻿export default function VehiclesPage(): JSX.Element {
+export default function VehiclesPage(): JSX.Element {
   const demoVehicles = [
     { id: "demo-1", title: "Demo Fahrzeug 1" },
     { id: "demo-2", title: "Demo Fahrzeug 2" },

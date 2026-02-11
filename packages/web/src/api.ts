@@ -1,4 +1,4 @@
-﻿export type ApiBody = unknown | string;
+export type ApiBody = unknown | string;
 
 export type ApiResult =
   | {

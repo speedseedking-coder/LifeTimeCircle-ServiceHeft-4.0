@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@lifetimecircle/web",
   "private": true,
   "engines": { "node": ">=20.19.0" },
@@ -21,6 +21,3 @@
     "vite": "^7.3.1"
   }
 }
-
-
-

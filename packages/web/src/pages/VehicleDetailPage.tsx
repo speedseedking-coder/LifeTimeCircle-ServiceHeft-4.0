@@ -1,4 +1,4 @@
-﻿function getVehicleIdFromPath(pathname: string): string {
+function getVehicleIdFromPath(pathname: string): string {
   const parts = pathname.split("/").filter(Boolean);
   const i = parts.indexOf("vehicles");
   if (i >= 0 && parts[i + 1]) return decodeURIComponent(parts[i + 1]);

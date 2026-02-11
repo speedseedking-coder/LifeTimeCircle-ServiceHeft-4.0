@@ -1,4 +1,4 @@
-﻿export default function DocumentsPage(): JSX.Element {
+export default function DocumentsPage(): JSX.Element {
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
       <h1>Documents</h1>

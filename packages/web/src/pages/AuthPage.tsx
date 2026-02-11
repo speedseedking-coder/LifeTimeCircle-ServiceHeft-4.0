@@ -1,4 +1,4 @@
-﻿export default function AuthPage(): JSX.Element {
+export default function AuthPage(): JSX.Element {
   return (
     <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
       <h1>Auth</h1>

@@ -1,4 +1,4 @@
-﻿import type { CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 const box: CSSProperties = {
   border: "1px solid rgba(0,0,0,0.12)",
