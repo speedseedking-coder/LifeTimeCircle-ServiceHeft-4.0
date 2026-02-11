@@ -47,3 +47,11 @@ scripts/dump_*.ps1
 
 # local scratch
 tmp/
+
+# Local-only artifacts
+_local/
+
+
+# local backups
+packages/web/src/*.bak_*
+

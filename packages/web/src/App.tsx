@@ -10,6 +10,7 @@ import ConsentPage from "./pages/ConsentPage";
 import VehiclesPage from "./pages/VehiclesPage";
 import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DocumentsPage from "./pages/DocumentsPage";
+import OnboardingWizardPage from "./pages/OnboardingWizardPage";
 
 type Route =
   | { kind: "home" }
@@ -22,7 +23,8 @@ type Route =
   | { kind: "consent" }
   | { kind: "vehicles" }
   | { kind: "vehicleDetail"; vehicleId: string }
-  | { kind: "documents" };
+  | { kind: "documents" }
+  | { kind: "onboarding" };
 
 function parseHash(): Route {
   const raw = (window.location.hash || "").replace(/^#\/?/, "");
@@ -43,6 +45,7 @@ function parseHash(): Route {
   if (parts[0] === "vehicles" && parts.length === 1) return { kind: "vehicles" };
   if (parts[0] === "vehicles" && parts[1]) return { kind: "vehicleDetail", vehicleId: parts[1] };
   if (parts[0] === "documents") return { kind: "documents" };
+  if (parts[0] === "onboarding") return { kind: "onboarding" };
 
   return { kind: "home" };
 }
@@ -340,6 +343,9 @@ export default function App() {
       {route.kind === "vehicles" && <VehiclesPage />}
       {route.kind === "vehicleDetail" && <VehicleDetailPage />}
       {route.kind === "documents" && <DocumentsPage />}
+      {route.kind === "onboarding" && <OnboardingWizardPage />}
     </div>
   );
 }
+
+
