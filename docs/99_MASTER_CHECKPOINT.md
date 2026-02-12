@@ -1,4 +1,11 @@
-﻿
+﻿## Release Approval Record (Ticket/Jira, post-release doc-only)
+
+Release Manager Approval: GO — RC1 Freeze Verified (v0.1.0-rc1), No-Change Evidence attached.
+Change Type: None | Risk: Low | Rollback: N/A
+Post-release documentation only — RC1 tag unchanged.
+RC1 Proof: tag object 3d02a806691cbf5efddcf9f2ee1125125fed23ca + peeled f60680ffe53557f96147db8c765d39e2a63286f5 verified.
+No code changes.
+
 ✅ PR #95 **gemerged**: `chore/ci-helper-script`
 - `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
 
@@ -237,3 +244,4 @@ cd ".\server"
 $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
 py -3.11 -m poetry run pytest -q
+
