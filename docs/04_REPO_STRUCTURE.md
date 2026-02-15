@@ -75,7 +75,7 @@ LifeTimeCircle-ServiceHeft-4.0/
 
 ## 6) Quick Commands (Windows / Repo-Root)
 ```powershell
-cd "<REPO-ROOT>"
+cd (git rev-parse --show-toplevel)
 
 # Sync + Status
 git switch main

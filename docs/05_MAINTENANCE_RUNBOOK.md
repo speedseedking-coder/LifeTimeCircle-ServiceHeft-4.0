@@ -56,11 +56,12 @@ Immer zuerst:
 
 ```powershell
 
-cd "<REPO-ROOT>"
+cd (git rev-parse --show-toplevel)
 
 git switch main
 
 git pull --ff-only origin main
 
 git status -sb
+
 
