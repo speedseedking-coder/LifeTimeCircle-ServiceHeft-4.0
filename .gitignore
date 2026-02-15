@@ -55,3 +55,4 @@ _local/
 # local backups
 packages/web/src/*.bak_*
 
+data/
