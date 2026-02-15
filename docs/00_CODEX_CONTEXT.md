@@ -9,11 +9,7 @@ Stand: 2026-02-08
 Ziel dieses Dokuments: Codex/Agenten sollen ohne Rückfragen sofort „richtig“ im Repo arbeiten können.
 
 Repo liegt lokal weiterhin unter:
-
-<REPO-ROOT>
-
-
-
+(git rev-parse --show-toplevel)
 ------------------------------------------------------------
 
 0\) SOURCE OF TRUTH (SoT) + Konflikt-Priorität (bindend)
@@ -364,7 +360,7 @@ D) RBAC-Enforcement:
 
 API (Tab A):
 
-\- cd <REPO-ROOT>\\server
+\- cd (git rev-parse --show-toplevel); cd .\server
 
 \- $env:LTC\_SECRET\_KEY="dev\_test\_secret\_key\_32\_chars\_minimum\_\_OK"
 
@@ -374,7 +370,7 @@ API (Tab A):
 
 WEB (Tab B):
 
-\- cd <REPO-ROOT>\\packages\\web
+\- cd (git rev-parse --show-toplevel); cd .\packages\web
 
 \- npm install
 
@@ -386,7 +382,7 @@ WEB (Tab B):
 
 Tests:
 
-\- cd <REPO-ROOT>\\server
+\- cd (git rev-parse --show-toplevel); cd .\server
 
 \- $env:LTC\_SECRET\_KEY="dev\_test\_secret\_key\_32\_chars\_minimum\_\_OK"
 
@@ -396,7 +392,7 @@ Tests:
 
 Web Build Smoke:
 
-\- cd <REPO-ROOT>
+\- cd (git rev-parse --show-toplevel)
 
 \- pwsh -NoProfile -ExecutionPolicy Bypass -File .\\server\\scripts\\ltc\_web\_toolkit.ps1 -Smoke -Clean
 
@@ -487,4 +483,5 @@ Frontend:
 \- Tests grün: pytest
 
 \- Docs aktualisiert (Master Checkpoint + ggf. Rights/Decisions/Spec)
+
 
