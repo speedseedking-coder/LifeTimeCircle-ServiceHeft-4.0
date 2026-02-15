@@ -246,3 +246,13 @@ Stand: **2026-02-15**
 ### Konsequenzen
 - PRs gelten erst als "fertig", wenn **Required Check `pytest` gruen** UND **lokaler IST-ZUSTAND Voll-Check gruen**.
 - Public-QR bleibt datenarm; Pflicht-Disclaimer darf nicht veraendert werden.
+---
+
+## D-031: Preflight Remote-Gate verlangt echten `origin` + `git ls-remote --heads origin`
+**Status:** beschlossen  
+**Warum:** Ein lokaler Pfad als `origin` (z.B. `.`) kann Fetch kuenstlich "gruen" machen, prueft aber keinen realen PR-Flow gegen ein Remote-Repository.  
+**Konsequenz:**  
+- Gate ist nur gruen, wenn `git remote -v` einen echten Remote-URL zeigt (kein lokaler Pfad wie `.` oder Dateisystempfad).  
+- Zusaetzlich muss `git ls-remote --heads origin` erfolgreich laufen (Erreichbarkeit + Auth pruefbar).  
+- Bei Fail: **STOP**, keine weiteren Commits/PR-Aktionen bis Remote korrekt konfiguriert ist.
+
