@@ -1,4 +1,4 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\00\_INDEX.md
+﻿./docs//00/_INDEX.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 
@@ -95,6 +95,4 @@ Regel: Policies liegen in `docs/policies/`, Modul- und Term-Definitionen in `doc
 \- Neue verbindliche Regeln → `docs/policies/\*` + Eintrag in `docs/01\_DECISIONS.md`
 
 \- Modul-Repos kopieren immer `docs/07\_CONTEXT\_PACK.md` (unverändert)
-
-
-
+- docs/00_CODEX_CONTEXT.md — Codex/Agent Briefing (SoT Helper)

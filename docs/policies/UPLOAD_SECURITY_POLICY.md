@@ -1,4 +1,4 @@
-// File: C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\policies\\UPLOAD\_SECURITY\_POLICY.md
+﻿// File: ./docs//policies//UPLOAD/_SECURITY/_POLICY.md
 
 
 
