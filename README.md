@@ -1,4 +1,10 @@
-﻿# LifeTimeCircle – ServiceHeft 4.0
+# LifeTimeCircle – ServiceHeft 4.0
+
+<!-- LTC_START_HERE_LINKS -->
+- **Start Here**: docs/07_START_HERE.md
+- **Maintenance/Runbook**: docs/05_MAINTENANCE_RUNBOOK.md
+<!-- /LTC_START_HERE_LINKS -->
+
 
 ## Source of Truth (verbindlich)
 Bei fachlichen Konflikten gilt ausschließlich diese Reihenfolge:
