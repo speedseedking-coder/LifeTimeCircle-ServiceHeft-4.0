@@ -1,31 +1,69 @@
-﻿# tools/test_all.ps1
-# One-command green: backend tests + web build
+# tools/test_all.ps1
+# LifeTimeCircle – ServiceHeft 4.0
+# Ziel: deterministisch fail-fast (kein "False-Green" bei npm/tsc/pytest Fehlern)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-function Step($msg) { Write-Host ""; Write-Host "==> $msg" }
+function Invoke-Step {
+  param(
+    [Parameter(Mandatory=$true)][string]$Name,
+    [Parameter(Mandatory=$true)][scriptblock]$Script
+  )
 
-function Run-Step([string]$name, [scriptblock]$fn) {
-  try { Step $name; & $fn; Write-Host "OK: $name"; return $true }
-  catch { Write-Host "FAIL: $name"; Write-Host $_; return $false }
+  Write-Host ""
+  Write-Host "==> $Name"
+  & $Script
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "FAILED: $Name (exit=$LASTEXITCODE)"
+  }
+
+  Write-Host "OK: $Name"
 }
 
-$repoRoot = (git rev-parse --show-toplevel) 2>$null
-if (-not $repoRoot) { throw "Not inside a git repo (git rev-parse failed)." }
-Set-Location $repoRoot
+try {
+  $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+  Set-Location $repoRoot
 
-$ok = $true
+  # Tests brauchen einen starken Secret-Key (>=16) für Export/Redaction/HMAC
+  if (-not $env:LTC_SECRET_KEY -or $env:LTC_SECRET_KEY.Trim().Length -lt 16) {
+    $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+  }
 
-$ok = $ok -and (Run-Step "Backend tests (server): poetry run pytest -q" {
-  Push-Location "server"
-  try { poetry run pytest -q } finally { Pop-Location }
-})
+  Invoke-Step -Name "Backend tests (server): poetry run pytest -q" -Script {
+    Push-Location (Join-Path $repoRoot "server")
+    try {
+      & poetry run pytest -q
+      if ($LASTEXITCODE -ne 0) { throw "pytest failed (exit=$LASTEXITCODE)" }
+    } finally {
+      Pop-Location
+    }
+  }
 
-$ok = $ok -and (Run-Step "Web build (packages/web): npm ci + npm run build" {
-  Push-Location "packages/web"
-  try { npm ci; npm run build } finally { Pop-Location }
-})
+  Invoke-Step -Name "Web build (packages/web): npm ci + npm run build" -Script {
+    Push-Location (Join-Path $repoRoot "packages/web")
+    try {
+      & npm ci
+      if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit=$LASTEXITCODE)" }
 
-Write-Host ""
-if ($ok) { Write-Host "ALL GREEN ✅"; exit 0 }
-else { Write-Host "SOMETHING FAILED ❌"; exit 1 }
+      # sanity: tsc muss nach npm ci existieren
+      if (-not (Test-Path ".\node_modules\.bin\tsc.cmd")) {
+        throw "tsc.cmd fehlt nach npm ci (packages/web/node_modules/.bin/tsc.cmd)."
+      }
+
+      & npm run build
+      if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit=$LASTEXITCODE)" }
+    } finally {
+      Pop-Location
+    }
+  }
+
+  Write-Host ""
+  Write-Host "ALL GREEN ✅"
+  exit 0
+}
+catch {
+  Write-Error $_
+  exit 1
+}
