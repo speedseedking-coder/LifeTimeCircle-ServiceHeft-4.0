@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\DATA_CLASSIFICATION.md
+﻿// File: ./docs/policies/DATA_CLASSIFICATION.md
 
 # DATA_CLASSIFICATION – Datenklassen & Handhabung
 

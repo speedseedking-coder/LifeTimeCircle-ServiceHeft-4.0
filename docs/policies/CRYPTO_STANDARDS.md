@@ -1,4 +1,4 @@
-// File: C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\policies\\CRYPTO\_STANDARDS.md
+﻿// File: ./docs//policies//CRYPTO/_STANDARDS.md
 
 
 

@@ -1,4 +1,4 @@
-\# Dateiname: docs/AI\_HINTS.md
+﻿\# Dateiname: docs/AI\_HINTS.md
 
 Version: 2026-03 | Last-Update: YYYY-MM-DD
 
@@ -10,7 +10,7 @@ Projekt:
 
 \- Produktion statt Demo. Default: deny-by-default + least privilege. RBAC serverseitig enforced.
 
-\- Source of Truth: C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs (keine Altpfade/Altversionen).
+\- Source of Truth: `./docs` (keine Altpfade/Altversionen).
 
 
 

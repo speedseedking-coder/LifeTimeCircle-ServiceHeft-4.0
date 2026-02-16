@@ -1,10 +1,7 @@
-
-Block 6/6 — `docs/04_REPO_STRUCTURE.md`
-```md
-# docs/04_REPO_STRUCTURE.md
+﻿# docs/04_REPO_STRUCTURE.md
 # LifeTimeCircle – Service Heft 4.0
 **Repo-Struktur / Source of Truth (SoT)**  
-Stand: **2026-02-06**
+Stand: **2026-02-08**
 
 > Ziel: klare Pfade, keine Altversionen, keine Duplikate.  
 > **./docs** ist Source of Truth.
@@ -78,7 +75,7 @@ LifeTimeCircle-ServiceHeft-4.0/
 
 ## 6) Quick Commands (Windows / Repo-Root)
 ```powershell
-cd "C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0"
+cd (git rev-parse --show-toplevel)
 
 # Sync + Status
 git switch main
@@ -89,6 +86,7 @@ git status -sb
 cd .\server
 $env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"
 poetry run pytest -q
+py -3.11 -m poetry run pytest -q
 
 # Web Smoke (build)
 cd ..

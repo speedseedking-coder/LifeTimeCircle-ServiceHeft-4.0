@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\TRUSTSCORE_SPEC.md
+﻿// File: ./docs/policies/TRUSTSCORE_SPEC.md
 
 # TRUSTSCORE_SPEC – Public-QR Trustscore (Nachweisqualität, nicht Zustand)
 

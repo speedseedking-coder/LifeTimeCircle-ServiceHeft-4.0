@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\AUTH_SECURITY_DEFAULTS.md
+﻿// File: ./docs/policies/AUTH_SECURITY_DEFAULTS.md
 
 # AUTH_SECURITY_DEFAULTS – Login, Sessions, Anti-Abuse (passwordless)
 

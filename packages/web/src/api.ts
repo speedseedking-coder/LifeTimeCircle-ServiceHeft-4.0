@@ -35,15 +35,17 @@ async function readBody(res: Response): Promise<{ contentType: string | null; bo
   return { contentType, body: await res.text() };
 }
 
-export async function apiGet(path: string, init?: RequestInit): Promise<ApiResult> {
+async function apiRequest(method: "GET" | "POST", path: string, init?: RequestInit): Promise<ApiResult> {
   const url = `/api${normalizePath(path)}`;
 
   let res: Response;
   try {
     res = await fetch(url, {
-      method: "GET",
+      method,
       headers: {
         Accept: "application/json, text/plain, text/html;q=0.9, */*;q=0.8",
+        // Content-Type nur setzen, wenn wir wirklich JSON-String senden (future-safe für FormData)
+        ...((typeof init?.body === "string" && init.body.length > 0) ? { "Content-Type": "application/json" } : {}),
         ...(init?.headers ?? {}),
       },
       ...init,
@@ -56,27 +58,27 @@ export async function apiGet(path: string, init?: RequestInit): Promise<ApiResul
   const { contentType, body } = await readBody(res);
 
   if (!res.ok) {
-    const errorText =
-      typeof body === "string"
-        ? body.slice(0, 500)
-        : (() => {
-            try {
-              return JSON.stringify(body).slice(0, 500);
-            } catch {
-              return "unknown_error_body";
-            }
-          })();
-
     return {
       ok: false,
       status: res.status,
       contentType,
       error: `http_${res.status}`,
-      body: errorText,
+      body,
     };
   }
 
   return { ok: true, status: res.status, contentType, body };
+}
+
+export async function apiGet(path: string, init?: RequestInit): Promise<ApiResult> {
+  return apiRequest("GET", path, init);
+}
+
+export async function apiPost(path: string, body?: unknown, init?: RequestInit): Promise<ApiResult> {
+  return apiRequest("POST", path, {
+    ...init,
+    body: typeof body === "undefined" ? undefined : JSON.stringify(body),
+  });
 }
 
 export function prettyBody(body: ApiBody): string {
@@ -95,4 +97,28 @@ export function isRecord(v: unknown): v is Record<string, unknown> {
 
 export function asString(v: unknown): string | null {
   return typeof v === "string" ? v : null;
+}
+
+export function extractApiError(body: unknown): string | null {
+  if (typeof body === "string") {
+    try {
+      const parsed = JSON.parse(body) as unknown;
+      if (isRecord(parsed)) {
+        const detail = parsed.detail;
+        if (typeof detail === "string") return detail;
+        if (isRecord(detail) && typeof detail.code === "string") return detail.code;
+      }
+    } catch {
+      // keep raw string fallback
+    }
+    return body;
+  }
+
+  if (isRecord(body)) {
+    const detail = body.detail;
+    if (typeof detail === "string") return detail;
+    if (isRecord(detail) && typeof detail.code === "string") return detail.code;
+  }
+
+  return null;
 }

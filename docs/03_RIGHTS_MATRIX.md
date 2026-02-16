@@ -91,7 +91,7 @@ Regel:
 ## 6) Profil / Entitlements (UI: Profiladmin / E-Rolle)
 | Route-Group | superadmin | admin | dealer | vip | user | moderator |
 |---|---:|---:|---:|---:|---:|---:|
-| `/profile/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `/profile/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 | `/entitlements/*` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ 403 |
 
 Hinweis:
@@ -277,3 +277,10 @@ Regel:
 - 2-Step Validierung ist verpflichtend (validate → run)
 - Report ist verpflichtend (Erfolg/Fehler/Mapping)
 - Dubletten: skip + Report
+
+Zusatzregel „Trust-Evidence“:
+- Nicht-Admins dürfen Dokumente nur downloaden, wenn sie „valid evidence“ sind:
+  APPROVED + CLEAN + PII_OK (und object-level Zugriff).
+
+PII-Sichtbarkeit:
+- pii_status != OK => nur Owner/Admin sichtbar.

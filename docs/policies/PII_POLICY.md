@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\PII_POLICY.md
+﻿// File: ./docs/policies/PII_POLICY.md
 
 # PII_POLICY – Personenbezogene Daten (Erhebung, Verarbeitung, Schutz)
 

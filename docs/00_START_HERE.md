@@ -1,4 +1,4 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\00\_START\_HERE.md
+﻿./docs/00_START_HERE.md
 
 \# 00\_START\_HERE — LifeTimeCircle / Service Heft 4.0
 
@@ -8,7 +8,7 @@ Stand: 2026-01-30 (Europe/Berlin)
 
 Kontakt: lifetimecircle@online.de  
 
-Docs-SoT (Windows): `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\`  (keine Altpfade/Altversionen)
+Docs-SoT: `./docs/` (keine Altpfade/Altversionen)
 
 
 
@@ -88,7 +88,7 @@ Docs-SoT (Windows): `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\
 
 ```powershell
 
-cd "C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\server"
+cd ".\server"
 
 $env:LTC\_SECRET\_KEY="dev-only-change-me-please-change-me-32chars-XXXX"
 

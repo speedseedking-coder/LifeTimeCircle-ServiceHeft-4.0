@@ -1,4 +1,4 @@
-C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\06\_TERMS\_GLOSSARY.md
+﻿./docs/06_TERMS_GLOSSARY.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 
@@ -12,7 +12,7 @@ Stand: 2026-01-29
 
 \- \*\*Core / ServiceHeft-Core\*\*: Zentrale Anwendung, einzige Quelle für Vehicle/Timeline/Docs/Verification/Public-QR.
 
-\- \*\*Source of Truth (SoT)\*\*: `C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs` inkl. `docs/policies/`.
+\- \*\***Source of Truth (SoT)**: `./docs` inkl. `./docs/policies/`.
 
 \- \*\*Policy\*\*: Verbindliche Regel (Security/Privacy/RBAC/Trustscore). Modul-Repos dürfen Policies nicht überschreiben.
 

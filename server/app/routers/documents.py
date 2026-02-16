@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
-from app.models.documents import DocumentOut, DocumentScanStatus
 from app.services.documents_store import DocumentsStore, default_store
+from app.schemas.documents import DocumentOut
+from app.models.documents import DocumentScanStatus
 
 # singleton store (can be overridden in tests via dependency_overrides)
 _STORE: DocumentsStore = default_store()
@@ -24,8 +25,8 @@ def require_actor(request: Request):
         return actor
 
     # Dev/Smoke: Header-Fallback
-    role = request.headers.get("X-Role") or request.headers.get("x-role")
-    user_id = request.headers.get("X-User-Id") or request.headers.get("x-user-id")
+    role = request.headers.get("X-LTC-ROLE") or request.headers.get("x-ltc-role")
+    user_id = request.headers.get("X-LTC-UID") or request.headers.get("x-ltc-uid")
     if role and user_id:
         return {"role": role, "user_id": user_id}
 
@@ -169,3 +170,4 @@ def admin_reject(
         return store.reject(doc_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="not_found")
+

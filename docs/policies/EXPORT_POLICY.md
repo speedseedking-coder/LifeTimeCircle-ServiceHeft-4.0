@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\EXPORT_POLICY.md
+﻿// File: ./docs/policies/EXPORT_POLICY.md
 
 # EXPORT_POLICY – Datenexport (redacted default, Full Export nur admin)
 

@@ -134,6 +134,27 @@ UI-Regel (immer bei Optionalfeldern):
 
 ## 6) Dokumente / Upload, Kamera, PII (Datenschutz, produktionshart)
 
+## 6.x Trust-Evidence (harte Quelle)
+Trust darf nur auf serverseitig deterministischen Evidence-Regeln aufsetzen:
+
+Ein Dokument zählt als „valid evidence“ genau dann, wenn:
+- approval_status = APPROVED
+- scan_status = CLEAN
+- pii_status = OK
+- nicht gelöscht (deleted_at = NULL)
+
+Upload ist immer Quarantäne-by-default:
+- approval_status = QUARANTINED
+- scan_status = PENDING
+
+Approve ist nur erlaubt, wenn CLEAN + PII_OK.
+INFECTED führt automatisch zu REJECTED.
+
+PII-Regel (blockierend für T3):
+- pii_status in (SUSPECTED, CONFIRMED) => Sichtbarkeit nur Owner/Admin
+- solange PII offen: kein T3 möglich (Trust darf nicht grün werden durch solche Dokumente)
+- MVP-Bereinigung erfolgt via Neu-Upload (Replace), nicht via Toggle/Editor.
+
 ### 6.1 Upload (MVP)
 - Uploadquellen:
   - Foto aufnehmen (Kamera)
