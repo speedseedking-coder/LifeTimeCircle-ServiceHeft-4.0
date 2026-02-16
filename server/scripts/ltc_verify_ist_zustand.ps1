@@ -1,3 +1,22 @@
+Run "8) Web: npm ci + npm run build" {
+  if (!(Test-Path -LiteralPath "packages/web/package.json")) { Fail "packages/web/package.json fehlt"; throw "web package fehlt" }
+  if (!(Test-Path -LiteralPath "packages/web/package-lock.json")) { Fail "packages/web/package-lock.json fehlt (npm ci benötigt Lockfile)"; throw "web lockfile fehlt" }
+  $npm = Get-NpmCmd
+  Push-Location "packages/web"
+  try {
+    & $npm "ci" "--no-audit" "--no-fund"
+    if ($LASTEXITCODE -ne 0) { throw "STOP: npm ci failed (exit=$LASTEXITCODE)" }
+
+    & npx --no-install tsc -v
+    if ($LASTEXITCODE -ne 0) { throw "STOP: tsc missing after npm ci (exit=$LASTEXITCODE)" }
+    Ok "npm ci grün"
+
+    & $npm "run" "build"
+    if ($LASTEXITCODE -ne 0) { throw "STOP: npm run build failed (exit=$LASTEXITCODE)" }
+    Ok "npm run build grün"
+  }
+  finally { Pop-Location }
+}
 Write-Host "`n=== 8) Web: npm ci + npm run build ==="
 
 $web = Join-Path $root "packages/web"
