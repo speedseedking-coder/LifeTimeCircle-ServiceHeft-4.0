@@ -1,24 +1,6 @@
-﻿## Release Approval Record (Ticket/Jira, post-release doc-only)
-
-Release Manager Approval: GO — RC1 Freeze Verified (v0.1.0-rc1), No-Change Evidence attached.  
-Change Type: None | Risk: Low | Rollback: N/A  
-Post-release documentation only — RC1 tag unchanged.  
-RC1 Proof: tag object 3d02a806691cbf5efddcf9f2ee1125125fed23ca + peeled f60680ffe53557f96147db8c765d39e2a63286f5 verified.  
-No code changes.
-
-✅ PR #95 **gemerged**: `chore/ci-helper-script`
-- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
-
-✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
-- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
-
-✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
-
----
-
-# LifeTimeCircle – Service Heft 4.0
+﻿# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-12** (Europe/Berlin)
+Stand: **2026-02-16** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -32,6 +14,7 @@ Projekt:
 ## Produkt-Spezifikation (Unified) — SoT
 - **Ab jetzt nur noch „LifeTimeCircle · Service Heft (Unified)“** (kein Parallelzweig „2.0“)
 - Vollständige Spezifikation: `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- Spezifikation ist erweitert/finalisiert (E2E-Flow, Trust/Unfalltrust, PII, Module, Transfer/Dealer, PDFs/TTL, Notifications, Import, Packaging) – siehe `docs/02_PRODUCT_SPEC_UNIFIED.md`
 
 ---
 
@@ -40,36 +23,41 @@ Projekt:
 ### WIP: Vehicles MVP + Consent Gate (Next10 E2E)
 - Status: **PR offen** (Branch: `$marker`)
 - Scope:
-  - `/vehicles` Router (Create/List/Get), object-level, Moderator 403, VIN nur masked
-  - `require_consent(db, actor)` Gate (deny-by-default, 403 `consent_required`)
-  - Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
-
-### WIP: 80%-Alpha Track (Codex Masterplan)
-- Branch: `codex/80pct-masterplan`
-- Commit: `512b59e` — Phase A+B fertig:
-  - Repo-Sanity erledigt, echter Merge-Conflict in SoT/Decisions bereinigt
-  - **Tests/CI gehärtet**: `LTC_SECRET_KEY` stabil für pytest/CI (harmloser DEV-Testkey), lokal reproduzierbar grün
-  - `server/tests/conftest.py`: autouse-Fixture + Marker-Ausnahme `allow_missing_secret`
-  - `.github/workflows/ci.yml` setzt stabilen DEV-Wert für `LTC_SECRET_KEY` im pytest-Job
-  - Docs: `docs/01_DECISIONS.md` Conflict-Marker entfernt, `docs/99_MASTER_CHECKPOINT.md` WIP-Block ergänzt
-- PR (make_pr): „fix: stabilize LTC_SECRET_KEY for pytest and resolve decisions merge markers“
-
-### WIP: Projektstandsanalyse (Doc-only)
-- Commit: `216e4b9`
-- Neue Datei: `docs/12_PROJECT_STATUS_ANALYSE_2026-02-12.md`
-- PR (make_pr): „docs: add project status analysis (folder/file-wide assessment)“
+  - `/vehicles` Router (Create/List/Get), object-level, Moderator überall 403 (außer Blog/News/Public)
+  - VIN nur masked
+  - `require_consent(db, actor)` Gate (deny-by-default, **403** `consent_required`)
+  - Docs: Rights-Matrix korrigiert (Moderator strikt nur Blog/News; Consent/Profile/Support sonst 403)
 
 ---
 
 ## Aktueller Stand (main)
 
-- Neu: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+- Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+
+✅ PR #122 **gemerged**: `fix(import): report hardening`
+- Commit auf `main`: `f24a52e`
+- Repo-Pfad-Cleanup (Windows): Repo-Root wieder korrekt und clean
+- Docs aktualisiert: `docs/00_CODEX_CONTEXT.md`, `docs/04_REPO_STRUCTURE.md`, `docs/05_MAINTENANCE_RUNBOOK.md`
+
+✅ PR #121 **gemerged**: `chore: add one-command test runner (backend+web)`
+- Commit auf `main`: `8efc913`
+- Neu: `tools/test_all.ps1` (One-Command Runner: backend+web)
+- Updates: `.gitignore`, `README.md`, `docs/01_DECISIONS.md`
+
+✅ PR #95 **gemerged**: `chore/ci-helper-script`
+- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
+
+✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
+- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
+
+✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
 
 ✅ PR #89 gemerged: `chore(web): declare node engine >=20.19.0 (vite 7)`
-- `packages/web/package.json`: `engines.node` auf **>=20.19.0** gesetzt (Vite 7 Requirement)
+- `packages/web/package.json`: `engines.node` auf **>=20.19.0** gesetzt (Vite 7 Requirement / verhindert lokale Mismatch-Setups)
 
 ✅ PR #87 gemerged: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
 - Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
+- Hinweis: Vite 7 benötigt Node.js >= 20.19
 
 ✅ PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
 - Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhängen (Consent wird separat getestet)
@@ -91,11 +79,15 @@ Projekt:
   - `docs/01_DECISIONS.md`
 - Script:
   - `server/scripts/fix_docs_encoding_utf8.ps1` (byte-level repair, UTF-8 safe)
-- Branch Protection nachhaltig gefixt (Required status check = **Job-Name `pytest`**)
+- Branch Protection nachhaltig gefixt:
+  - Required status check = **Job-Name `pytest`**
+  - Verifikation via Check-Runs:
+    - `gh api "repos/$repo/commits/$sha/check-runs" --jq ".check_runs[].name"`
 
 ✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
-- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root
-- Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1`
+- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+- Script: `server/scripts/patch_ci_fix_docs_validator_step.ps1`
+- CI grün: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
 
 ✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
 - Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
@@ -113,36 +105,39 @@ Projekt:
   - optional `-Clean`
   - `npm ci` + `npm run build`
 
+✅ PR #57: `docs: master checkpoint 2026-02-06 (PR #53/#54)`
+- Script: `server/scripts/patch_master_checkpoint_pr53_pr54.ps1` (idempotent)
+
+✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
+- `server/scripts/ltc_web_toolkit.ps1` enthält:
+  - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
+- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+
+✅ PR #59: `docs: master checkpoint add PR #58`
+- Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM)
+
+✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
+✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
 ✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`
 - `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)
-
 ✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`
 - Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**
-
 ✅ PR #33: **Public: blog/news endpoints**
 - Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`
 - Router wired in `server/app/main.py`
-
 ✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`
-- `server/app/main.py`: Documents-Router nur **einmal** registriert
-
+- Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)
 ✅ PR #40: `Add web skeleton + root redirect + docs updates`
 - Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
 - Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
 - API Root Redirect: `GET /` → 307 → `/public/site`
 - `GET /favicon.ico` → 204
-
 ✅ PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)
 - Ohne Actor → **401**
 - DEV/Test Header-Override nur hinter Gate (nicht in Produktion)
-
-✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate**
+✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate** (serverseitig)
 - VIP-Gewerbe: **max. 2 Staff-Accounts**
-- Erhöhung/Freigabe: **nur superadmin**
-
-✅ P0 Uploads-Quarantäne:
-- Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
-✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
+- Staff-Zuordnung/Freigabe/Erhöhung: **nur superadmin**
 ✅ Tests grün: `poetry run pytest -q`
 
 ---
@@ -243,8 +238,6 @@ Allowlist Moderator (ohne 403):
 ## Tests / Lokal ausführen
 > Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
 
+One-Command (Root):
 ```powershell
-cd ".\server"
-$env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
-poetry run pytest -q
-py -3.11 -m poetry run pytest -q
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
