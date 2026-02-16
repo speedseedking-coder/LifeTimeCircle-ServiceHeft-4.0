@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\NEWSLETTER_CONSENT_POLICY.md
+﻿// File: ./docs/policies/NEWSLETTER_CONSENT_POLICY.md
 
 # NEWSLETTER_CONSENT_POLICY – Newsletter Opt-in/Opt-out, Nachweis
 

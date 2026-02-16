@@ -1,4 +1,4 @@
-C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\PROJECT_MAP.md
+﻿./docs/policies/PROJECT_MAP.md
 # LifeTimeCircle – ServiceHeft 4.0
 ## Project Map (Architektur- & Repo-Landkarte)
 
@@ -12,7 +12,7 @@ Regel: Begriffe/Policies sind kanonisch im Core-Repo. Modul-Repos kopieren `docs
 
 ## 1) Core-Repo (Source of Truth)
 **Root:**  
-`C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\`
+`<REPO-ROOT>/`
 
 ### Verantwortlich für
 - ServiceHeft 4.0 Kern (Fahrzeugprofil, Timeline, Nachweise)

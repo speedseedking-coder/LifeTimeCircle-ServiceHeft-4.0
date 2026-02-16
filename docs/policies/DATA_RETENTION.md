@@ -1,4 +1,4 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\DATA_RETENTION.md
+﻿// File: ./docs/policies/DATA_RETENTION.md
 
 # DATA_RETENTION – Aufbewahrung, Löschung, Legal Hold
 

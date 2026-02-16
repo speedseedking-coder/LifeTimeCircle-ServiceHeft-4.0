@@ -1,10 +1,10 @@
-// File: C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies\AGENT_BRIEF.md
+﻿// File: ./docs/policies/AGENT_BRIEF.md
 
 # AGENT_BRIEF – LifeTimeCircle / Service Heft 4.0 (produktiver Standard)
 
 **Stand:** 2026-01-28 (Europe/Berlin)  
 **Kontakt:** lifetimecircle@online.de  
-**Source of Truth:** C:\Users\stefa\Projekte\LifeTimeCircle-ServiceHeft-4.0\docs\policies
+**Source of Truth: ./docs (inkl. ./docs/policies/)
 
 ---
 

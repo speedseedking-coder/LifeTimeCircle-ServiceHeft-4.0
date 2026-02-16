@@ -1,4 +1,4 @@
-// File: C:\\Users\\stefa\\Projekte\\LifeTimeCircle-ServiceHeft-4.0\\docs\\policies\\ACCEPTANCE\_TESTS.md
+﻿// File: ./docs//policies//ACCEPTANCE/_TESTS.md
 
 
 
