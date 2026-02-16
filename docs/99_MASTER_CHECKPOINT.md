@@ -1,4 +1,4 @@
-﻿# LifeTimeCircle – Service Heft 4.0
+# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-16** (Europe/Berlin)
 
@@ -32,6 +32,12 @@ Projekt:
 
 ## Aktueller Stand (main)
 
+
+✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
+- Branch: $marker  
+- Neu: /vehicles Router (Create/List/Get), object-level, Moderator 403, VIN nur masked  
+- Neu: equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
+- Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
 ✅ PR #122 **gemerged**: `fix(import): report hardening`
