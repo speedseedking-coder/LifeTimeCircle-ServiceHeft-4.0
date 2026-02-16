@@ -20,16 +20,16 @@ function Stop-ByPort([int]$port) {
     return
   }
 
-  $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
-  foreach ($pid in $pids) {
-    if (-not $pid -or $pid -le 0) { continue }
+  $procIds = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+  foreach ($procId in $procIds) {
+    if (-not $procId -or $procId -le 0) { continue }
     try {
-      $p = Get-Process -Id $pid -ErrorAction Stop
+      $p = Get-Process -Id $procId -ErrorAction Stop
       $name = $p.ProcessName
-      Write-Host "PORT ${port}: stoppe PID=$pid ($name)"
-      Stop-Process -Id $pid -Force:$Force -ErrorAction Stop
+      Write-Host "PORT ${port}: stoppe PID=$procId ($name)"
+      Stop-Process -Id $procId -Force:$Force -ErrorAction Stop
     } catch {
-      Write-Host "PORT ${port}: WARN konnte PID=$pid nicht stoppen: $($_.Exception.Message)"
+      Write-Host "PORT ${port}: WARN konnte PID=$procId nicht stoppen: $($_.Exception.Message)"
     }
   }
 }
