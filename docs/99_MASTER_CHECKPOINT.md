@@ -1,6 +1,6 @@
 ?# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-16** (Europe/Berlin)
+Stand: **2026-02-17** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -20,17 +20,17 @@ Projekt:
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
-### WIP: Vehicles MVP + Consent Gate (Next10 E2E)
-- Status: **PR offen** (Branch: `work`)
-- Scope:
-  - `/vehicles` Router (Create/List/Get), object-level, Moderator überall 403 (außer Blog/News/Public)
-  - VIN nur masked
-  - `require_consent(db, actor)` Gate (deny-by-default, **403** `consent_required`)
-  - Docs: Rights-Matrix korrigiert (Moderator strikt nur Blog/News; Consent/Profile/Support sonst 403)
+### Keine offenen PRs (Stand 2026-02-17)
+- Status: **clean**
 
 ---
 
 ## Aktueller Stand (main)
+
+✅ PR #140 **gemerged**: eat(vehicles): persistent model + consent hardening + PR1 tests
+- Commit auf main: 942bc88
+- Evidence (lokal): pwsh .\server\scripts\ltc_verify_ist_zustand.ps1 ✅, pwsh .\tools\test_all.ps1 ✅
+
 
 
 ✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
@@ -247,3 +247,4 @@ Allowlist Moderator (ohne 403):
 One-Command (Root):
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
+
