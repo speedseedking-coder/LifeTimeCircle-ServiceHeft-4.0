@@ -1149,10 +1149,11 @@ export default function App() {
     document.title = pageTitle;
   }, [pageTitle]);
 
-  const nonHomeBg = getBgForRoute(route);
+ const nonHomeBg = getBgForRoute(route);
 
-  const isProtected =
-    route.kind === "vehicles" || route.kind === "vehicleDetail" || route.kind === "documents" || route.kind === "onboarding";
+  // ✅ Wichtig: KEIN Narrowing über route.kind erzeugen
+  const PROTECTED_ROUTES = new Set<Route["kind"]>(["vehicles", "vehicleDetail", "documents", "onboarding"]);
+  const isProtected = PROTECTED_ROUTES.has(route.kind);
 
   // ✅ Redirects NICHT im Render (stabil, kein Flackern)
   useEffect(() => {
@@ -1160,17 +1161,110 @@ export default function App() {
     if (auth.isBooting) return;
 
     if (!auth.isAuthed) {
-      if (route.kind !== "auth") window.location.hash = "#/auth";
+      window.location.hash = "#/auth";
       return;
     }
 
-    if (auth.consentRequired && route.kind !== "consent") {
+    if (auth.consentRequired) {
       window.location.hash = "#/consent";
       return;
     }
-  }, [isProtected, auth.isBooting, auth.isAuthed, auth.consentRequired, route.kind]);
+  }, [isProtected, auth.isBooting, auth.isAuthed, auth.consentRequired]);
 
   return (
+    <>
+      <style>{css}</style>
+
+      {route.kind === "home" && <FrontPage />}
+
+      {route.kind === "faq" && <FaqPage />}
+      {route.kind === "cookies" && <CookiesPage />}
+      {route.kind === "jobs" && <JobsPage />}
+      {route.kind === "impressum" && <ImpressumPage />}
+      {route.kind === "datenschutz" && <DatenschutzPage />}
+
+      {route.kind !== "home" &&
+        route.kind !== "faq" &&
+        route.kind !== "cookies" &&
+        route.kind !== "jobs" &&
+        route.kind !== "impressum" &&
+        route.kind !== "datenschutz" && (
+          <div className="ltc-app ltc-app--plain" style={bgStyle(nonHomeBg)}>
+            <div className="ltc-container ltc-page">
+              <h1 className="ltc-h1">{pageTitle}</h1>
+
+              {/* ✅ Boot-Blocker für Protected Routes */}
+              {isProtected && auth.isBooting ? (
+                <div className="ltc-card">
+                  <div className="ltc-muted">Session wird geprüft…</div>
+                </div>
+              ) : (
+                <>
+                  <div className="ltc-card">
+                    <div className="ltc-muted">
+                      Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                      <a className="ltc-link" href="#/">
+                        ← Zur Frontpage
+                      </a>
+                      {import.meta.env.DEV && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <a className="ltc-link" href="#/debug/public-site">
+                            Debug Public Site
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
+
+                  {route.kind === "blogList" && <ItemsList title="Blog (Public)" path="/blog" kind="blog" />}
+                  {route.kind === "newsList" && <ItemsList title="News (Public)" path="/news" kind="news" />}
+
+                  {route.kind === "blogPost" && (
+                    <PostView
+                      title={`Blog Post: ${route.slug}`}
+                      path={`/blog/${encodeURIComponent(route.slug)}`}
+                      backHref="#/blog"
+                      backLabel="zur Blog-Liste"
+                    />
+                  )}
+
+                  {route.kind === "newsPost" && (
+                    <PostView
+                      title={`News Post: ${route.slug}`}
+                      path={`/news/${encodeURIComponent(route.slug)}`}
+                      backHref="#/news"
+                      backLabel="zur News-Liste"
+                    />
+                  )}
+
+                  {route.kind === "publicQr" && (
+                    <div style={{ marginTop: 12 }}>
+                      <PublicQrPage vehicleId={decodeURIComponent(route.vehicleId)} />
+                    </div>
+                  )}
+
+                  {route.kind === "auth" && <AuthPage />}
+                  {route.kind === "consent" && <ConsentPage />}
+                  {route.kind === "vehicles" && <VehiclesPage />}
+                  {route.kind === "vehicleDetail" && <VehicleDetailPage />}
+                  {route.kind === "documents" && <DocumentsPage />}
+                  {route.kind === "onboarding" && <OnboardingWizardPage />}
+
+                  <Footer />
+                </>
+              )}
+            </div>
+          </div>
+        )}
+    </>
+  );
     <>
       <style>{css}</style>
 
