@@ -18,9 +18,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (PR HEAD)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Debug: Show verify script branch section
+        shell: pwsh
+        run: |
+          Write-Host "=== HEAD SHA ==="
+          git rev-parse HEAD
+          Write-Host "=== Show lines around branch detection ==="
+          Get-Content -Path server\scripts\ltc_verify_ist_zustand.ps1 -TotalCount 120 | Select-Object -Skip 40 | ForEach-Object { "{0,3}: {1}" -f (++),  }
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -47,9 +57,19 @@ jobs:
       LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
 
     steps:
-      - name: Checkout
+      - name: Checkout (PR HEAD)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Debug: Show verify script branch section
+        shell: pwsh
+        run: |
+          Write-Host "=== HEAD SHA ==="
+          git rev-parse HEAD
+          Write-Host "=== Show lines around branch detection ==="
+          Get-Content -Path server\scripts\ltc_verify_ist_zustand.ps1 -TotalCount 120 | Select-Object -Skip 40 | ForEach-Object { "{0,3}: {1}" -f (++),  }
       # P0 Guard: fail-fast, wenn jemand den required job key/name driftet
       - name: CI guard - required job 'pytest'
         shell: pwsh
@@ -87,9 +107,19 @@ jobs:
     env:
       LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
     steps:
-      - name: Checkout
+      - name: Checkout (PR HEAD)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Debug: Show verify script branch section
+        shell: pwsh
+        run: |
+          Write-Host "=== HEAD SHA ==="
+          git rev-parse HEAD
+          Write-Host "=== Show lines around branch detection ==="
+          Get-Content -Path server\scripts\ltc_verify_ist_zustand.ps1 -TotalCount 120 | Select-Object -Skip 40 | ForEach-Object { "{0,3}: {1}" -f (++),  }
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -121,5 +151,6 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File server\scripts\ltc_verify_ist_zustand.ps1
+
 
 
