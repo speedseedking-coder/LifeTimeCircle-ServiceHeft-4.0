@@ -1,11 +1,11 @@
-# server/scripts/ltc_verify_ist_zustand.ps1
+﻿# server/scripts/ltc_verify_ist_zustand.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Section([string]$t) { Write-Host "`n=== $t ===" -ForegroundColor Cyan }
-function Ok([string]$t)      { Write-Host "✅ $t" -ForegroundColor Green }
-function Warn([string]$t)    { Write-Host "⚠️ $t" -ForegroundColor Yellow }
-function Fail([string]$t)    { Write-Host "❌ $t" -ForegroundColor Red }
+function Ok([string]$t)      { Write-Host ("✅ " + $t) -ForegroundColor Green }
+function Warn([string]$t)    { Write-Host ("⚠️ " + $t) -ForegroundColor Yellow }
+function Fail([string]$t)    { Write-Host ("❌ " + $t) -ForegroundColor Red }
 
 function Require-Tool([string]$name) {
   $cmd = Get-Command $name -ErrorAction SilentlyContinue
@@ -14,7 +14,8 @@ function Require-Tool([string]$name) {
 }
 
 function Get-RepoRoot {
-  $top = (git rev-parse --show-toplevel 2>$null).Trim()
+  $topRaw = (git rev-parse --show-toplevel 2>$null)
+  $top = ("" + $topRaw).Trim()
   if (-not $top) { throw "Kein Git-Repo gefunden (git rev-parse --show-toplevel leer)." }
   Set-Location $top
   [Environment]::CurrentDirectory = $top
@@ -36,9 +37,19 @@ function Run([string]$title, [scriptblock]$sb) {
 
 function Normalize([string]$s) {
   if ($null -eq $s) { return "" }
-  $s = $s -replace '["„“]', ''   # ASCII " sowie „ und “
-  $s = $s -replace '\s+', ' '    # alle Whitespaces -> Single Space
+  # Entferne typische Anführungszeichen-Varianten und normalisiere Whitespace
+  $s = $s -replace '["„“”]', ''
+  $s = $s -replace '\s+', ' '
   return $s.Trim()
+}
+
+function Get-BranchName {
+  # GitHub Actions PR: detached HEAD -> git branch --show-current kann leer sein.
+  $branchRaw = (git branch --show-current 2>$null)
+  if (-not $branchRaw) { $branchRaw = $env:GITHUB_HEAD_REF }
+  if (-not $branchRaw) { $branchRaw = $env:GITHUB_REF_NAME }
+  if (-not $branchRaw) { $branchRaw = (git rev-parse --abbrev-ref HEAD 2>$null) }
+  return ("" + $branchRaw).Trim()
 }
 
 # --- Start ---
@@ -53,18 +64,24 @@ $root = Get-RepoRoot
 Ok "Repo-Root: $root"
 
 Run "1) Repo-Root / Git Status" {
-  $branch = (git branch --show-current).Trim()
-  $head   = (git rev-parse --short HEAD).Trim()
-  $status = (git status -sb)
+  $branch = Get-BranchName
+  if (-not $branch) { $branch = "UNKNOWN" }
 
+  $headRaw = (git rev-parse --short HEAD 2>$null)
+  $head = ("" + $headRaw).Trim()
+
+  $statusLines = @(git status -sb 2>$null)
+  $status = ($statusLines -join "`n")
   Write-Host $status
+
   Ok "Branch: $branch"
   Ok "HEAD:   $head"
 
   if ($status -match "ahead|behind|diverged") { Warn "Branch ist nicht 1:1 synced mit origin (ahead/behind/diverged)." }
   else { Ok "Sync-Status zu origin sieht gut aus." }
 
-  $porc = (git status --porcelain)
+  $porcLines = @(git status --porcelain 2>$null)
+  $porc = ($porcLines -join "`n")
   if ($porc) {
     Fail "Working tree NICHT clean (uncommitted changes vorhanden)."
     Write-Host $porc
@@ -110,6 +127,7 @@ Run "4) Public-QR Pflichttext (robust, SoT-konform)" {
   $srcRoot = "packages/web/src"
   if (!(Test-Path -LiteralPath $srcRoot)) { Fail "Fehlt: $srcRoot"; throw "Web src fehlt" }
 
+  # Pflichttext MUSS exakt inhaltlich stimmen (Whitespace/Quotes tolerant)
   $core = "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs."
   $needle = Normalize $core
 
@@ -157,9 +175,15 @@ Run "6) API-Client (Bearer/401/POST) + keine dev/actor header" {
 
 Run "7) Backend: pytest (mit LTC_SECRET_KEY)" {
   if (!(Test-Path -LiteralPath "server/pyproject.toml")) { Fail "server/pyproject.toml fehlt"; throw "server fehlt" }
+
   Push-Location "server"
   try {
-    $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+    # In CI kommt LTC_SECRET_KEY als Secret -> NICHT überschreiben.
+    if (-not $env:LTC_SECRET_KEY) {
+      $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
+      Warn "LTC_SECRET_KEY war nicht gesetzt -> setze DEV-Test-Key (nur lokal sinnvoll)."
+    }
+
     poetry run pytest -q
     Ok "pytest grün"
   } finally { Pop-Location }
@@ -191,3 +215,4 @@ Run "8) Web: npm ci + npm run build" {
 Section "DONE"
 Ok "IST-ZUSTAND Voll-Check abgeschlossen."
 Warn "Optional: Smoke via ./server/scripts/ltc_web_toolkit.ps1 (-Smoke -Clean) nur, wenn pwsh verfügbar ist."
+
