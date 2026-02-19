@@ -1,1 +1,64 @@
-<PASTE: AppBackdrop.css AUS OBEN (OHNE DIESE ZEILE)>
+.ltc-bg {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+
+  /* Basis-Feeling */
+  background:
+    radial-gradient(1200px 800px at 70% 20%, rgba(255, 190, 80, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.88));
+
+  /* Gutter-Variable */
+  --ltc-right-gutter: clamp(0px, 8vw, 260px);
+}
+
+.ltc-bg__image {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background-image: var(--ltc-bg-url);
+  background-size: var(--ltc-bg-size);
+  background-position: var(--ltc-bg-position);
+  background-repeat: no-repeat;
+
+  opacity: var(--ltc-bg-opacity);
+  transform: translateZ(0);
+}
+
+.ltc-bg__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background:
+    radial-gradient(900px 700px at 30% 10%, rgba(0, 0, 0, 0.20), transparent 60%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.34) 72%, rgba(0, 0, 0, 0.14) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.70) 0%, rgba(0, 0, 0, 0.88) 100%);
+}
+
+/* Der eigentliche Trick:
+   Content wird links gehalten und um den rechten Gutter schmaler -> Background rechts sichtbar */
+.ltc-shell {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+
+  max-width: calc(100% - var(--ltc-right-gutter));
+  margin-left: 0;
+  margin-right: auto;
+
+  padding-left: clamp(12px, 2.2vw, 28px);
+  padding-right: clamp(12px, 2.2vw, 28px);
+}
+
+@media (max-width: 900px) {
+  .ltc-bg { --ltc-right-gutter: 0px; }
+  .ltc-shell {
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
