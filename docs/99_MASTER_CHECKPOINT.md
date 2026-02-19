@@ -27,7 +27,7 @@ Projekt:
 
 ## Aktueller Stand (main)
 
-✅ PR #140 **gemerged**: eat(vehicles): persistent model + consent hardening + PR1 tests
+✅ PR #140 **gemerged**: feat(vehicles): persistent model + consent hardening + PR1 tests
 - Commit auf main: 942bc88
 - Evidence (lokal): pwsh .\server\scripts\ltc_verify_ist_zustand.ps1 ✅, pwsh .\tools\test_all.ps1 ✅
 
