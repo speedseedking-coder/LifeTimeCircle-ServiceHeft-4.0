@@ -56,3 +56,6 @@ _local/
 packages/web/src/*.bak_*
 
 data/
+
+# local dev logs (do not commit)
+packages/web/LTC_REAL_last_run.log
