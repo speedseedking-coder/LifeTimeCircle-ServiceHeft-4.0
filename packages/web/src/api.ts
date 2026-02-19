@@ -1,4 +1,5 @@
-﻿export type ApiBody = unknown | string;
+﻿import { httpFetch } from "./lib/httpFetch";
+export type ApiBody = unknown | string;
 
 export type ApiResult =
   | {
@@ -40,7 +41,7 @@ async function apiRequest(method: "GET" | "POST", path: string, init?: RequestIn
 
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await httpFetch(url, {
       method,
       headers: {
         Accept: "application/json, text/plain, text/html;q=0.9, */*;q=0.8",
@@ -122,3 +123,4 @@ export function extractApiError(body: unknown): string | null {
 
   return null;
 }
+
