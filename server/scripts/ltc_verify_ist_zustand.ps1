@@ -3,9 +3,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 function Section([string]$t) { Write-Host "`n=== $t ===" -ForegroundColor Cyan }
-function Ok([string]$t)      { Write-Host ("✅ " + $t) -ForegroundColor Green }
-function Warn([string]$t)    { Write-Host ("⚠️ " + $t) -ForegroundColor Yellow }
-function Fail([string]$t)    { Write-Host ("❌ " + $t) -ForegroundColor Red }
+function Ok([string]$t)      { Write-Host "âœ… $t" -ForegroundColor Green }
+function Warn([string]$t)    { Write-Host "âš ï¸ $t" -ForegroundColor Yellow }
+function Fail([string]$t)    { Write-Host "âŒ $t" -ForegroundColor Red }
 
 function Require-Tool([string]$name) {
   $cmd = Get-Command $name -ErrorAction SilentlyContinue
@@ -14,8 +14,7 @@ function Require-Tool([string]$name) {
 }
 
 function Get-RepoRoot {
-  $topRaw = (git rev-parse --show-toplevel 2>$null)
-  $top = ("" + $topRaw).Trim()
+  $top = (git rev-parse --show-toplevel 2>$null).Trim()
   if (-not $top) { throw "Kein Git-Repo gefunden (git rev-parse --show-toplevel leer)." }
   Set-Location $top
   [Environment]::CurrentDirectory = $top
@@ -37,19 +36,9 @@ function Run([string]$title, [scriptblock]$sb) {
 
 function Normalize([string]$s) {
   if ($null -eq $s) { return "" }
-  # Entferne typische Anführungszeichen-Varianten und normalisiere Whitespace
-  $s = $s -replace '["„“”]', ''
-  $s = $s -replace '\s+', ' '
+  $s = $s -replace '["â€žâ€œ]', ''   # ASCII " sowie â€ž und â€œ
+  $s = $s -replace '\s+', ' '    # alle Whitespaces -> Single Space
   return $s.Trim()
-}
-
-function Get-BranchName {
-  # GitHub Actions PR: detached HEAD -> git branch --show-current kann leer sein.
-  $branchRaw = (git branch --show-current 2>$null)
-  if (-not $branchRaw) { $branchRaw = $env:GITHUB_HEAD_REF }
-  if (-not $branchRaw) { $branchRaw = $env:GITHUB_REF_NAME }
-  if (-not $branchRaw) { $branchRaw = (git rev-parse --abbrev-ref HEAD 2>$null) }
-  return ("" + $branchRaw).Trim()
 }
 
 # --- Start ---
@@ -64,24 +53,22 @@ $root = Get-RepoRoot
 Ok "Repo-Root: $root"
 
 Run "1) Repo-Root / Git Status" {
-  $branch = Get-BranchName
-  if (-not $branch) { $branch = "UNKNOWN" }
+$branchRaw = (git branch --show-current 2>$null)
+if (-not $branchRaw) { $branchRaw = $env:GITHUB_HEAD_REF }
+if (-not $branchRaw) { $branchRaw = $env:GITHUB_REF_NAME }
+if (-not $branchRaw) { $branchRaw = (git rev-parse --abbrev-ref HEAD 2>$null) }
+$branch = ("" + $branchRaw).Trim()
+  $head   = (git rev-parse --short HEAD).Trim()
+  $status = (git status -sb)
 
-  $headRaw = (git rev-parse --short HEAD 2>$null)
-  $head = ("" + $headRaw).Trim()
-
-  $statusLines = @(git status -sb 2>$null)
-  $status = ($statusLines -join "`n")
   Write-Host $status
-
   Ok "Branch: $branch"
   Ok "HEAD:   $head"
 
   if ($status -match "ahead|behind|diverged") { Warn "Branch ist nicht 1:1 synced mit origin (ahead/behind/diverged)." }
   else { Ok "Sync-Status zu origin sieht gut aus." }
 
-  $porcLines = @(git status --porcelain 2>$null)
-  $porc = ($porcLines -join "`n")
+  $porc = (git status --porcelain)
   if ($porc) {
     Fail "Working tree NICHT clean (uncommitted changes vorhanden)."
     Write-Host $porc
@@ -127,8 +114,7 @@ Run "4) Public-QR Pflichttext (robust, SoT-konform)" {
   $srcRoot = "packages/web/src"
   if (!(Test-Path -LiteralPath $srcRoot)) { Fail "Fehlt: $srcRoot"; throw "Web src fehlt" }
 
-  # Pflichttext MUSS exakt inhaltlich stimmen (Whitespace/Quotes tolerant)
-  $core = "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs."
+  $core = "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs."
   $needle = Normalize $core
 
   $files = Get-ChildItem -Path $srcRoot -Recurse -File -Include *.ts,*.tsx
@@ -147,7 +133,7 @@ Run "4) Public-QR Pflichttext (robust, SoT-konform)" {
     Fail "Pflichttext inhaltlich NICHT gefunden."
     Write-Host "Erwarteter Kerntext:"
     Write-Host $core
-    throw "Public-QR Pflichttext fehlt oder ist inhaltlich verändert"
+    throw "Public-QR Pflichttext fehlt oder ist inhaltlich verÃ¤ndert"
   }
 }
 
@@ -156,7 +142,7 @@ Run "5) Guards / Moderator-Stop (Marker-Check)" {
   $hints = "moderator|403|forbidden|role|rbac|guard|requireauth|requireconsent"
   $hits = @(rg -n -S $hints $srcRoot 2>$null)
   if ($hits.Count -gt 0) { Ok "Marker gefunden (Auszug):"; $hits | Select-Object -First 40 | ForEach-Object { Write-Host $_ } }
-  else { Warn "Keine typischen Guard/Role-Marker gefunden (kann ok sein, wenn anders gelöst)." }
+  else { Warn "Keine typischen Guard/Role-Marker gefunden (kann ok sein, wenn anders gelÃ¶st)." }
 }
 
 Run "6) API-Client (Bearer/401/POST) + keine dev/actor header" {
@@ -169,30 +155,24 @@ Run "6) API-Client (Bearer/401/POST) + keine dev/actor header" {
   else { Warn "Keine offensichtlichen Marker gefunden." }
 
   $bad = @(rg -n -S "x-actor|x-dev|actor-header|dev-header" $apiFile 2>$null)
-  if ($bad.Count -gt 0) { Fail "Verdächtige dev/actor header Marker gefunden!"; $bad | ForEach-Object { Write-Host $_ }; throw "API Header Policy verletzt" }
+  if ($bad.Count -gt 0) { Fail "VerdÃ¤chtige dev/actor header Marker gefunden!"; $bad | ForEach-Object { Write-Host $_ }; throw "API Header Policy verletzt" }
   else { Ok "Keine Hinweise auf dev/actor header gefunden." }
 }
 
 Run "7) Backend: pytest (mit LTC_SECRET_KEY)" {
   if (!(Test-Path -LiteralPath "server/pyproject.toml")) { Fail "server/pyproject.toml fehlt"; throw "server fehlt" }
-
   Push-Location "server"
   try {
-    # In CI kommt LTC_SECRET_KEY als Secret -> NICHT überschreiben.
-    if (-not $env:LTC_SECRET_KEY) {
-      $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
-      Warn "LTC_SECRET_KEY war nicht gesetzt -> setze DEV-Test-Key (nur lokal sinnvoll)."
-    }
-
+    $env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
     poetry run pytest -q
-    Ok "pytest grün"
+    Ok "pytest grÃ¼n"
   } finally { Pop-Location }
 }
 
 Run "8) Web: npm ci + npm run build" {
   $webDir = Join-Path $root "packages/web"
   if (!(Test-Path -LiteralPath (Join-Path $webDir "package.json"))) { Fail "packages/web/package.json fehlt"; throw "web package fehlt" }
-  if (!(Test-Path -LiteralPath (Join-Path $webDir "package-lock.json"))) { Fail "packages/web/package-lock.json fehlt (npm ci benötigt Lockfile)"; throw "web lockfile fehlt" }
+  if (!(Test-Path -LiteralPath (Join-Path $webDir "package-lock.json"))) { Fail "packages/web/package-lock.json fehlt (npm ci benÃ¶tigt Lockfile)"; throw "web lockfile fehlt" }
 
   $npm = Get-NpmCmd
   Push-Location $webDir
@@ -203,16 +183,15 @@ Run "8) Web: npm ci + npm run build" {
     & npx --no-install tsc -v
     if ($LASTEXITCODE -ne 0) { throw "STOP: tsc missing after npm ci (exit=$LASTEXITCODE)" }
 
-    Ok "npm ci grün"
+    Ok "npm ci grÃ¼n"
 
     & $npm "run" "build"
     if ($LASTEXITCODE -ne 0) { throw "STOP: npm run build failed (exit=$LASTEXITCODE)" }
 
-    Ok "npm run build grün"
+    Ok "npm run build grÃ¼n"
   } finally { Pop-Location }
 }
 
 Section "DONE"
 Ok "IST-ZUSTAND Voll-Check abgeschlossen."
-Warn "Optional: Smoke via ./server/scripts/ltc_web_toolkit.ps1 (-Smoke -Clean) nur, wenn pwsh verfügbar ist."
-
+Warn "Optional: Smoke via ./server/scripts/ltc_web_toolkit.ps1 (-Smoke -Clean) nur, wenn pwsh verfÃ¼gbar ist."
