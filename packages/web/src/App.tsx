@@ -1,5 +1,5 @@
 // packages/web/src/App.tsx
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 
 import { PublicQrPage } from "./pages/PublicQrPage";
@@ -12,7 +12,6 @@ import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
 
 /**
- * Thema/Projekt (kurz, präzise)
  * LifeTimeCircle – ServiceHeft 4.0:
  * - Digitales Nachweis- & Dokumentationssystem (Proof statt Behauptung)
  * - Fokus: Uploads, Historie, prüfbare Belege / Audit-Trail
@@ -114,7 +113,6 @@ const BG = {
 function getBgForRoute(route: Route): BgCfg | null {
   switch (route.kind) {
     case "home":
-      // Home nutzt eigenes Hero-Handling (FrontPage). Hier nur null.
       return null;
 
     case "faq":
@@ -149,22 +147,20 @@ function getBgForRoute(route: Route): BgCfg | null {
       return { url: BG.service2, opacity: 0.22, size: "cover", position: "center" };
 
     case "vehicleDetail":
-      // Detail = Serviceheft, Galerie/Rechnungen wären eigene Subroutes; hier „serviceheft“
       return { url: BG.serviceheft, opacity: 0.22, size: "cover", position: "center" };
 
     case "documents":
-      // documents = Prüfer/Belege
-      return { url: BG.rechnungspruefer, opacity: 0.20, size: "cover", position: "center" };
+      return { url: BG.rechnungspruefer, opacity: 0.2, size: "cover", position: "center" };
 
     case "onboarding":
-      return { url: BG.service2, opacity: 0.20, size: "cover", position: "center" };
+      return { url: BG.service2, opacity: 0.2, size: "cover", position: "center" };
 
     case "debugPublicSite":
       return { url: BG.frontpage2, opacity: 0.14, size: "cover", position: "center" };
   }
 }
 
-function bgStyle(bg: BgCfg | null): React.CSSProperties {
+function bgStyle(bg: BgCfg | null): CSSProperties {
   if (!bg) {
     return {
       ["--ltc-bg" as any]: "none",
@@ -351,12 +347,7 @@ function CookieSettingsCard(props: { onSaved?: () => void }) {
 function IconShield(props: { className?: string }) {
   return (
     <svg className={props.className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        opacity="0.9"
-      />
+      <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z" stroke="currentColor" strokeWidth="1.6" opacity="0.9" />
       <path
         d="M9.5 12l1.8 1.8L15.8 9.3"
         stroke="currentColor"
@@ -424,7 +415,6 @@ function Topbar(props: { right?: ReactNode }) {
 }
 
 function Footer() {
-  // Pflichttext exakt + unverändert (nur hier und als Zitat in About)
   const trustText =
     "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
@@ -519,10 +509,7 @@ function Card(props: { title: string; children: ReactNode }) {
 }
 
 function ApiBox(props: { path: string; title: string }) {
-  const [state, setState] = useState<{ loading: boolean; text: string; status?: number }>({
-    loading: true,
-    text: "",
-  });
+  const [state, setState] = useState<{ loading: boolean; text: string; status?: number }>({ loading: true, text: "" });
 
   useEffect(() => {
     let alive = true;
@@ -540,11 +527,7 @@ function ApiBox(props: { path: string; title: string }) {
         return;
       }
 
-      setState({
-        loading: false,
-        text: prettyBody(r.body),
-        status: r.status,
-      });
+      setState({ loading: false, text: prettyBody(r.body), status: r.status });
     });
 
     return () => {
@@ -581,11 +564,7 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
       if (!alive) return;
 
       if (!r.ok) {
-        setState({
-          loading: false,
-          status: r.status,
-          error: `${r.error}${r.body ? `: ${String(r.body)}` : ""}`,
-        });
+        setState({ loading: false, status: r.status, error: `${r.error}${r.body ? `: ${String(r.body)}` : ""}` });
         return;
       }
 
@@ -678,21 +657,18 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
 }
 
 /** ---------------------------
- * Frontpage – näher ans Beispielbild
+ * Frontpage – NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
  * --------------------------- */
 function FrontPage() {
   const [email, setEmail] = useState("");
   const [cookieModalOpen, setCookieModalOpen] = useState(false);
 
-  // Background robust:
-  // 1) frontpage_LiftimeCicrcle_2.png (dein neues Motiv)
-  // 2) safe.webp
-  // 3) safe.png
   const [bgUrl, setBgUrl] = useState<string>(BG.frontpage2);
 
   useEffect(() => {
     let alive = true;
 
+    // Fallback-Liste: wenn du später ein Landscape-Bild ergänzt, einfach vorne eintragen
     const tryList = [BG.frontpage2, "/images/frontpage_LiftimeCicrcle_safe.webp", "/images/frontpage_LiftimeCicrcle_safe.png"];
     let idx = 0;
 
@@ -725,12 +701,21 @@ function FrontPage() {
     window.location.hash = "#/auth";
   };
 
-  // Pflichttext exakt + unverändert (nur Footer + Zitat in About)
   const trustText =
     "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
   return (
-    <div className="ltc-app ltc-app--hero" style={{ ["--ltc-bg" as any]: `url("${bgUrl}")` }}>
+    <div
+      className="ltc-app ltc-app--hero"
+      style={{
+        ["--ltc-bg" as any]: `url("${bgUrl}")`,
+        ["--ltc-bg-op" as any]: "1",
+
+        // ✅ Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
+        ["--ltc-bg-size" as any]: "cover",
+        ["--ltc-bg-pos" as any]: "68% 12%",
+      }}
+    >
       <Topbar
         right={
           <div className="ltc-nav ltc-nav--tight">
@@ -753,179 +738,235 @@ function FrontPage() {
         }
       />
 
-      {/* HERO (wie Beispiel: groß links, Form darunter) */}
-      <div className="ltc-container ltc-hero2">
-        <div className="ltc-hero2__left">
-          <h1 className="ltc-hero2__h1">
-            Digitales
-            <br />
-            Fahrzeug-Serviceheft
-          </h1>
-          <div className="ltc-hero2__sub">Dokumentation, Vertrauen &amp; Zukunft</div>
+      {/* HERO (wie Beispiel): links Copy + Login, rechts Phone/QR Mock */}
+      <div className="ltc-container">
+        <section className="ltc-hero">
+          <div className="ltc-hero__grid">
+            <div className="ltc-hero__copy">
+              <div className="ltc-hero__panel">
+                <h1 className="ltc-hero__h1">
+                  Digitales
+                  <br />
+                  Fahrzeug-Serviceheft
+                </h1>
+                <div className="ltc-hero__sub">Dokumentation, Vertrauen &amp; Zukunft</div>
 
-          <form className="ltc-hero2__form" onSubmit={onLogin}>
-            <input
-              className="ltc-input ltc-input--hero"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              autoComplete="email"
-            />
-            <button type="submit" className="ltc-btn ltc-btn--primary ltc-btn--hero">
-              Log in
-            </button>
-          </form>
+                <form className="ltc-hero__form" onSubmit={onLogin}>
+                  <div className="ltc-hero__formRow">
+                    <input
+                      className="ltc-input ltc-input--hero"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email address"
+                      autoComplete="email"
+                      aria-label="Email address"
+                    />
+                    <button type="submit" className="ltc-btn ltc-btn--primary ltc-btn--hero">
+                      Log in
+                    </button>
+                  </div>
 
-          <div className="ltc-hero2__actions">
-            <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => scrollToId("about")}>
+                  <div className="ltc-hero__ctaRow">
+                    <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => scrollToId("about")}>
+                      Mehr Erfahren
+                    </button>
+                    <button type="button" className="ltc-btn ltc-btn--soft" onClick={() => scrollToId("services")}>
+                      View Services
+                    </button>
+                  </div>
+                </form>
+
+                <div className="ltc-dividerGold" />
+
+                <div className="ltc-hero__iconRow">
+                  <div className="ltc-iconItem">
+                    <IconShield className="ltc-ic" />
+                    <div>Ereignisse &amp; Nachweise sichern</div>
+                  </div>
+                  <div className="ltc-iconItem">
+                    <IconCheck className="ltc-ic" />
+                    <div>Verifiziert und nachvollziehbar</div>
+                  </div>
+                  <div className="ltc-iconItem">
+                    <IconQr className="ltc-ic" />
+                    <div>Direkte QR-Checks &amp; Reports</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="ltc-hero__mock" aria-hidden="true">
+              <div className="ltc-phone">
+                <div className="ltc-phone__top">
+                  <div className="ltc-phone__cam" />
+                  <div className="ltc-phone__speaker" />
+                </div>
+
+                <div className="ltc-phone__screen">
+                  <div className="ltc-qrMock" />
+                  <div className="ltc-verified">
+                    <div className="ltc-verified__label">VERIFIZIERT</div>
+                    <div className="ltc-verified__badge">
+                      <IconCheck className="ltc-verified__ic" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ltc-phone__btn" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Cards (wie Beispiel: 2 große Karten) */}
+        <section className="ltc-featureRow">
+          <div className="ltc-featureCard">
+            <div className="ltc-featureCard__head">
+              <IconShield className="ltc-ic2" />
+              <div>
+                <div className="ltc-featureCard__t">Fahrzeug-Trust Report</div>
+                <div className="ltc-muted">Transparente Historie und verlässliche Berichte</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="ltc-featureCard">
+            <div className="ltc-featureCard__head">
+              <IconCheck className="ltc-ic2" />
+              <div>
+                <div className="ltc-featureCard__t">Verifizierte Einträge</div>
+                <div className="ltc-muted">Wartung, Reparatur &amp; Unfalldokumentation</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Showroom Band (Autos-Look wie Beispiel) */}
+        <section className="ltc-showroom">
+          <div className="ltc-showroom__card">
+            <div className="ltc-showroom__meta">
+              <span className="ltc-kicker">Nachweise sichtbar machen</span>
+              <span className="ltc-muted">— ohne Datenballast im Public/QR</span>
+            </div>
+
+            <div className="ltc-showroom__cars" aria-hidden="true">
+              <div className="ltc-carTile" />
+              <div className="ltc-carTile ltc-carTile--mid" />
+              <div className="ltc-carTile ltc-carTile--right" />
+            </div>
+          </div>
+        </section>
+
+        {/* ServiceHeft Band (wie Beispiel: Headline links + Dokument/Tablet Mock rechts) */}
+        <section className="ltc-band">
+          <div className="ltc-band__grid">
+            <div className="ltc-band__copy">
+              <div className="ltc-band__kicker">ServiceHeft 4.0</div>
+              <div className="ltc-band__h">Dokumentierte Automobilhistorie mit Zukunft.</div>
+              <div className="ltc-band__actions">
+                <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => scrollToId("about")}>
+                  Mehr Erfahren
+                </button>
+              </div>
+            </div>
+
+            <div className="ltc-band__mock" aria-hidden="true">
+              <div className="ltc-docMock">
+                <div className="ltc-docMock__paper" />
+                <div className="ltc-docMock__paper ltc-docMock__paper--2" />
+                <div className="ltc-docMock__tablet">
+                  <div className="ltc-docMock__tabletTop">REPORT</div>
+                  <div className="ltc-docMock__tabletBadge">
+                    <div className="ltc-docMock__tabletLabel">VERIFIZIERT</div>
+                    <IconCheck className="ltc-docMock__tabletIc" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pflicht-Disclaimer (wie Beispiel separat sichtbar) */}
+        <section className="ltc-disclaimerBand">
+          <div className="ltc-disclaimerBand__card">
+            <div className="ltc-disclaimerBand__left">
+              <IconShield className="ltc-ic2" />
+              <div className="ltc-disclaimerBand__text">{trustText}</div>
+            </div>
+            <button type="button" className="ltc-btn ltc-btn--soft" onClick={() => scrollToId("footer")}>
               Mehr Erfahren
             </button>
-            <button type="button" className="ltc-btn ltc-btn--soft" onClick={() => scrollToId("services")}>
-              View Services
-            </button>
           </div>
+        </section>
 
-          <div className="ltc-dividerGold" />
-
-          {/* Icon Row (wie Beispielzeile) */}
-          <div className="ltc-iconRow">
-            <div className="ltc-iconItem">
-              <IconShield className="ltc-ic" />
-              <div>Ereignisse &amp; Nachweise sichern</div>
-            </div>
-            <div className="ltc-iconItem">
-              <IconCheck className="ltc-ic" />
-              <div>Verifiziert und nachvollziehbar</div>
-            </div>
-            <div className="ltc-iconItem">
-              <IconQr className="ltc-ic" />
-              <div>Direkte QR-Checks &amp; Reports</div>
+        {/* Services / About bleiben inhaltlich gleich (nur spacing/Container korrekt) */}
+        <div id="services" className="ltc-section">
+          <div className="ltc-card ltc-card--wide">
+            <div className="ltc-card__title">Services</div>
+            <ul className="ltc-list">
+              <li>Upload &amp; Dokumentenablage (Quarantäne-by-default, Approve nach Scan CLEAN)</li>
+              <li>Historie (Einträge, Timeline, Nachweislogik)</li>
+              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualität)</li>
+              <li>Public/QR Mini-Check (datenarm, VIN maskiert)</li>
+            </ul>
+            <div style={{ marginTop: 10 }}>
+              <a className="ltc-link" href="#/faq">
+                Zu den FAQs →
+              </a>
             </div>
           </div>
         </div>
 
-        {/* rechte Seite bleibt „leer“ (Bild ist ja im Background), aber wir geben dem Layout Raum */}
-        <div className="ltc-hero2__right" aria-hidden="true" />
-      </div>
+        <div id="about" className="ltc-section">
+          <div className="ltc-card ltc-card--wide">
+            <div className="ltc-card__title">About</div>
 
-      {/* Service-Karten (wie Beispiel: 2 große Karten) */}
-      <div className="ltc-container ltc-cardsRow">
-        <div className="ltc-serviceCard">
-          <div className="ltc-serviceCard__head">
-            <IconShield className="ltc-ic2" />
-            <div>
-              <div className="ltc-serviceCard__t">Fahrzeug-Trust Report</div>
-              <div className="ltc-muted">Transparente Historie und verlässliche Berichte</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="ltc-serviceCard">
-          <div className="ltc-serviceCard__head">
-            <IconCheck className="ltc-ic2" />
-            <div>
-              <div className="ltc-serviceCard__t">Verifizierte Einträge</div>
-              <div className="ltc-muted">Wartung, Reparatur &amp; Unfalldokumentation</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Zweiter Abschnitt (wie Beispiel: „ServiceHeft 4.0“ + Button) */}
-      <div className="ltc-container ltc-midHero">
-        <div className="ltc-midHero__inner">
-          <div className="ltc-midHero__left">
-            <div className="ltc-midHero__kicker">ServiceHeft 4.0</div>
-            <div className="ltc-midHero__sub">Dokumentierte Automobilhistorie mit Zukunft.</div>
-          </div>
-          <div className="ltc-midHero__right">
-            <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => scrollToId("about")}>
-              Mehr Erfahren
-            </button>
-          </div>
-        </div>
-
-        {/* Hinweis-Teaser (ohne Pflichttext zu duplizieren) */}
-        <div className="ltc-hintTeaser">
-          <IconShield className="ltc-ic" />
-          <div className="ltc-muted">
-            Trust-Ampel Hinweis findest du im Footer.{" "}
-            <button type="button" className="ltc-linkBtn" onClick={() => scrollToId("footer")}>
-              Zum Hinweis →
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Services Section (Details) */}
-      <div id="services" className="ltc-container ltc-section">
-        <div className="ltc-card ltc-card--wide">
-          <div className="ltc-card__title">Services</div>
-          <ul className="ltc-list">
-            <li>Upload &amp; Dokumentenablage (Quarantäne-by-default, Approve nach Scan CLEAN)</li>
-            <li>Historie (Einträge, Timeline, Nachweislogik)</li>
-            <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualität)</li>
-            <li>Public/QR Mini-Check (datenarm, VIN maskiert)</li>
-          </ul>
-          <div style={{ marginTop: 10 }}>
-            <a className="ltc-link" href="#/faq">
-              Zu den FAQs →
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* About (Zitat + Mehr-Text) */}
-      <div id="about" className="ltc-container ltc-section">
-        <div className="ltc-card ltc-card--wide">
-          <div className="ltc-card__title">About</div>
-
-          <div className="ltc-prose">
-            <p>
-              LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist – nicht „wie gut/schlecht“ ein
-              Fahrzeug technisch ist.
-            </p>
-
-            <details className="ltc-details">
-              <summary>Mehr lesen: Zeiten des Autokaufs, fehlendes Vertrauen, Nachweise</summary>
+            <div className="ltc-prose">
               <p>
-                Vertrauen kippt oft dort, wo Dokumente fehlen: Recherche (viel Text, wenig Proof), Besichtigung (Aussagen vs. Belege), Verhandlung
-                (Risikoaufschlag), Übergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
+                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist – nicht „wie gut/schlecht“ ein
+                Fahrzeug technisch ist.
               </p>
-              <ul>
-                <li>
-                  <b>Nachweise erhöhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
-                </li>
-                <li>
-                  <b>Proof reduziert Risiko:</b> weniger „Gefühl“, mehr belastbare Historie.
-                </li>
-                <li>
-                  <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhöhen und sich positiv auf den Wiederverkaufswert auswirken.
-                </li>
-              </ul>
-            </details>
-          </div>
 
-          {/* Pflichttext nur als Zitat hier */}
-          <div className="ltc-quote ltc-quote--gold">
-            <div className="ltc-quote__t">Zitat</div>
-            <div className="ltc-quote__q">„{trustText}“</div>
-          </div>
-
-          <div className="ltc-actions">
-            <a className="ltc-btn ltc-btn--soft" href="#/blog">
-              Blog ansehen
-            </a>
-            <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => setCookieModalOpen(true)}>
-              Cookie-Einstellungen
-            </button>
-          </div>
-
-          {import.meta.env.DEV && (
-            <div className="ltc-meta" style={{ marginTop: 12 }}>
-              Debug: <a href="#/debug/public-site">#/debug/public-site</a>
+              <details className="ltc-details">
+                <summary>Mehr lesen: Zeiten des Autokaufs, fehlendes Vertrauen, Nachweise</summary>
+                <p>
+                  Vertrauen kippt oft dort, wo Dokumente fehlen: Recherche (viel Text, wenig Proof), Besichtigung (Aussagen vs. Belege), Verhandlung
+                  (Risikoaufschlag), Übergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
+                </p>
+                <ul>
+                  <li>
+                    <b>Nachweise erhöhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
+                  </li>
+                  <li>
+                    <b>Proof reduziert Risiko:</b> weniger „Gefühl“, mehr belastbare Historie.
+                  </li>
+                  <li>
+                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhöhen und sich positiv auf den Wiederverkaufswert auswirken.
+                  </li>
+                </ul>
+              </details>
             </div>
-          )}
+
+            <div className="ltc-quote ltc-quote--gold">
+              <div className="ltc-quote__t">Zitat</div>
+              <div className="ltc-quote__q">„{trustText}“</div>
+            </div>
+
+            <div className="ltc-actions">
+              <a className="ltc-btn ltc-btn--soft" href="#/blog">
+                Blog ansehen
+              </a>
+              <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => setCookieModalOpen(true)}>
+                Cookie-Einstellungen
+              </button>
+            </div>
+
+            {import.meta.env.DEV && (
+              <div className="ltc-meta" style={{ marginTop: 12 }}>
+                Debug: <a href="#/debug/public-site">#/debug/public-site</a>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -941,7 +982,6 @@ function FrontPage() {
     </div>
   );
 }
-
 /** ---------------------------
  * Static Pages
  * --------------------------- */
@@ -1033,9 +1073,9 @@ function DatenschutzPage() {
  * App Root
  * --------------------------- */
 export default function App() {
-  // hard route: /qr/:vehicleId or /public/qr/:vehicleId (Public QR landing)
   const pathQrMatch =
     window.location.pathname.match(/^\/qr\/([^/?#]+)$/) ?? window.location.pathname.match(/^\/public\/qr\/([^/?#]+)$/);
+
   if (pathQrMatch) {
     const vehicleId = decodeURIComponent(pathQrMatch[1]);
     return (
@@ -1063,7 +1103,6 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
 
-  // Legacy Redirect: wenn jemand #/public/site aufruft -> sofort auf #/
   useEffect(() => {
     const raw = (window.location.hash || "").replace(/^#\/?/, "");
     if (raw.startsWith("public/site")) window.location.replace("#/");
@@ -1202,11 +1241,10 @@ export default function App() {
     </>
   );
 }
-
 /** ---------------------------
- * CSS – näher ans Beispielbild (Goldline, Glow, Spacing, Cards)
+ * CSS – Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
-const css = `
+const css = String.raw`
 :root{
   --ltc-bg0:#070a0f;
   --ltc-fg:rgba(255,255,255,.92);
@@ -1216,6 +1254,10 @@ const css = `
   --ltc-gold: rgba(201,168,106, 0.95);
   --ltc-gold2: rgba(201,168,106, 0.35);
   --ltc-shadow:0 18px 60px rgba(0,0,0,.55);
+
+  /* Frame: Background-Fenster */
+  --ltc-frame-max: 1500px;
+  --ltc-frame-gutter: 24px;
 }
 
 *{box-sizing:border-box}
@@ -1229,153 +1271,127 @@ body{
 a{color:inherit}
 code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
-.ltc-container{max-width:1200px;margin:0 auto;padding:0 18px}
-
-.ltc-app{
-  min-height:100vh;
-  color:var(--ltc-fg);
+/* ✅ Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
+.ltc-container{
+  width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
+  margin: 0 auto;
+  padding: 0 18px;
 }
 
-/* Plain Pages: Background-Engine per Route (über CSS-Variablen) */
-.ltc-app--plain{
+.ltc-app{ min-height:100vh; color:var(--ltc-fg); }
+
+/* -----------------------------------------
+   Background Engine: Bild NUR im Frame
+------------------------------------------ */
+.ltc-app--plain,
+.ltc-app--hero{
   position: relative;
   overflow: hidden;
   isolation: isolate;
   background: var(--ltc-bg0);
 }
-.ltc-app--plain::before{
+
+/* Bild-Frame */
+.ltc-app--plain::before,
+.ltc-app--hero::before{
   content:"";
   position: fixed;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
+  transform: translateX(-50%);
   z-index: -2;
   pointer-events: none;
 
   background-image: var(--ltc-bg);
+  background-repeat: no-repeat;
   background-size: var(--ltc-bg-size, cover);
   background-position: var(--ltc-bg-pos, center);
-  background-repeat: no-repeat;
 
   opacity: var(--ltc-bg-op, 0);
   filter: saturate(1.05) contrast(1.03);
 }
+
+/* Overlay über ALLES */
 .ltc-app--plain::after{
   content:"";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-
   background:
     radial-gradient(1100px 700px at 12% 10%, rgba(201,168,106,.14), transparent 60%),
     radial-gradient(900px 600px at 88% 18%, rgba(255,255,255,.05), transparent 55%),
     linear-gradient(to bottom, rgba(0,0,0,.44), rgba(0,0,0,.74));
 }
 
-.ltc-app--hero{
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-
-  background-image:
-    radial-gradient(1200px 420px at 18% 18%, rgba(201,168,106,.16), transparent 60%),
-    radial-gradient(980px 520px at 85% 26%, rgba(201,168,106,.10), transparent 65%),
-    linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.72) 55%, rgba(0,0,0,.80) 100%),
-    var(--ltc-bg);
-
-  background-size: auto, auto, auto, contain;
-  background-repeat: no-repeat;
-  background-position: center top;
+/* HERO Overlay (mehr “Banner”-Look) */
+.ltc-app--hero::after{
+  content:"";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 520px at 20% 18%, rgba(201,168,106,.18), transparent 60%),
+    radial-gradient(980px 620px at 85% 26%, rgba(201,168,106,.10), transparent 65%),
+    linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.72) 55%, rgba(0,0,0,.84) 100%);
 }
 
+/* Topbar */
 .ltc-topbar{
   position: sticky;
   top: 0;
   z-index: 70;
   padding: 12px 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.70) 0%, rgba(0,0,0,.35) 70%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.35) 70%, rgba(0,0,0,0) 100%);
   backdrop-filter: blur(10px);
 }
-
 .ltc-topbar__line{
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(201,168,106,.50), transparent);
   opacity: .9;
 }
-
-.ltc-topbar__inner{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.ltc-topbar__right{
-  display: flex;
-  justify-content: flex-end;
-}
+.ltc-topbar__inner{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.ltc-topbar__right{ display:flex; justify-content:flex-end; }
 
 .ltc-brand{
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
+  display:flex; align-items:center; gap:12px;
+  text-decoration:none;
   color: rgba(255,255,255,.92);
 }
-
 .ltc-brand__mark{
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(201,168,106,.40);
+  width:14px;height:14px;border-radius:999px;
+  border:1px solid rgba(201,168,106,.40);
   box-shadow: 0 0 0 3px rgba(201,168,106,.10);
 }
-
-.ltc-brand__text{
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-}
-
-.ltc-brand__name{
-  font-size: 13px;
-  letter-spacing: .18em;
-  font-weight: 950;
-}
-
-.ltc-brand__sub{
-  font-size: 10px;
-  letter-spacing: .22em;
-  opacity: .72;
-  margin-top: 2px;
-}
+.ltc-brand__text{ display:flex; flex-direction:column; line-height:1.05; }
+.ltc-brand__name{ font-size:13px; letter-spacing:.18em; font-weight:950; }
+.ltc-brand__sub{ font-size:10px; letter-spacing:.22em; opacity:.72; margin-top:2px; }
 
 .ltc-nav{
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
+  display:flex; align-items:center; justify-content:flex-end;
+  gap:10px; flex-wrap:wrap;
 }
-
 .ltc-nav--tight{ gap: 10px; }
 
 .ltc-nav__a,
 .ltc-nav__btn{
-  appearance: none;
-  background: transparent;
-  border: 1px solid transparent;
+  appearance:none;
+  background:transparent;
+  border:1px solid transparent;
   color: rgba(255,255,255,.82);
-  font-size: 12px;
-  letter-spacing: .10em;
-  text-transform: uppercase;
-  padding: 8px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  text-decoration: none;
-  font-weight: 850;
-  line-height: 1;
+  font-size:12px;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  padding:8px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  text-decoration:none;
+  font-weight:850;
+  line-height:1;
 }
-
 .ltc-nav__a:hover,
 .ltc-nav__btn:hover{
   background: rgba(255,255,255,.05);
@@ -1383,49 +1399,28 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 }
 
 .ltc-pill{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(201,168,106,.34);
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:9px 12px;
+  border-radius:999px;
+  border:1px solid rgba(201,168,106,.34);
   background: rgba(0,0,0,.28);
   color: rgba(255,255,255,.92);
-  text-decoration: none;
-  font-size: 12px;
-  letter-spacing: .10em;
-  text-transform: uppercase;
-  font-weight: 900;
+  text-decoration:none;
+  font-size:12px;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  font-weight:900;
 }
-
 .ltc-pill:hover{
   border-color: rgba(201,168,106,.52);
   background: rgba(255,255,255,.06);
 }
-
 @media (max-width: 720px){
   .ltc-topbar{ padding: 10px 0; }
   .ltc-nav__a,.ltc-nav__btn,.ltc-pill{ padding: 7px 9px; font-size: 11px; }
 }
 
-.ltc-hero2__h1{
-  margin:0;
-  font-size: clamp(38px, 3.8vw, 50px);
-  letter-spacing:-0.9px;
-  line-height:1.02;
-  font-weight:950;
-  text-shadow: 0 18px 46px rgba(0,0,0,.62);
-}
-.ltc-hero2__sub{
-  margin-top:10px;
-  font-size:18px;
-  opacity:.86;
-  line-height:1.55;
-  text-shadow: 0 14px 36px rgba(0,0,0,.50);
-}
-.ltc-hero2__form{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.ltc-hero2__actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
-
+/* Inputs + Buttons */
 .ltc-input{
   width:340px;max-width:100%;
   padding:12px 14px;
@@ -1436,8 +1431,11 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   outline:none;
   box-shadow:0 16px 44px rgba(0,0,0,.34);
 }
-.ltc-input--hero{width:360px}
-.ltc-input:focus{border-color:rgba(201,168,106,.35); box-shadow:0 18px 46px rgba(0,0,0,.36), 0 0 0 1px rgba(201,168,106,.20) inset}
+.ltc-input--hero{ width: 420px; }
+.ltc-input:focus{
+  border-color:rgba(201,168,106,.35);
+  box-shadow:0 18px 46px rgba(0,0,0,.36), 0 0 0 1px rgba(201,168,106,.20) inset
+}
 
 .ltc-btn{
   padding:12px 16px;
@@ -1451,16 +1449,20 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   text-decoration:none;
   display:inline-flex;align-items:center;justify-content:center;
 }
-.ltc-btn:hover{transform:translateY(-1px);border-color:rgba(201,168,106,.30);background:rgba(255,255,255,.08)}
-.ltc-btn:active{transform:translateY(0px)}
+.ltc-btn:hover{
+  transform:translateY(-1px);
+  border-color:rgba(201,168,106,.30);
+  background:rgba(255,255,255,.08)
+}
+.ltc-btn:active{ transform:translateY(0px) }
 .ltc-btn--primary{
   border-color:rgba(201,168,106,.42);
   background: linear-gradient(180deg, rgba(201,168,106,.16), rgba(0,0,0,.26));
   box-shadow: 0 14px 34px rgba(0,0,0,.35), 0 0 24px rgba(201,168,106,.14);
 }
-.ltc-btn--soft{background:rgba(0,0,0,.30);border-color:rgba(255,255,255,.14);font-weight:900}
-.ltc-btn--ghost{background:transparent;border-color:rgba(201,168,106,.22);font-weight:900}
-.ltc-btn--hero{min-width:120px}
+.ltc-btn--soft{ background:rgba(0,0,0,.30); border-color:rgba(255,255,255,.14); font-weight:900 }
+.ltc-btn--ghost{ background:transparent; border-color:rgba(201,168,106,.22); font-weight:900 }
+.ltc-btn--hero{ min-width:120px }
 
 .ltc-dividerGold{
   height:1px;
@@ -1469,24 +1471,226 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   opacity:.9;
 }
 
-.ltc-iconRow{
-  display:flex; gap:18px; flex-wrap:wrap;
+/* Icons */
+.ltc-ic{ width:18px;height:18px;color:rgba(201,168,106,.85) }
+.ltc-ic2{ width:22px;height:22px;color:rgba(201,168,106,.90) }
+
+.ltc-iconItem{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.ltc-iconItem > div{ min-width:0; }
+
+/* --------------------------
+   FRONT PAGE (NEU)
+-------------------------- */
+.ltc-hero{
+  padding: 22px 0 0 0;
+}
+.ltc-hero__grid{
+  display:grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 18px;
+  align-items: stretch;
+}
+@media (max-width: 980px){
+  .ltc-hero__grid{ grid-template-columns: 1fr; }
+}
+
+.ltc-hero__copy{ min-width:0; }
+.ltc-hero__panel{
+  border-radius: 20px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--ltc-shadow);
+  padding: 22px;
+  position: relative;
+  overflow:hidden;
+}
+.ltc-hero__panel:before{
+  content:"";
+  position:absolute; inset:0;
+  background: radial-gradient(740px 260px at 18% 0%, rgba(201,168,106,.12), transparent 60%);
+  pointer-events:none;
+}
+
+.ltc-hero__h1{
+  margin:0;
+  font-size: clamp(38px, 4vw, 56px);
+  letter-spacing:-0.9px;
+  line-height:1.02;
+  font-weight:950;
+  text-shadow: 0 18px 46px rgba(0,0,0,.62);
+  position:relative;
+}
+.ltc-hero__sub{
+  margin-top:10px;
+  font-size:18px;
+  opacity:.86;
+  line-height:1.55;
+  text-shadow: 0 14px 36px rgba(0,0,0,.50);
+  position:relative;
+}
+
+.ltc-hero__form{ margin-top: 16px; position:relative; }
+.ltc-hero__formRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.ltc-hero__ctaRow{
+  margin-top: 12px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* ✅ 3 Punkte wie Beispiel: Desktop nebeneinander */
+.ltc-hero__iconRow{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 18px;
   font-size:13px;
   opacity:.92;
+  align-items:center;
+  position:relative;
 }
-.ltc-iconItem{display:flex; align-items:center; gap:10px; min-width:220px}
-.ltc-ic{width:18px;height:18px;color:rgba(201,168,106,.85)}
-.ltc-ic2{width:22px;height:22px;color:rgba(201,168,106,.90)}
+@media (max-width: 860px){
+  .ltc-hero__iconRow{ grid-template-columns: 1fr; }
+}
 
-.ltc-cardsRow{
-  margin-top:18px;
+/* Right side phone mock */
+.ltc-hero__mock{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height: 380px;
+}
+@media (max-width: 980px){
+  .ltc-hero__mock{ min-height: 320px; }
+}
+
+.ltc-phone{
+  width: min(320px, 100%);
+  aspect-ratio: 9 / 16;
+  border-radius: 28px;
+  border: 1px solid rgba(201,168,106,.22);
+  background: rgba(0,0,0,.45);
+  box-shadow: 0 22px 64px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06) inset;
+  position: relative;
+  overflow: hidden;
+}
+.ltc-phone:before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(520px 240px at 70% 20%, rgba(201,168,106,.18), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.10));
+  pointer-events:none;
+}
+.ltc-phone__top{
+  position:absolute; top:10px; left:0; right:0;
+  display:flex; align-items:center; justify-content:center;
+  gap:10px;
+  z-index:2;
+}
+.ltc-phone__cam{
+  width:10px;height:10px;border-radius:999px;
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+}
+.ltc-phone__speaker{
+  width:56px;height:8px;border-radius:999px;
+  background: rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.08);
+}
+.ltc-phone__screen{
+  position:absolute; inset: 34px 14px 34px 14px;
+  border-radius: 18px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.35);
+  overflow:hidden;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.ltc-phone__btn{
+  position:absolute; bottom:10px; left:50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+  z-index:2;
+}
+
+/* QR mock */
+.ltc-qrMock{
+  width: 70%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,.10) 1px, transparent 1px),
+    radial-gradient(240px 240px at 40% 40%, rgba(201,168,106,.18), transparent 60%),
+    rgba(0,0,0,.24);
+  background-size: 10px 10px, 10px 10px, auto, auto;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 44px rgba(0,0,0,.35);
+}
+
+/* Verified badge */
+.ltc-verified{
+  position:absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border:1px solid rgba(201,168,106,.24);
+  background: rgba(0,0,0,.38);
+  backdrop-filter: blur(10px);
+}
+.ltc-verified__label{
+  font-weight: 950;
+  letter-spacing: .12em;
+  font-size: 12px;
+  color: rgba(201,168,106,.95);
+}
+.ltc-verified__badge{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border:1px solid rgba(201,168,106,.34);
+  background: rgba(201,168,106,.12);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 0 20px rgba(201,168,106,.16);
+}
+.ltc-verified__ic{ width: 18px; height: 18px; color: rgba(255,255,255,.92); }
+
+/* Feature cards row */
+.ltc-featureRow{
+  margin-top: 16px;
   display:grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
-  gap:14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
-@media (max-width: 980px){.ltc-cardsRow{grid-template-columns:1fr}}
-
-.ltc-serviceCard{
+@media (max-width: 980px){
+  .ltc-featureRow{ grid-template-columns: 1fr; }
+}
+.ltc-featureCard{
   border-radius:18px;
   border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.04);
@@ -1496,55 +1700,202 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   position:relative;
   overflow:hidden;
 }
-.ltc-serviceCard:before{
+.ltc-featureCard:before{
   content:"";
   position:absolute; inset:0;
   background: radial-gradient(520px 180px at 20% 10%, rgba(201,168,106,.12), transparent 60%);
   pointer-events:none;
 }
-.ltc-serviceCard__head{display:flex; gap:12px; align-items:flex-start; position:relative}
-.ltc-serviceCard__t{font-weight:950; font-size:18px; margin-bottom:2px}
+.ltc-featureCard__head{ display:flex; gap:12px; align-items:flex-start; position:relative; }
+.ltc-featureCard__t{ font-weight:950; font-size:18px; margin-bottom:2px }
 
-.ltc-midHero{
-  margin-top:18px;
-  padding:0 0 8px 0;
-}
-.ltc-midHero__inner{
-  border-radius:18px;
+/* Showroom band */
+.ltc-showroom{ margin-top: 14px; }
+.ltc-showroom__card{
+  border-radius: 20px;
   border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.28);
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.26);
+  backdrop-filter: blur(12px);
   box-shadow: var(--ltc-shadow);
-  padding:18px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  flex-wrap:wrap;
+  padding: 18px;
+  position:relative;
+  overflow:hidden;
 }
-.ltc-midHero__kicker{font-size:42px; font-weight:950; letter-spacing:-.8px}
-.ltc-midHero__sub{margin-top:4px; opacity:.86}
-.ltc-hintTeaser{
-  margin-top:10px;
+.ltc-showroom__card:before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(900px 320px at 30% 0%, rgba(201,168,106,.12), transparent 60%),
+    radial-gradient(700px 260px at 80% 120%, rgba(255,255,255,.05), transparent 55%);
+  pointer-events:none;
+}
+.ltc-showroom__meta{ position:relative; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.ltc-kicker{
+  font-weight: 950;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(201,168,106,.92);
+}
+
+.ltc-showroom__cars{
+  position:relative;
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items:end;
+  min-height: 120px;
+}
+@media (max-width: 860px){
+  .ltc-showroom__cars{ grid-template-columns: 1fr; min-height:auto; }
+}
+.ltc-carTile{
+  height: 120px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  background:
+    radial-gradient(220px 120px at 30% 40%, rgba(255,255,255,.10), transparent 60%),
+    radial-gradient(260px 140px at 70% 60%, rgba(201,168,106,.14), transparent 65%),
+    rgba(255,255,255,.03);
+  box-shadow: 0 18px 54px rgba(0,0,0,.30);
+}
+.ltc-carTile--mid{ height: 132px; }
+.ltc-carTile--right{ height: 124px; }
+
+/* Service band */
+.ltc-band{ margin-top: 14px; }
+.ltc-band__grid{
+  border-radius: 20px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--ltc-shadow);
+  padding: 18px;
+  display:grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 18px;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+}
+.ltc-band__grid:before{
+  content:"";
+  position:absolute; inset:0;
+  background: radial-gradient(820px 280px at 18% 0%, rgba(201,168,106,.10), transparent 60%);
+  pointer-events:none;
+}
+@media (max-width: 980px){
+  .ltc-band__grid{ grid-template-columns: 1fr; }
+}
+.ltc-band__copy{ position:relative; }
+.ltc-band__kicker{
+  font-weight: 950;
+  letter-spacing: -.8px;
+  font-size: 44px;
+  line-height:1.0;
+}
+.ltc-band__h{
+  margin-top: 6px;
+  font-size: 16px;
+  opacity: .86;
+  line-height: 1.55;
+}
+.ltc-band__actions{ margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap; position:relative; }
+
+.ltc-docMock{
+  position:relative;
+  min-height: 220px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-end;
+}
+.ltc-docMock__paper{
+  position:absolute;
+  left: 10px;
+  bottom: 14px;
+  width: 58%;
+  height: 70%;
+  border-radius: 14px;
+  border:1px solid rgba(255,255,255,.10);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.22)),
+    rgba(255,255,255,.03);
+  box-shadow: 0 18px 54px rgba(0,0,0,.32);
+}
+.ltc-docMock__paper--2{
+  left: 26px;
+  bottom: 22px;
+  width: 54%;
+  height: 64%;
+  opacity: .88;
+}
+.ltc-docMock__tablet{
+  position:relative;
+  width: 52%;
+  height: 86%;
+  min-height: 210px;
+  border-radius: 18px;
+  border:1px solid rgba(201,168,106,.22);
+  background: rgba(0,0,0,.34);
+  box-shadow: 0 22px 64px rgba(0,0,0,.45);
+  overflow:hidden;
+}
+.ltc-docMock__tablet:before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(420px 220px at 70% 20%, rgba(201,168,106,.18), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18));
+  pointer-events:none;
+}
+.ltc-docMock__tabletTop{
+  position:absolute; top: 10px; left: 12px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  font-size: 12px;
+  opacity: .86;
+}
+.ltc-docMock__tabletBadge{
+  position:absolute; right: 12px; bottom: 12px;
+  border-radius: 14px;
+  border:1px solid rgba(201,168,106,.22);
+  background: rgba(0,0,0,.38);
+  padding: 10px 10px;
   display:flex;
   align-items:center;
   gap:10px;
-  padding:12px 12px;
-  border-radius:16px;
-  border:1px solid rgba(201,168,106,.18);
-  background: rgba(0,0,0,.26);
 }
-.ltc-linkBtn{
-  background:transparent;
-  border:none;
-  color:rgba(255,255,255,.90);
-  cursor:pointer;
-  font-weight:900;
-  padding:0;
-  text-decoration:underline;
+.ltc-docMock__tabletLabel{
+  font-weight: 950;
+  letter-spacing: .10em;
+  font-size: 11px;
+  color: rgba(201,168,106,.95);
 }
+.ltc-docMock__tabletIc{ width: 18px; height: 18px; color: rgba(255,255,255,.92); }
 
-.ltc-section{padding:10px 0 0 0}
+/* Disclaimer band */
+.ltc-disclaimerBand{ margin-top: 14px; margin-bottom: 8px; }
+.ltc-disclaimerBand__card{
+  border-radius: 18px;
+  border:1px solid rgba(201,168,106,.18);
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 60px rgba(0,0,0,.30);
+  padding: 14px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ltc-disclaimerBand__left{ display:flex; align-items:center; gap: 10px; min-width: 0; }
+.ltc-disclaimerBand__text{ opacity:.88; line-height: 1.5; max-width: 920px; }
+
+/* Sections */
+.ltc-section{ padding: 12px 0 0 0; }
+
+/* Cards / Prose (bestehende Klassen weiter genutzt) */
 .ltc-card{
   border:1px solid rgba(255,255,255,.10);
   border-radius:18px;
@@ -1553,23 +1904,21 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   padding:18px;
   box-shadow: 0 14px 34px rgba(0,0,0,.22);
 }
-.ltc-card--wide{position:relative; overflow:hidden}
+.ltc-card--wide{ position:relative; overflow:hidden }
 .ltc-card--wide:before{
   content:"";
   position:absolute; inset:0;
   background: radial-gradient(740px 240px at 18% 0%, rgba(201,168,106,.10), transparent 60%);
   pointer-events:none;
 }
-.ltc-card__title{font-weight:950;font-size:18px;margin-bottom:10px; position:relative}
-
-.ltc-muted{opacity:.82;line-height:1.55;color:var(--ltc-muted)}
-.ltc-strong{font-weight:900}
-.ltc-meta{font-size:12px;opacity:.78;margin:10px 0; position:relative}
-.ltc-pre{white-space:pre-wrap;margin:0;font-size:13px;line-height:1.35}
-
-.ltc-list{margin:0;padding-left:18px;line-height:1.7; position:relative}
-.ltc-link{text-decoration:none;color:rgba(255,255,255,.90)}
-.ltc-link:hover{text-decoration:underline}
+.ltc-card__title{ font-weight:950;font-size:18px;margin-bottom:10px; position:relative }
+.ltc-muted{ opacity:.82;line-height:1.55;color:var(--ltc-muted) }
+.ltc-strong{ font-weight:900 }
+.ltc-meta{ font-size:12px;opacity:.78;margin:10px 0; position:relative }
+.ltc-pre{ white-space:pre-wrap;margin:0;font-size:13px;line-height:1.35 }
+.ltc-list{ margin:0;padding-left:18px;line-height:1.7; position:relative }
+.ltc-link{ text-decoration:none;color:rgba(255,255,255,.90) }
+.ltc-link:hover{ text-decoration:underline }
 
 .ltc-quote{
   margin-top:14px;
@@ -1583,16 +1932,17 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   border-color: rgba(201,168,106,.22);
   box-shadow: 0 0 0 1px rgba(201,168,106,.10) inset;
 }
-.ltc-quote__t{font-weight:900;margin-bottom:6px}
-.ltc-quote__q{font-style:italic;opacity:.92;line-height:1.6}
+.ltc-quote__t{ font-weight:900;margin-bottom:6px }
+.ltc-quote__q{ font-style:italic;opacity:.92;line-height:1.6 }
 
-.ltc-details{margin-top:10px; position:relative}
-.ltc-details summary{cursor:pointer;font-weight:900}
-.ltc-details p{margin-top:10px}
-.ltc-prose{line-height:1.75;opacity:.92; position:relative}
-.ltc-prose p{margin:10px 0}
-.ltc-prose ul{margin:8px 0 0 18px}
+.ltc-details{ margin-top:10px; position:relative }
+.ltc-details summary{ cursor:pointer;font-weight:900 }
+.ltc-details p{ margin-top:10px }
+.ltc-prose{ line-height:1.75;opacity:.92; position:relative }
+.ltc-prose p{ margin:10px 0 }
+.ltc-prose ul{ margin:8px 0 0 18px }
 
+/* Footer */
 .ltc-footer{
   margin-top:26px;
   border-top:1px solid rgba(255,255,255,.10);
@@ -1605,12 +1955,13 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap:18px;
 }
-.ltc-footer__title{font-weight:950;margin-bottom:10px}
-.ltc-footer__links{display:grid;gap:8px}
-.ltc-footer__links a{color:rgba(255,255,255,.80);text-decoration:none}
-.ltc-footer__links a:hover{text-decoration:underline}
-.ltc-footer__bottom{padding:0 0 18px 0;font-size:12px;opacity:.72}
+.ltc-footer__title{ font-weight:950;margin-bottom:10px }
+.ltc-footer__links{ display:grid;gap:8px }
+.ltc-footer__links a{ color:rgba(255,255,255,.80);text-decoration:none }
+.ltc-footer__links a:hover{ text-decoration:underline }
+.ltc-footer__bottom{ padding:0 0 18px 0;font-size:12px;opacity:.72 }
 
+/* Cookie */
 .ltc-cookie{
   position:fixed;
   left:14px; right:14px; bottom:14px;
@@ -1624,15 +1975,15 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   box-shadow: var(--ltc-shadow);
   padding:14px;
 }
-.ltc-cookie__title{font-weight:950;margin-bottom:6px}
-.ltc-cookie__text{font-size:13px;opacity:.86;line-height:1.45}
-.ltc-cookie__text a{color:rgba(255,255,255,.92)}
-.ltc-cookie__actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.ltc-cookie__title{ font-weight:950;margin-bottom:6px }
+.ltc-cookie__text{ font-size:13px;opacity:.86;line-height:1.45 }
+.ltc-cookie__text a{ color:rgba(255,255,255,.92) }
+.ltc-cookie__actions{ margin-top:12px;display:flex;gap:10px;flex-wrap:wrap }
 
-.ltc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
-.ltc-check{width:18px;height:18px;accent-color:#fff}
-.ltc-divider{height:1px;background:rgba(255,255,255,.10);margin:10px 0}
-.ltc-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+.ltc-row{ display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 }
+.ltc-check{ width:18px;height:18px;accent-color:#fff }
+.ltc-divider{ height:1px;background:rgba(255,255,255,.10);margin:10px 0 }
+.ltc-actions{ margin-top:14px;display:flex;gap:10px;flex-wrap:wrap }
 
 .ltc-modal{
   position:fixed; inset:0;
@@ -1651,10 +2002,10 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   backdrop-filter: blur(10px);
   box-shadow: var(--ltc-shadow);
 }
-.ltc-modal__head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px}
-.ltc-modal__body{padding:12px}
+.ltc-modal__head{ display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px }
+.ltc-modal__body{ padding:12px }
 
-.ltc-page{padding:28px 0 0 0}
-.ltc-h1{margin:0 0 14px 0;font-size:34px;letter-spacing:-.6px}
+/* Plain pages */
+.ltc-page{ padding:28px 0 0 0 }
+.ltc-h1{ margin:0 0 14px 0;font-size:34px;letter-spacing:-.6px }
 `;
-
