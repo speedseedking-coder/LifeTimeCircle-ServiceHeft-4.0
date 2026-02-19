@@ -11,14 +11,12 @@ import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
 
-import { useAuthBoot } from "./lib.auth";
-
 /**
- * LifeTimeCircle – ServiceHeft 4.0:
+ * LifeTimeCircle ÔÇô ServiceHeft 4.0:
  * - Digitales Nachweis- & Dokumentationssystem (Proof statt Behauptung)
- * - Fokus: Uploads, Historie, prüfbare Belege / Audit-Trail
+ * - Fokus: Uploads, Historie, pr├╝fbare Belege / Audit-Trail
  * - Public/QR: datenarm, schnelle Checks / Reports
- * - Trust-Ampel bewertet ausschließlich Dokumentations- & Nachweisqualität (kein technischer Zustand)
+ * - Trust-Ampel bewertet ausschlie├ƒlich Dokumentations- & Nachweisqualit├ñt (kein technischer Zustand)
  */
 
 type Route =
@@ -418,7 +416,7 @@ function Topbar(props: { right?: ReactNode }) {
 
 function Footer() {
   const trustText =
-    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschlie├ƒlich die Dokumentations- und Nachweisqualit├ñt. Sie ist keine Aussage ├╝ber den technischen Zustand des Fahrzeugs.";
 
   return (
     <footer id="footer" className="ltc-footer">
@@ -427,7 +425,7 @@ function Footer() {
           <div>
             <div className="ltc-footer__title">LifeTimeCircle</div>
             <div className="ltc-muted">
-              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prüfbare Nachweise.
+              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, pr├╝fbare Nachweise.
             </div>
           </div>
 
@@ -457,7 +455,7 @@ function Footer() {
           </div>
         </div>
 
-        <div className="ltc-footer__bottom">© {new Date().getFullYear()} LifeTimeCircle · ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">┬® {new Date().getFullYear()} LifeTimeCircle ┬À ServiceHeft 4.0</div>
       </div>
     </footer>
   );
@@ -541,10 +539,10 @@ function ApiBox(props: { path: string; title: string }) {
     <Card title={props.title}>
       <div className="ltc-meta">
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` → ${state.status}` : ""}
+        {typeof state.status === "number" ? ` ÔåÆ ${state.status}` : ""}
       </div>
 
-      {state.loading ? <div className="ltc-muted">Lädt…</div> : <pre className="ltc-pre">{state.text}</pre>}
+      {state.loading ? <div className="ltc-muted">L├ñdtÔÇª</div> : <pre className="ltc-pre">{state.text}</pre>}
     </Card>
   );
 }
@@ -601,11 +599,11 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
     <Card title={props.title}>
       <div className="ltc-meta">
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` → ${state.status}` : ""}
+        {typeof state.status === "number" ? ` ÔåÆ ${state.status}` : ""}
       </div>
 
       {state.loading ? (
-        <div className="ltc-muted">Lädt…</div>
+        <div className="ltc-muted">L├ñdtÔÇª</div>
       ) : state.error ? (
         <pre className="ltc-pre">{state.error}</pre>
       ) : state.items ? (
@@ -631,7 +629,7 @@ function PostView(props: { title: string; path: string; backHref: string; backLa
     <>
       <div style={{ marginBottom: 12 }}>
         <a className="ltc-link" href={props.backHref}>
-          ← {props.backLabel}
+          ÔåÉ {props.backLabel}
         </a>
       </div>
       <ApiBox path={props.path} title={props.title} />
@@ -649,7 +647,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
         <div className="ltc-modal__head">
           <div className="ltc-strong">{props.title}</div>
           <button type="button" className="ltc-btn ltc-btn--ghost" onClick={props.onClose}>
-            Schließen
+            Schlie├ƒen
           </button>
         </div>
         <div className="ltc-modal__body">{props.children}</div>
@@ -659,7 +657,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
 }
 
 /** ---------------------------
- * Frontpage – Hero/Showroom/Bands
+ * Frontpage ÔÇô NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
  * --------------------------- */
 function FrontPage() {
   const [email, setEmail] = useState("");
@@ -670,7 +668,7 @@ function FrontPage() {
   useEffect(() => {
     let alive = true;
 
-    // Fallback-Liste: wenn du später ein Landscape-Bild ergänzt, einfach vorne eintragen
+    // Fallback-Liste: wenn du sp├ñter ein Landscape-Bild erg├ñnzt, einfach vorne eintragen
     const tryList = [BG.frontpage2, "/images/frontpage_LiftimeCicrcle_safe.webp", "/images/frontpage_LiftimeCicrcle_safe.png"];
     let idx = 0;
 
@@ -704,7 +702,7 @@ function FrontPage() {
   };
 
   const trustText =
-    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschlie├ƒlich die Dokumentations- und Nachweisqualit├ñt. Sie ist keine Aussage ├╝ber den technischen Zustand des Fahrzeugs.";
 
   return (
     <div
@@ -712,6 +710,8 @@ function FrontPage() {
       style={{
         ["--ltc-bg" as any]: `url("${bgUrl}")`,
         ["--ltc-bg-op" as any]: "1",
+
+        // Ô£à Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
         ["--ltc-bg-size" as any]: "cover",
         ["--ltc-bg-pos" as any]: "68% 12%",
       }}
@@ -738,6 +738,7 @@ function FrontPage() {
         }
       />
 
+      {/* HERO (wie Beispiel): links Copy + Login, rechts Phone/QR Mock */}
       <div className="ltc-container">
         <section className="ltc-hero">
           <div className="ltc-hero__grid">
@@ -817,13 +818,14 @@ function FrontPage() {
           </div>
         </section>
 
+        {/* Feature Cards (wie Beispiel: 2 gro├ƒe Karten) */}
         <section className="ltc-featureRow">
           <div className="ltc-featureCard">
             <div className="ltc-featureCard__head">
               <IconShield className="ltc-ic2" />
               <div>
                 <div className="ltc-featureCard__t">Fahrzeug-Trust Report</div>
-                <div className="ltc-muted">Transparente Historie und verlässliche Berichte</div>
+                <div className="ltc-muted">Transparente Historie und verl├ñssliche Berichte</div>
               </div>
             </div>
           </div>
@@ -832,18 +834,19 @@ function FrontPage() {
             <div className="ltc-featureCard__head">
               <IconCheck className="ltc-ic2" />
               <div>
-                <div className="ltc-featureCard__t">Verifizierte Einträge</div>
+                <div className="ltc-featureCard__t">Verifizierte Eintr├ñge</div>
                 <div className="ltc-muted">Wartung, Reparatur &amp; Unfalldokumentation</div>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Showroom Band (Autos-Look wie Beispiel) */}
         <section className="ltc-showroom">
           <div className="ltc-showroom__card">
             <div className="ltc-showroom__meta">
               <span className="ltc-kicker">Nachweise sichtbar machen</span>
-              <span className="ltc-muted">— ohne Datenballast im Public/QR</span>
+              <span className="ltc-muted">ÔÇö ohne Datenballast im Public/QR</span>
             </div>
 
             <div className="ltc-showroom__cars" aria-hidden="true">
@@ -854,6 +857,7 @@ function FrontPage() {
           </div>
         </section>
 
+        {/* ServiceHeft Band (wie Beispiel: Headline links + Dokument/Tablet Mock rechts) */}
         <section className="ltc-band">
           <div className="ltc-band__grid">
             <div className="ltc-band__copy">
@@ -882,6 +886,7 @@ function FrontPage() {
           </div>
         </section>
 
+        {/* Pflicht-Disclaimer (wie Beispiel separat sichtbar) */}
         <section className="ltc-disclaimerBand">
           <div className="ltc-disclaimerBand__card">
             <div className="ltc-disclaimerBand__left">
@@ -894,18 +899,19 @@ function FrontPage() {
           </div>
         </section>
 
+        {/* Services / About bleiben inhaltlich gleich (nur spacing/Container korrekt) */}
         <div id="services" className="ltc-section">
           <div className="ltc-card ltc-card--wide">
             <div className="ltc-card__title">Services</div>
             <ul className="ltc-list">
-              <li>Upload &amp; Dokumentenablage (Quarantäne-by-default, Approve nach Scan CLEAN)</li>
-              <li>Historie (Einträge, Timeline, Nachweislogik)</li>
-              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualität)</li>
+              <li>Upload &amp; Dokumentenablage (Quarant├ñne-by-default, Approve nach Scan CLEAN)</li>
+              <li>Historie (Eintr├ñge, Timeline, Nachweislogik)</li>
+              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualit├ñt)</li>
               <li>Public/QR Mini-Check (datenarm, VIN maskiert)</li>
             </ul>
             <div style={{ marginTop: 10 }}>
               <a className="ltc-link" href="#/faq">
-                Zu den FAQs →
+                Zu den FAQs ÔåÆ
               </a>
             </div>
           </div>
@@ -917,7 +923,7 @@ function FrontPage() {
 
             <div className="ltc-prose">
               <p>
-                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist – nicht „wie gut/schlecht“ ein
+                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist ÔÇô nicht ÔÇ×wie gut/schlechtÔÇ£ ein
                 Fahrzeug technisch ist.
               </p>
 
@@ -925,17 +931,17 @@ function FrontPage() {
                 <summary>Mehr lesen: Zeiten des Autokaufs, fehlendes Vertrauen, Nachweise</summary>
                 <p>
                   Vertrauen kippt oft dort, wo Dokumente fehlen: Recherche (viel Text, wenig Proof), Besichtigung (Aussagen vs. Belege), Verhandlung
-                  (Risikoaufschlag), Übergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
+                  (Risikoaufschlag), ├£bergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
                 </p>
                 <ul>
                   <li>
-                    <b>Nachweise erhöhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
+                    <b>Nachweise erh├Âhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
                   </li>
                   <li>
-                    <b>Proof reduziert Risiko:</b> weniger „Gefühl“, mehr belastbare Historie.
+                    <b>Proof reduziert Risiko:</b> weniger ÔÇ×Gef├╝hlÔÇ£, mehr belastbare Historie.
                   </li>
                   <li>
-                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhöhen und sich positiv auf den Wiederverkaufswert auswirken.
+                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erh├Âhen und sich positiv auf den Wiederverkaufswert auswirken.
                   </li>
                 </ul>
               </details>
@@ -943,7 +949,7 @@ function FrontPage() {
 
             <div className="ltc-quote ltc-quote--gold">
               <div className="ltc-quote__t">Zitat</div>
-              <div className="ltc-quote__q">„{trustText}“</div>
+              <div className="ltc-quote__q">ÔÇ×{trustText}ÔÇ£</div>
             </div>
 
             <div className="ltc-actions">
@@ -976,7 +982,6 @@ function FrontPage() {
     </div>
   );
 }
-
 /** ---------------------------
  * Static Pages
  * --------------------------- */
@@ -984,18 +989,20 @@ function FaqPage() {
   return (
     <StaticShell title="FAQ" bg={getBgForRoute({ kind: "faq" })}>
       <h2>Was ist das ServiceHeft 4.0?</h2>
-      <p>Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen prüfbar werden.</p>
+      <p>
+        Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen pr├╝fbar werden.
+      </p>
 
       <h2>Warum ist das beim Autokauf relevant?</h2>
       <p>
-        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil Käufer
+        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil K├ñufer
         weniger Risiko einpreisen.
       </p>
 
       <h2>Was zeigt Public/QR?</h2>
-      <p>Datenarm (z. B. VIN maskiert), aber geeignet für schnelle Checks &amp; Reports.</p>
+      <p>Datenarm (z. B. VIN maskiert), aber geeignet f├╝r schnelle Checks &amp; Reports.</p>
 
-      <h2>Wo ändere ich Cookies?</h2>
+      <h2>Wo ├ñndere ich Cookies?</h2>
       <p>
         Unter <a href="#/cookies">Cookie-Einstellungen</a>.
       </p>
@@ -1008,7 +1015,7 @@ function CookiesPage() {
     <StaticShell title="Cookie-Einstellungen" bg={getBgForRoute({ kind: "cookies" })}>
       <CookieSettingsCard />
       <h2>Was wird gespeichert?</h2>
-      <p>Technisch notwendige Zustände (z. B. Flow-/Session-Status) und deine Cookie-Auswahl. Marketing/Tracking ist deaktiviert.</p>
+      <p>Technisch notwendige Zust├ñnde (z. B. Flow-/Session-Status) und deine Cookie-Auswahl. Marketing/Tracking ist deaktiviert.</p>
     </StaticShell>
   );
 }
@@ -1047,7 +1054,7 @@ function DatenschutzPage() {
   return (
     <StaticShell title="Datenschutz" bg={getBgForRoute({ kind: "datenschutz" })}>
       <p>
-        Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind Quarantäne-by-default und werden erst nach Scan freigegeben. Keine PII in
+        Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind Quarant├ñne-by-default und werden erst nach Scan freigegeben. Keine PII in
         Mockups/Exports/Logs.
       </p>
       <h2>Consent</h2>
@@ -1066,7 +1073,6 @@ function DatenschutzPage() {
  * App Root
  * --------------------------- */
 export default function App() {
-  // Path-based public QR support (non-hash)
   const pathQrMatch =
     window.location.pathname.match(/^\/qr\/([^/?#]+)$/) ?? window.location.pathname.match(/^\/public\/qr\/([^/?#]+)$/);
 
@@ -1079,7 +1085,7 @@ export default function App() {
           <div className="ltc-container ltc-page">
             <div style={{ marginBottom: 12 }}>
               <a className="ltc-link" href="#/">
-                ← Zur Frontpage
+                ÔåÉ Zur Frontpage
               </a>
             </div>
             <PublicQrPage vehicleId={vehicleId} />
@@ -1090,7 +1096,6 @@ export default function App() {
   }
 
   const [route, setRoute] = useState<Route>(() => parseHash());
-  const auth = useAuthBoot();
 
   useEffect(() => {
     const onChange = () => setRoute(parseHash());
@@ -1098,7 +1103,6 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
 
-  // Keep legacy route from showing
   useEffect(() => {
     const raw = (window.location.hash || "").replace(/^#\/?/, "");
     if (raw.startsWith("public/site")) window.location.replace("#/");
@@ -1107,7 +1111,7 @@ export default function App() {
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle – ServiceHeft 4.0";
+        return "LifeTimeCircle ÔÇô ServiceHeft 4.0";
       case "debugPublicSite":
         return "Debug: Public Site (API)";
       case "faq":
@@ -1149,27 +1153,7 @@ export default function App() {
     document.title = pageTitle;
   }, [pageTitle]);
 
-const nonHomeBg = getBgForRoute(route);
-
-  // ✅ Wichtig: KEIN Narrowing über route.kind erzeugen
-  const PROTECTED_ROUTES = new Set<Route["kind"]>(["vehicles", "vehicleDetail", "documents", "onboarding"]);
-  const isProtected = PROTECTED_ROUTES.has(route.kind);
-
-  // ✅ Redirects NICHT im Render (stabil, kein Flackern)
-  useEffect(() => {
-    if (!isProtected) return;
-    if (auth.isBooting) return;
-
-    if (!auth.isAuthed) {
-      window.location.hash = "#/auth";
-      return;
-    }
-
-    if (auth.consentRequired) {
-      window.location.hash = "#/consent";
-      return;
-    }
-  }, [isProtected, auth.isBooting, auth.isAuthed, auth.consentRequired]);
+  const nonHomeBg = getBgForRoute(route);
 
   return (
     <>
@@ -1193,268 +1177,72 @@ const nonHomeBg = getBgForRoute(route);
             <div className="ltc-container ltc-page">
               <h1 className="ltc-h1">{pageTitle}</h1>
 
-              {/* ✅ Boot-Blocker für Protected Routes */}
-              {isProtected && auth.isBooting ? (
-                <div className="ltc-card">
-                  <div className="ltc-muted">Session wird geprüft…</div>
+              <div className="ltc-card">
+                <div className="ltc-muted">
+                  Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
                 </div>
-              ) : (
-                <>
-                  <div className="ltc-card">
-                    <div className="ltc-muted">
-                      Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
-                    </div>
 
-                    <div style={{ marginTop: 12 }}>
-                      <a className="ltc-link" href="#/">
-                        ← Zur Frontpage
+                <div style={{ marginTop: 12 }}>
+                  <a className="ltc-link" href="#/">
+                    ÔåÉ Zur Frontpage
+                  </a>
+                  {import.meta.env.DEV && (
+                    <>
+                      {" "}
+                      ┬À{" "}
+                      <a className="ltc-link" href="#/debug/public-site">
+                        Debug Public Site
                       </a>
-                      {import.meta.env.DEV && (
-                        <>
-                          {" "}
-                          ·{" "}
-                          <a className="ltc-link" href="#/debug/public-site">
-                            Debug Public Site
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
-
-                  {route.kind === "blogList" && <ItemsList title="Blog (Public)" path="/blog" kind="blog" />}
-                  {route.kind === "newsList" && <ItemsList title="News (Public)" path="/news" kind="news" />}
-
-                  {route.kind === "blogPost" && (
-                    <PostView
-                      title={`Blog Post: ${route.slug}`}
-                      path={`/blog/${encodeURIComponent(route.slug)}`}
-                      backHref="#/blog"
-                      backLabel="zur Blog-Liste"
-                    />
+                    </>
                   )}
-
-                  {route.kind === "newsPost" && (
-                    <PostView
-                      title={`News Post: ${route.slug}`}
-                      path={`/news/${encodeURIComponent(route.slug)}`}
-                      backHref="#/news"
-                      backLabel="zur News-Liste"
-                    />
-                  )}
-
-                  {route.kind === "publicQr" && (
-                    <div style={{ marginTop: 12 }}>
-                      <PublicQrPage vehicleId={decodeURIComponent(route.vehicleId)} />
-                    </div>
-                  )}
-
-                  {route.kind === "auth" && <AuthPage />}
-                  {route.kind === "consent" && <ConsentPage />}
-                  {route.kind === "vehicles" && <VehiclesPage />}
-                  {route.kind === "vehicleDetail" && <VehicleDetailPage />}
-                  {route.kind === "documents" && <DocumentsPage />}
-                  {route.kind === "onboarding" && <OnboardingWizardPage />}
-
-                  <Footer />
-                </>
-              )}
-            </div>
-          </div>
-        )}
-    </>
-  );
-    <>
-      <style>{css}</style>
-
-      {route.kind === "home" && <FrontPage />}
-
-      {route.kind === "faq" && <FaqPage />}
-      {route.kind === "cookies" && <CookiesPage />}
-      {route.kind === "jobs" && <JobsPage />}
-      {route.kind === "impressum" && <ImpressumPage />}
-      {route.kind === "datenschutz" && <DatenschutzPage />}
-
-      {route.kind !== "home" &&
-        route.kind !== "faq" &&
-        route.kind !== "cookies" &&
-        route.kind !== "jobs" &&
-        route.kind !== "impressum" &&
-        route.kind !== "datenschutz" && (
-          <div className="ltc-app ltc-app--plain" style={bgStyle(nonHomeBg)}>
-            <div className="ltc-container ltc-page">
-              <h1 className="ltc-h1">{pageTitle}</h1>
-
-              {/* ✅ Boot-Blocker für Protected Routes */}
-              {isProtected && auth.isBooting ? (
-                <div className="ltc-card">
-                  <div className="ltc-muted">Session wird geprüft…</div>
                 </div>
-              ) : (
-                <>
-                  <div className="ltc-card">
-                    <div className="ltc-muted">
-                      Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
-                    </div>
+              </div>
 
-                    <div style={{ marginTop: 12 }}>
-                      <a className="ltc-link" href="#/">
-                        ← Zur Frontpage
-                      </a>
-                      {import.meta.env.DEV && (
-                        <>
-                          {" "}
-                          ·{" "}
-                          <a className="ltc-link" href="#/debug/public-site">
-                            Debug Public Site
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  </div>
+              {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
 
-                  {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
+              {route.kind === "blogList" && <ItemsList title="Blog (Public)" path="/blog" kind="blog" />}
+              {route.kind === "newsList" && <ItemsList title="News (Public)" path="/news" kind="news" />}
 
-                  {route.kind === "blogList" && <ItemsList title="Blog (Public)" path="/blog" kind="blog" />}
-                  {route.kind === "newsList" && <ItemsList title="News (Public)" path="/news" kind="news" />}
-
-                  {route.kind === "blogPost" && (
-                    <PostView
-                      title={`Blog Post: ${route.slug}`}
-                      path={`/blog/${encodeURIComponent(route.slug)}`}
-                      backHref="#/blog"
-                      backLabel="zur Blog-Liste"
-                    />
-                  )}
-
-                  {route.kind === "newsPost" && (
-                    <PostView
-                      title={`News Post: ${route.slug}`}
-                      path={`/news/${encodeURIComponent(route.slug)}`}
-                      backHref="#/news"
-                      backLabel="zur News-Liste"
-                    />
-                  )}
-
-                  {route.kind === "publicQr" && (
-                    <div style={{ marginTop: 12 }}>
-                      <PublicQrPage vehicleId={decodeURIComponent(route.vehicleId)} />
-                    </div>
-                  )}
-
-                  {route.kind === "auth" && <AuthPage />}
-                  {route.kind === "consent" && <ConsentPage />}
-                  {route.kind === "vehicles" && <VehiclesPage />}
-                  {route.kind === "vehicleDetail" && <VehicleDetailPage />}
-                  {route.kind === "documents" && <DocumentsPage />}
-                  {route.kind === "onboarding" && <OnboardingWizardPage />}
-
-                  <Footer />
-                </>
+              {route.kind === "blogPost" && (
+                <PostView
+                  title={`Blog Post: ${route.slug}`}
+                  path={`/blog/${encodeURIComponent(route.slug)}`}
+                  backHref="#/blog"
+                  backLabel="zur Blog-Liste"
+                />
               )}
-            </div>
-          </div>
-        )}
-    </>
-  );
-    <>
-      <style>{css}</style>
 
-      {route.kind === "home" && <FrontPage />}
+              {route.kind === "newsPost" && (
+                <PostView
+                  title={`News Post: ${route.slug}`}
+                  path={`/news/${encodeURIComponent(route.slug)}`}
+                  backHref="#/news"
+                  backLabel="zur News-Liste"
+                />
+              )}
 
-      {route.kind === "faq" && <FaqPage />}
-      {route.kind === "cookies" && <CookiesPage />}
-      {route.kind === "jobs" && <JobsPage />}
-      {route.kind === "impressum" && <ImpressumPage />}
-      {route.kind === "datenschutz" && <DatenschutzPage />}
-
-      {route.kind !== "home" &&
-        route.kind !== "faq" &&
-        route.kind !== "cookies" &&
-        route.kind !== "jobs" &&
-        route.kind !== "impressum" &&
-        route.kind !== "datenschutz" && (
-          <div className="ltc-app ltc-app--plain" style={bgStyle(nonHomeBg)}>
-            <div className="ltc-container ltc-page">
-              <h1 className="ltc-h1">{pageTitle}</h1>
-
-              {/* ✅ Boot-Blocker für Protected Routes */}
-              {isProtected && auth.isBooting ? (
-                <div className="ltc-card">
-                  <div className="ltc-muted">Session wird geprüft…</div>
+              {route.kind === "publicQr" && (
+                <div style={{ marginTop: 12 }}>
+                  <PublicQrPage vehicleId={decodeURIComponent(route.vehicleId)} />
                 </div>
-              ) : (
-                <>
-                  <div className="ltc-card">
-                    <div className="ltc-muted">
-                      Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
-                    </div>
-
-                    <div style={{ marginTop: 12 }}>
-                      <a className="ltc-link" href="#/">
-                        ← Zur Frontpage
-                      </a>
-                      {import.meta.env.DEV && (
-                        <>
-                          {" "}
-                          ·{" "}
-                          <a className="ltc-link" href="#/debug/public-site">
-                            Debug Public Site
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
-
-                  {route.kind === "blogList" && <ItemsList title="Blog (Public)" path="/blog" kind="blog" />}
-                  {route.kind === "newsList" && <ItemsList title="News (Public)" path="/news" kind="news" />}
-
-                  {route.kind === "blogPost" && (
-                    <PostView
-                      title={`Blog Post: ${route.slug}`}
-                      path={`/blog/${encodeURIComponent(route.slug)}`}
-                      backHref="#/blog"
-                      backLabel="zur Blog-Liste"
-                    />
-                  )}
-
-                  {route.kind === "newsPost" && (
-                    <PostView
-                      title={`News Post: ${route.slug}`}
-                      path={`/news/${encodeURIComponent(route.slug)}`}
-                      backHref="#/news"
-                      backLabel="zur News-Liste"
-                    />
-                  )}
-
-                  {route.kind === "publicQr" && (
-                    <div style={{ marginTop: 12 }}>
-                      <PublicQrPage vehicleId={decodeURIComponent(route.vehicleId)} />
-                    </div>
-                  )}
-
-                  {route.kind === "auth" && <AuthPage />}
-                  {route.kind === "consent" && <ConsentPage />}
-                  {route.kind === "vehicles" && <VehiclesPage />}
-                  {route.kind === "vehicleDetail" && <VehicleDetailPage />}
-                  {route.kind === "documents" && <DocumentsPage />}
-                  {route.kind === "onboarding" && <OnboardingWizardPage />}
-
-                  <Footer />
-                </>
               )}
+
+              {route.kind === "auth" && <AuthPage />}
+              {route.kind === "consent" && <ConsentPage />}
+              {route.kind === "vehicles" && <VehiclesPage />}
+              {route.kind === "vehicleDetail" && <VehicleDetailPage />}
+              {route.kind === "documents" && <DocumentsPage />}
+              {route.kind === "onboarding" && <OnboardingWizardPage />}
+
+              <Footer />
             </div>
           </div>
         )}
     </>
   );
 }
-
 /** ---------------------------
- * CSS – Frame + Container identisch breit + Frontpage Styles
+ * CSS ÔÇô Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
 const css = String.raw`
 :root{
@@ -1467,6 +1255,7 @@ const css = String.raw`
   --ltc-gold2: rgba(201,168,106, 0.35);
   --ltc-shadow:0 18px 60px rgba(0,0,0,.55);
 
+  /* Frame: Background-Fenster */
   --ltc-frame-max: 1500px;
   --ltc-frame-gutter: 24px;
 }
@@ -1482,6 +1271,7 @@ body{
 a{color:inherit}
 code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
+/* Ô£à Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
 .ltc-container{
   width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
   margin: 0 auto;
@@ -1490,6 +1280,9 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 
 .ltc-app{ min-height:100vh; color:var(--ltc-fg); }
 
+/* -----------------------------------------
+   Background Engine: Bild NUR im Frame
+------------------------------------------ */
 .ltc-app--plain,
 .ltc-app--hero{
   position: relative;
@@ -1498,6 +1291,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   background: var(--ltc-bg0);
 }
 
+/* Bild-Frame */
 .ltc-app--plain::before,
 .ltc-app--hero::before{
   content:"";
@@ -1519,6 +1313,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   filter: saturate(1.05) contrast(1.03);
 }
 
+/* Overlay ├╝ber ALLES */
 .ltc-app--plain::after{
   content:"";
   position: fixed;
@@ -1531,6 +1326,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
     linear-gradient(to bottom, rgba(0,0,0,.44), rgba(0,0,0,.74));
 }
 
+/* HERO Overlay (mehr ÔÇ£BannerÔÇØ-Look) */
 .ltc-app--hero::after{
   content:"";
   position: fixed;
@@ -1543,6 +1339,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
     linear-gradient(180deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.72) 55%, rgba(0,0,0,.84) 100%);
 }
 
+/* Topbar */
 .ltc-topbar{
   position: sticky;
   top: 0;
@@ -1623,6 +1420,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   .ltc-nav__a,.ltc-nav__btn,.ltc-pill{ padding: 7px 9px; font-size: 11px; }
 }
 
+/* Inputs + Buttons */
 .ltc-input{
   width:340px;max-width:100%;
   padding:12px 14px;
@@ -1673,6 +1471,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   opacity:.9;
 }
 
+/* Icons */
 .ltc-ic{ width:18px;height:18px;color:rgba(201,168,106,.85) }
 .ltc-ic2{ width:22px;height:22px;color:rgba(201,168,106,.90) }
 
@@ -1684,7 +1483,12 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 }
 .ltc-iconItem > div{ min-width:0; }
 
-.ltc-hero{ padding: 22px 0 0 0; }
+/* --------------------------
+   FRONT PAGE (NEU)
+-------------------------- */
+.ltc-hero{
+  padding: 22px 0 0 0;
+}
 .ltc-hero__grid{
   display:grid;
   grid-template-columns: 1.05fr .95fr;
@@ -1745,6 +1549,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   flex-wrap:wrap;
 }
 
+/* Ô£à 3 Punkte wie Beispiel: Desktop nebeneinander */
 .ltc-hero__iconRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1758,6 +1563,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   .ltc-hero__iconRow{ grid-template-columns: 1fr; }
 }
 
+/* Right side phone mock */
 .ltc-hero__mock{
   display:flex;
   align-items:center;
@@ -1824,6 +1630,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   z-index:2;
 }
 
+/* QR mock */
 .ltc-qrMock{
   width: 70%;
   aspect-ratio: 1 / 1;
@@ -1838,6 +1645,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   box-shadow: 0 18px 44px rgba(0,0,0,.35);
 }
 
+/* Verified badge */
 .ltc-verified{
   position:absolute;
   bottom: 12px;
@@ -1872,6 +1680,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 }
 .ltc-verified__ic{ width: 18px; height: 18px; color: rgba(255,255,255,.92); }
 
+/* Feature cards row */
 .ltc-featureRow{
   margin-top: 16px;
   display:grid;
@@ -1900,6 +1709,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-featureCard__head{ display:flex; gap:12px; align-items:flex-start; position:relative; }
 .ltc-featureCard__t{ font-weight:950; font-size:18px; margin-bottom:2px }
 
+/* Showroom band */
 .ltc-showroom{ margin-top: 14px; }
 .ltc-showroom__card{
   border-radius: 20px;
@@ -1953,6 +1763,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-carTile--mid{ height: 132px; }
 .ltc-carTile--right{ height: 124px; }
 
+/* Service band */
 .ltc-band{ margin-top: 14px; }
 .ltc-band__grid{
   border-radius: 20px;
@@ -2063,6 +1874,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 }
 .ltc-docMock__tabletIc{ width: 18px; height: 18px; color: rgba(255,255,255,.92); }
 
+/* Disclaimer band */
 .ltc-disclaimerBand{ margin-top: 14px; margin-bottom: 8px; }
 .ltc-disclaimerBand__card{
   border-radius: 18px;
@@ -2080,8 +1892,10 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-disclaimerBand__left{ display:flex; align-items:center; gap: 10px; min-width: 0; }
 .ltc-disclaimerBand__text{ opacity:.88; line-height: 1.5; max-width: 920px; }
 
+/* Sections */
 .ltc-section{ padding: 12px 0 0 0; }
 
+/* Cards / Prose (bestehende Klassen weiter genutzt) */
 .ltc-card{
   border:1px solid rgba(255,255,255,.10);
   border-radius:18px;
@@ -2128,6 +1942,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-prose p{ margin:10px 0 }
 .ltc-prose ul{ margin:8px 0 0 18px }
 
+/* Footer */
 .ltc-footer{
   margin-top:26px;
   border-top:1px solid rgba(255,255,255,.10);
@@ -2146,6 +1961,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-footer__links a:hover{ text-decoration:underline }
 .ltc-footer__bottom{ padding:0 0 18px 0;font-size:12px;opacity:.72 }
 
+/* Cookie */
 .ltc-cookie{
   position:fixed;
   left:14px; right:14px; bottom:14px;
@@ -2189,6 +2005,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
 .ltc-modal__head{ display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px }
 .ltc-modal__body{ padding:12px }
 
+/* Plain pages */
 .ltc-page{ padding:28px 0 0 0 }
 .ltc-h1{ margin:0 0 14px 0;font-size:34px;letter-spacing:-.6px }
 `;
