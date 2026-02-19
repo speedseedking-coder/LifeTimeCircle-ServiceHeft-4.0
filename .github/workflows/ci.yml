@@ -16,11 +16,13 @@ jobs:
     name: web_build
     runs-on: ubuntu-latest
     steps:
-            - name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}      - name: Debug: list Backdrop files
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Debug: list Backdrop files
         shell: bash
         run: |
           echo "=== HEAD SHA ==="
@@ -52,11 +54,13 @@ jobs:
     env:
       LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
     steps:
-            - name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}      - name: CI guard - required job 'pytest'
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: CI guard - required job 'pytest'
         shell: pwsh
         working-directory: ${{ github.workspace }}
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/ci_guard_required_job_pytest.ps1
@@ -94,11 +98,13 @@ jobs:
     env:
       LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
     steps:
-            - name: Checkout
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}      - name: Setup Python
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -129,4 +135,3 @@ jobs:
         shell: pwsh
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/ltc_verify_ist_zustand.ps1
-
