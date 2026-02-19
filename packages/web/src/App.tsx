@@ -1,4 +1,4 @@
-﻿// packages/web/src/App.tsx
+// packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 
@@ -688,7 +688,7 @@ function FrontPage() {
   // 1) frontpage_LiftimeCicrcle_2.png (dein neues Motiv)
   // 2) safe.webp
   // 3) safe.png
-  const [bgUrl, setBgUrl] = useState(BG.frontpage2);
+  const [bgUrl, setBgUrl] = useState<string>(BG.frontpage2);
 
   useEffect(() => {
     let alive = true;
