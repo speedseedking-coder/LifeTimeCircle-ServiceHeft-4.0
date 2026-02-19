@@ -1,5 +1,4 @@
-﻿import { handleUnauthorized } from "./handleUnauthorized";
-import { httpFetch } from "./httpFetch";
+﻿import { httpFetch } from "./httpFetch";
 
 /**
  * Minimal silent auth boot.
@@ -24,3 +23,4 @@ export async function bootAuth(): Promise<void> {
     // Network errors should not hard crash boot
   }
 }
+
