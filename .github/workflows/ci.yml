@@ -82,3 +82,23 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/patch_docs_unified_final_refresh.ps1
+verify_ist_zustand_windows:
+    name: verify_ist_zustand_windows
+    runs-on: windows-latest
+    env:
+      LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ripgrep (if missing)
+        shell: pwsh
+        run: |
+          if (-not (Get-Command rg -ErrorAction SilentlyContinue)) {
+            choco install ripgrep -y --no-progress
+          }
+          rg --version
+
+      - name: Run IST Zustand verify
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File server\scripts\ltc_verify_ist_zustand.ps1
