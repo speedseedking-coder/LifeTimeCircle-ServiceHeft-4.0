@@ -82,7 +82,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/patch_docs_unified_final_refresh.ps1
-verify_ist_zustand_windows:
+  verify_ist_zustand_windows:
     name: verify_ist_zustand_windows
     runs-on: windows-latest
     env:
