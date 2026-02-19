@@ -1,16 +1,14 @@
-// packages/web/src/components/componentsAppBackdrop.tsx
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import "./AppBackdrop.css";
 
 /**
  * NOTE:
  * Diese App nutzt Hash-Routing (#/auth, #/vehicles/123, ...).
- * Damit wir keine react-router-dom Dependency brauchen (und CI/Linux sauber bleibt),
- * leiten wir hier eine "pathname"-ähnliche Sicht aus window.location.hash ab.
+ * Wir leiten daraus eine "pathname"-ähnliche Sicht ab (ohne react-router-dom).
  */
 function getHashPathname(): string {
   const raw = (window.location.hash || "").replace(/^#\/?/, "");
-  const clean = raw.split("?")[0].split("#")[0]; // defensiv
+  const clean = raw.split("?")[0].split("#")[0];
   if (!clean) return "/";
   return `/${clean}`;
 }
@@ -29,12 +27,9 @@ function useHashPathname(): string {
 
 type BgConfig = {
   src: string;
-  /** CSS background-size value, e.g. "cover", "contain", "92% auto" */
   size?: string;
-  /** CSS background-position value */
   position?: string;
-  /** 0..1 */
-  opacity?: number;
+  opacity?: number; // 0..1
 };
 
 const BG = {
@@ -53,20 +48,20 @@ const BG = {
 } as const;
 
 function pickBackground(pathname: string): BgConfig | null {
-  // --- Public Landing / Entry
+  // Public Landing / Auth: Bild eher rechts ausrichten (passt zur "Right-Gutter" Optik)
   if (pathname === "/" || pathname.startsWith("/public/site")) {
-    return { src: BG.frontpage, size: "92% auto", position: "center", opacity: 0.30 };
+    return { src: BG.frontpage, size: "cover", position: "right center", opacity: 0.30 };
   }
   if (pathname.startsWith("/auth")) {
-    return { src: BG.frontpage, size: "92% auto", position: "center", opacity: 0.26 };
+    return { src: BG.frontpage, size: "cover", position: "right center", opacity: 0.26 };
   }
 
-  // --- Consent
+  // Consent
   if (pathname.startsWith("/consent")) {
     return { src: BG.consent, size: "cover", position: "center", opacity: 0.28 };
   }
 
-  // --- Public legal pages (Footer)
+  // Public legal pages (Footer)
   if (
     pathname.startsWith("/public/terms") ||
     pathname.startsWith("/public/faq") ||
@@ -84,7 +79,7 @@ function pickBackground(pathname: string): BgConfig | null {
     return { src: BG.jobs, size: "cover", position: "center", opacity: 0.26 };
   }
 
-  // --- Content
+  // Content
   if (pathname.startsWith("/blog")) {
     return { src: BG.blog, size: "cover", position: "center", opacity: 0.26 };
   }
@@ -92,7 +87,7 @@ function pickBackground(pathname: string): BgConfig | null {
     return { src: BG.news, size: "cover", position: "center", opacity: 0.26 };
   }
 
-  // --- Vehicles (more specific first)
+  // Vehicles (specific first)
   if (pathname.includes("/gallery") && pathname.startsWith("/vehicles/")) {
     return { src: BG.galerie, size: "cover", position: "center", opacity: 0.26 };
   }
@@ -106,7 +101,6 @@ function pickBackground(pathname: string): BgConfig | null {
     return { src: BG.vehicles, size: "cover", position: "center", opacity: 0.26 };
   }
 
-  // Fallback: kein Bild, nur Basis-Gradient
   return null;
 }
 
@@ -116,7 +110,6 @@ export function AppBackdrop(props: { children: ReactNode }) {
 
   const style = useMemo(() => {
     const base: CSSProperties = {
-      // defaults (auch ohne cfg)
       ["--ltc-bg-opacity" as any]: "0",
       ["--ltc-bg-size" as any]: "cover",
       ["--ltc-bg-position" as any]: "center",
@@ -138,7 +131,9 @@ export function AppBackdrop(props: { children: ReactNode }) {
     <div className="ltc-bg" style={style}>
       <div className="ltc-bg__image" aria-hidden="true" />
       <div className="ltc-bg__overlay" aria-hidden="true" />
-      {props.children}
+
+      {/* Right-Gutter: Content links, rechts "Luft" -> Background peek */}
+      <div className="ltc-shell">{props.children}</div>
     </div>
   );
 }
