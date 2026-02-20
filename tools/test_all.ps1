@@ -1,6 +1,10 @@
 # tools/test_all.ps1
 # LifeTimeCircle – ServiceHeft 4.0
-# Ziel: deterministisch fail-fast (kein "False-Green" bei npm/tsc/pytest Fehlern)
+# Ziel: deterministisch fail-fast (kein "False-Green")
+# - Repo-Root Encoding/Mojibake Gate (rg-basiert)
+# - Backend: pytest
+# - Web: npm ci + build
+# - Web: mini-e2e (Playwright) standardmäßig AN, opt-out via LTC_SKIP_E2E=1
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -25,6 +29,12 @@ function Invoke-Step {
 try {
   $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
   Set-Location $repoRoot
+  [Environment]::CurrentDirectory = $repoRoot
+
+  Invoke-Step -Name "Encoding gate (repo): node ./scripts/mojibake_scan.js" -Script {
+    & node ".\scripts\mojibake_scan.js"
+    if ($LASTEXITCODE -ne 0) { throw "mojibake scan failed (exit=$LASTEXITCODE)" }
+  }
 
   # Tests brauchen einen starken Secret-Key (>=16) für Export/Redaction/HMAC
   if (-not $env:LTC_SECRET_KEY -or $env:LTC_SECRET_KEY.Trim().Length -lt 16) {
@@ -44,24 +54,26 @@ try {
   Invoke-Step -Name "Web build (packages/web): npm ci + npm run build" -Script {
     Push-Location (Join-Path $repoRoot "packages/web")
     try {
-      & npm ci
+      & npm ci --no-audit --fund=false
       if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit=$LASTEXITCODE)" }
 
-      # sanity: tsc muss nach npm ci existieren
-      if (-not (Test-Path ".\node_modules\.bin\tsc.cmd")) {
-        throw "tsc.cmd fehlt nach npm ci (packages/web/node_modules/.bin/tsc.cmd)."
+      # sanity: tsc muss nach npm ci existieren (Windows/Linux)
+      if ((Test-Path ".\node_modules\.bin\tsc.cmd") -or (Test-Path "./node_modules/.bin/tsc")) {
+        & npx --no-install tsc -v | Out-Host
+      } else {
+        throw "tsc fehlt nach npm ci (packages/web/node_modules/.bin/tsc(.cmd))."
       }
 
       & npm run build
       if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit=$LASTEXITCODE)" }
 
-      # Optional: Mini-E2E (Playwright). Aktivieren mit: $env:LTC_RUN_E2E="1"
-      if ($env:LTC_RUN_E2E -eq "1") {
+      # Mini-E2E (Playwright): standardmäßig AN, opt-out via LTC_SKIP_E2E=1
+      if ($env:LTC_SKIP_E2E -eq "1") {
+        Write-Host ""
+        Write-Host "==> Web e2e (packages/web): SKIP (set LTC_SKIP_E2E=1)"
+      } else {
         & npm run e2e
         if ($LASTEXITCODE -ne 0) { throw "npm run e2e failed (exit=$LASTEXITCODE)" }
-      } else {
-        Write-Host ""
-        Write-Host "==> Web e2e (packages/web): SKIP (set LTC_RUN_E2E=1 to enable)"
       }
     } finally {
       Pop-Location

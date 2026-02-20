@@ -1,4 +1,7 @@
 ﻿# server/scripts/ltc_verify_ist_zustand.ps1
+# LifeTimeCircle – ServiceHeft 4.0 (SoT: docs/)
+# Zweck: lokaler/CI Preflight "IST-Zustand" (fail-fast, audit-sicher)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -56,12 +59,19 @@ function Get-BranchName {
 Run "0) Tools vorhanden" {
   Require-Tool "git"
   Require-Tool "rg"
+  Require-Tool "node"
   Require-Tool "poetry"
   Ok ("npm via: " + (Get-NpmCmd))
 }
 
 $root = Get-RepoRoot
 Ok "Repo-Root: $root"
+
+Run "0.1) Encoding gate (repo)" {
+  & node ".\scripts\mojibake_scan.js"
+  if ($LASTEXITCODE -ne 0) { throw "mojibake scan failed (exit=$LASTEXITCODE)" }
+  Ok "Mojibake-Scan gruen"
+}
 
 Run "1) Repo-Root / Git Status" {
   $branch = Get-BranchName
@@ -184,7 +194,8 @@ Run "7) Backend: pytest (mit LTC_SECRET_KEY)" {
       Warn "LTC_SECRET_KEY war nicht gesetzt -> setze DEV-Test-Key (nur lokal sinnvoll)."
     }
 
-    poetry run pytest -q
+    & poetry run pytest -q
+    if ($LASTEXITCODE -ne 0) { throw "pytest failed (exit=$LASTEXITCODE)" }
     Ok "pytest grün"
   } finally { Pop-Location }
 }
@@ -215,4 +226,3 @@ Run "8) Web: npm ci + npm run build" {
 Section "DONE"
 Ok "IST-ZUSTAND Voll-Check abgeschlossen."
 Warn "Optional: Smoke via ./server/scripts/ltc_web_toolkit.ps1 (-Smoke -Clean) nur, wenn pwsh verfügbar ist."
-
