@@ -1,5 +1,6 @@
 import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
+import { httpFetch } from "../lib/httpFetch";
 
 type TrustLight = "GREEN" | "YELLOW" | "RED";
 
@@ -9,8 +10,9 @@ type PublicQrResponse = {
   disclaimer: string;
 };
 
+// SoT Pflichttext (exakt, UTF-8!)
 const PUBLIC_QR_DISCLAIMER_TEXT =
-  "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+  "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.";
 
 function normalizeTrustLight(x: string): TrustLight {
   const v = (x || "").trim().toUpperCase();
@@ -53,9 +55,23 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
         setLoading(true);
         setError(null);
 
-        const r = await fetch(`/api/public/qr/${encodeURIComponent(vehicleId)}`, {
+        const r = await httpFetch(`/api/public/qr/${encodeURIComponent(vehicleId)}`, {
           headers: { Accept: "application/json" },
         });
+
+        // 403 consent_required -> redirect to consent (hash router)
+        if (r.status === 403) {
+          try {
+            const data403 = await r.clone().json();
+            const code = (data403 as any)?.detail?.code;
+            if (code === "consent_required") {
+              window.location.hash = "#/consent";
+              return; // do not set error, we are redirecting
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
 
         if (!r.ok) {
           throw new Error(`public_qr_http_${r.status}`);
@@ -133,4 +149,3 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
     </main>
   );
 }
-

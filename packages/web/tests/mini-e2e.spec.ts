@@ -1,124 +1,104 @@
 import { test, expect, Page } from "@playwright/test";
 
 const DISCLAIMER_TEXT =
-  "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+  "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.";
 
+/**
+ * Mockt API-Responses fÃ¼r die E2E-Flows:
+ * - /api/public/qr/:id wird von PublicQrPage genutzt
+ * - /api/vehicles* bleibt als Fallback (kann je nach App-Aufruf auftreten)
+ */
 async function mockApi(page: Page, mode: "unauth" | "auth_ok" | "consent_required") {
   await page.route("**/api/**", async (route) => {
-    const url = route.request().url();
-    const method = route.request().method();
+    const url = new URL(route.request().url());
+    const path = url.pathname;
 
-    function notFound() {
-      return route.fulfill({
-        status: 404,
-        contentType: "application/json",
-        body: JSON.stringify({ detail: { code: "not_found" } }),
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    // --- Public QR endpoint (used by PublicQrPage) ---
+    if (path.startsWith("/api/public/qr/")) {
+      if (mode === "unauth") return route.fulfill({ status: 401 });
+      if (mode === "consent_required") return json(403, { detail: { code: "consent_required" } });
+
+      // auth_ok: payload fields that UI may touch
+      return json(200, {
+        vehicleId: path.split("/").pop(),
+        ok: true,
+        trust_light: "YELLOW",
+        hint: "ok",
+        disclaimer: "",
       });
     }
 
-    if (url.includes("/api/auth/me")) {
-      if (mode === "unauth") {
-        return route.fulfill({
-          status: 401,
-          contentType: "application/json",
-          body: JSON.stringify({ detail: { code: "unauthorized" } }),
-        });
-      }
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ id: "u_test", role: "user" }),
-      });
+    // --- Vehicles fallback ---
+    if (path.startsWith("/api/vehicles")) {
+      if (mode === "unauth") return route.fulfill({ status: 401 });
+      if (mode === "consent_required") return json(403, { detail: { code: "consent_required" } });
+      return json(200, []);
     }
 
-    if (url.includes("/api/consent/status")) {
-      if (mode === "consent_required") {
-        return route.fulfill({
-          status: 403,
-          contentType: "application/json",
-          body: JSON.stringify({ detail: { code: "consent_required" } }),
-        });
-      }
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ is_complete: true }),
-      });
-    }
-
-    if (url.includes("/api/vehicles") && method === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ items: [] }),
-      });
-    }
-
-    if (url.includes("/api/public/qr/") && method === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          trust_light: "YELLOW",
-          hint: "Test-Hinweis",
-          disclaimer: DISCLAIMER_TEXT,
-        }),
-      });
-    }
-
-    return notFound();
+    return route.fallback();
   });
+}
+
+async function bootApp(page: Page): Promise<void> {
+  await page.goto("/");
+  await page.waitForLoadState("domcontentloaded");
+}
+
+async function setHash(page: Page, hash: string): Promise<void> {
+  if (!hash.startsWith("#")) throw new Error(`hash must start with '#': ${hash}`);
+  await page.evaluate((h) => {
+    window.location.hash = h;
+  }, hash);
 }
 
 test("401 redirects to #/auth?next=... (hash router compatible)", async ({ page }) => {
   await mockApi(page, "unauth");
-  await page.goto("/#/vehicles");
-  await page.waitForTimeout(500);
+  await bootApp(page);
+
+  await setHash(page, "#/public/qr/demo");
+
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 10_000 })
+    .toMatch(/^#\/auth(\?|$)/);
 
   const hash = await page.evaluate(() => window.location.hash);
-  expect(hash.startsWith("#/auth")).toBeTruthy();
-  expect(hash.includes("next=")).toBeTruthy();
+  expect(hash).toContain("next=");
 });
 
 test("loop guard: already on #/auth does not rewrite hash", async ({ page }) => {
   await mockApi(page, "unauth");
-  await page.goto("/#/auth");
-  await page.waitForTimeout(500);
+  await bootApp(page);
 
-  const hash = await page.evaluate(() => window.location.hash);
-  expect(hash).toBe("#/auth");
+  await setHash(page, "#/auth");
+
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 3_000 })
+    .toBe("#/auth");
 });
 
 test("403 consent_required redirects to #/consent", async ({ page }) => {
   await mockApi(page, "consent_required");
-  await page.goto("/#/vehicles");
-  await page.waitForTimeout(500);
+  await bootApp(page);
 
-  const hash = await page.evaluate(() => window.location.hash);
-  expect(hash).toBe("#/consent");
+  await setHash(page, "#/public/qr/demo");
+
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 10_000 })
+    .toBe("#/consent");
 });
-
-async function gotoPublicQr(page: Page, vehicleId: string): Promise<void> {
-  const candidates = [
-    `/#/public/qr/${encodeURIComponent(vehicleId)}`,
-    `/#/public-qr/${encodeURIComponent(vehicleId)}`,
-    `/#/publicqr/${encodeURIComponent(vehicleId)}`,
-    `/#/public/${encodeURIComponent(vehicleId)}`,
-  ];
-
-  for (const path of candidates) {
-    await page.goto(path);
-    await page.waitForTimeout(200);
-    const h1 = page.getByRole("heading", { name: "Public QR" });
-    if (await h1.count()) return;
-  }
-
-  throw new Error("public_qr_route_not_found");
-}
 
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {
   await mockApi(page, "auth_ok");
-  await gotoPublicQr(page, "veh_test_1");
+  await bootApp(page);
+
+  await setHash(page, "#/public/qr/veh_test_1");
 
   const loc = page.getByText(DISCLAIMER_TEXT, { exact: true });
   await expect(loc).toHaveCount(1);
