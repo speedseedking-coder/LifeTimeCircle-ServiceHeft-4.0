@@ -1,15 +1,15 @@
 // packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { apiGet, , isRecord, prettyBody } from "./api";
+import { apiGet, prettyBody } from "./api";
 
 /**
- * LifeTimeCircle â€“ ServiceHeft 4.0:
- * - Fokus: Uploads, Historie, prÃ¼fbare Belege / Audit-Trail
- * - Trust-Ampel bewertet ausschlieÃŸlich Dokumentations- & NachweisqualitÃ¤t (kein technischer Zustand)
+ * LifeTimeCircle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ServiceHeft 4.0:
+ * - Fokus: Uploads, Historie, prÃƒÆ’Ã‚Â¼fbare Belege / Audit-Trail
+ * - Trust-Ampel bewertet ausschlieÃƒÆ’Ã…Â¸lich Dokumentations- & NachweisqualitÃƒÆ’Ã‚Â¤t (kein technischer Zustand)
  *
  * Hinweis:
  * - Dieses File muss UTF-8 (ohne BOM) bleiben.
- * - Mojibake-Gate (scripts/mojibake_scan.js) prÃ¼ft repo-weit.
+ * - Mojibake-Gate (scripts/mojibake_scan.js) prÃƒÆ’Ã‚Â¼ft repo-weit.
  */
 
 type Route =
@@ -189,14 +189,14 @@ function Footer() {
             <a href="#/publicqr">Public/QR</a>
           </div>
         </div>
-        <div className="ltc-footer__bottom">Â© {new Date().getFullYear()} LifeTimeCircle â€“ ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">Ãƒâ€šÃ‚Â© {new Date().getFullYear()} LifeTimeCircle ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ ServiceHeft 4.0</div>
       </div>
     </div>
   );
 }
 
 const TRUST_TEXT =
-  "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.";
+  "Die Trust-Ampel bewertet ausschlieÃƒÆ’Ã…Â¸lich die Dokumentations- und NachweisqualitÃƒÆ’Ã‚Â¤t. Sie ist keine Aussage ÃƒÆ’Ã‚Â¼ber den technischen Zustand des Fahrzeugs.";
 
 function FrontPage() {
   const trustText = TRUST_TEXT;
@@ -206,14 +206,14 @@ function FrontPage() {
       <div className="ltc-heroFrame">
         <div className="ltc-heroContainer">
           <div className="ltc-heroLeft">
-            <div className="ltc-heroTitle">Digitales Serviceheft â€“ prÃ¼fbar, datenarm, audit-sicher.</div>
+            <div className="ltc-heroTitle">Digitales Serviceheft ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ prÃƒÆ’Ã‚Â¼fbar, datenarm, audit-sicher.</div>
             <div className="ltc-heroSub">
-              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prÃ¼fbare Nachweise.
+              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prÃƒÆ’Ã‚Â¼fbare Nachweise.
             </div>
             <div className="ltc-heroPills">
               <Pill>RBAC: deny-by-default</Pill>
               <Pill>VIN maskiert</Pill>
-              <Pill>Uploads: QuarantÃ¤ne-by-default</Pill>
+              <Pill>Uploads: QuarantÃƒÆ’Ã‚Â¤ne-by-default</Pill>
             </div>
             <div className="ltc-heroButtons">
               <LinkButton label="Start / Login" onClick={() => setHashRoute({ name: "auth" })} />
@@ -230,15 +230,15 @@ function FrontPage() {
             <div className="ltc-phoneMock">
               <div className="ltc-phoneMock__top">Public/QR Preview</div>
               <div className="ltc-phoneMock__body">
-                <div className="ltc-phoneMock__line">â€¢ VIN: W0Lâ€¦123 (maskiert)</div>
-                <div className="ltc-phoneMock__line">â€¢ Uploads: erst nach Scan</div>
-                <div className="ltc-phoneMock__line">â€¢ EintrÃ¤ge: nur prÃ¼fbare Belege</div>
+                <div className="ltc-phoneMock__line">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ VIN: W0LÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦123 (maskiert)</div>
+                <div className="ltc-phoneMock__line">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Uploads: erst nach Scan</div>
+                <div className="ltc-phoneMock__line">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ EintrÃƒÆ’Ã‚Â¤ge: nur prÃƒÆ’Ã‚Â¼fbare Belege</div>
                 <div className="ltc-phoneMock__qr">
                   <div className="ltc-phoneMock__qrBox" />
-                  <div className="ltc-phoneMock__qrHint">Scan â†’ Public/QR</div>
+                  <div className="ltc-phoneMock__qrHint">Scan ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Public/QR</div>
                 </div>
               </div>
-              <div className="ltc-phoneMock__foot">Trust-Ampel = NachweisqualitÃ¤t</div>
+              <div className="ltc-phoneMock__foot">Trust-Ampel = NachweisqualitÃƒÆ’Ã‚Â¤t</div>
             </div>
           </div>
         </div>
@@ -248,33 +248,33 @@ function FrontPage() {
         <div className="ltc-frontGrid">
           <SimpleCard title="Warum?" style={{ gridColumn: "span 2" }}>
             <div className="ltc-muted">
-              Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil KÃ¤ufer
-              schneller vergleichen kÃ¶nnen.
+              Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil KÃƒÆ’Ã‚Â¤ufer
+              schneller vergleichen kÃƒÆ’Ã‚Â¶nnen.
             </div>
             <Hr />
             <ul className="ltc-ul">
-              <li>Upload &amp; Dokumentenablage (QuarantÃ¤ne-by-default, Approve nach Scan CLEAN)</li>
-              <li>Historie (EintrÃ¤ge, Timeline, Nachweislogik)</li>
-              <li>Trust-Ampel (Dokumentations- &amp; NachweisqualitÃ¤t)</li>
+              <li>Upload &amp; Dokumentenablage (QuarantÃƒÆ’Ã‚Â¤ne-by-default, Approve nach Scan CLEAN)</li>
+              <li>Historie (EintrÃƒÆ’Ã‚Â¤ge, Timeline, Nachweislogik)</li>
+              <li>Trust-Ampel (Dokumentations- &amp; NachweisqualitÃƒÆ’Ã‚Â¤t)</li>
             </ul>
           </SimpleCard>
 
           <SimpleCard title="Quick Links">
             <div className="ltc-buttonsCol">
-              <LinkButton label="â†’ Fahrzeuge" onClick={() => setHashRoute({ name: "vehicles" })} />
-              <LinkButton label="â†’ Dokumente" onClick={() => setHashRoute({ name: "documents" })} />
-              <LinkButton label="â†’ Consent" onClick={() => setHashRoute({ name: "consent" })} kind="ghost" />
-              <LinkButton label="â†’ Onboarding" onClick={() => setHashRoute({ name: "onboarding" })} kind="ghost" />
+              <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Fahrzeuge" onClick={() => setHashRoute({ name: "vehicles" })} />
+              <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dokumente" onClick={() => setHashRoute({ name: "documents" })} />
+              <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Consent" onClick={() => setHashRoute({ name: "consent" })} kind="ghost" />
+              <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Onboarding" onClick={() => setHashRoute({ name: "onboarding" })} kind="ghost" />
             </div>
           </SimpleCard>
 
           <SimpleCard title="Public/QR ist bewusst datenarm">
             <div className="ltc-muted">
-              Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind QuarantÃ¤ne-by-default und werden erst nach Scan freigegeben. Keine PII in Ã¶ffentlichen
+              Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind QuarantÃƒÆ’Ã‚Â¤ne-by-default und werden erst nach Scan freigegeben. Keine PII in ÃƒÆ’Ã‚Â¶ffentlichen
               Reports/Exports.
             </div>
             <Hr />
-            <LinkButton label="â†’ Public/QR Ã¶ffnen" onClick={() => setHashRoute({ name: "publicqr" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Public/QR ÃƒÆ’Ã‚Â¶ffnen" onClick={() => setHashRoute({ name: "publicqr" })} />
           </SimpleCard>
         </div>
       </div>
@@ -291,7 +291,7 @@ function PageFrame(props: { title: string; back?: Route; backLabel?: string; chi
         <div className="ltc-topbar__left">
           {props.back ? (
             <button className="ltc-back" onClick={() => setHashRoute(props.back!)} type="button">
-              â† {props.backLabel || "ZurÃ¼ck"}
+              ÃƒÂ¢Ã¢â‚¬Â Ã‚Â {props.backLabel || "ZurÃƒÆ’Ã‚Â¼ck"}
             </button>
           ) : (
             <div className="ltc-backSpacer" />
@@ -318,7 +318,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
         <div className="ltc-modal__head">
           <div className="ltc-modal__title">{props.title}</div>
           <button className="ltc-modal__close" onClick={props.onClose} type="button">
-            SchlieÃŸen
+            SchlieÃƒÆ’Ã…Â¸en
           </button>
         </div>
         <div className="ltc-modal__body">{props.children}</div>
@@ -331,8 +331,8 @@ function AuthPage() {
   return (
     <PageFrame title="Login / Signup" back={{ name: "front" }} backLabel="Zur Frontpage">
       <div className="ltc-grid2">
-        <SimpleCard title="Rolle wÃ¤hlen">
-          <div className="ltc-muted">FÃ¼r den MVP reicht die Auswahl zur UX-Orchestrierung. Auth/Token kommt aus dem Backend.</div>
+        <SimpleCard title="Rolle wÃƒÆ’Ã‚Â¤hlen">
+          <div className="ltc-muted">FÃƒÆ’Ã‚Â¼r den MVP reicht die Auswahl zur UX-Orchestrierung. Auth/Token kommt aus dem Backend.</div>
           <Hr />
           <div className="ltc-buttonsCol">
             <LinkButton label="Privat" onClick={() => setHashRoute({ name: "consent" })} />
@@ -342,13 +342,13 @@ function AuthPage() {
 
         <SimpleCard title="Hinweis">
           <div className="ltc-muted">
-            Consent ist ein Gate. Wenn du noch nicht zugestimmt hast, bekommst du vom Backend bei geschÃ¼tzten Routen eine 403 mit <code>detail.code</code>{" "}
-            = <code>consent_required</code> â€“ dann leiten wir zur Consent-Seite.
+            Consent ist ein Gate. Wenn du noch nicht zugestimmt hast, bekommst du vom Backend bei geschÃƒÆ’Ã‚Â¼tzten Routen eine 403 mit <code>detail.code</code>{" "}
+            = <code>consent_required</code> ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ dann leiten wir zur Consent-Seite.
           </div>
           <Hr />
-          <div className="ltc-muted">Weiter gehtâ€™s mit: Consent â†’ Onboarding â†’ Fahrzeuge/Dokumente.</div>
+          <div className="ltc-muted">Weiter gehtÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s mit: Consent ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Onboarding ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Fahrzeuge/Dokumente.</div>
           <div style={{ marginTop: 12 }}>
-            <LinkButton label="â†’ Consent Ã¶ffnen" onClick={() => setHashRoute({ name: "consent" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Consent ÃƒÆ’Ã‚Â¶ffnen" onClick={() => setHashRoute({ name: "consent" })} />
           </div>
         </SimpleCard>
       </div>
@@ -362,19 +362,19 @@ function ConsentPage() {
   async function onAccept(e: FormEvent) {
     e.preventDefault();
     await run(async () => {
-      // Backend endpoint ist je nach Stand: /consent/accept o. Ã¤.
-      // Dieses UI ist UX-Flow only; API wiring kann in pages/ConsentPage.tsx endgÃ¼ltig sein.
+      // Backend endpoint ist je nach Stand: /consent/accept o. ÃƒÆ’Ã‚Â¤.
+      // Dieses UI ist UX-Flow only; API wiring kann in pages/ConsentPage.tsx endgÃƒÆ’Ã‚Â¼ltig sein.
       await apiGet("/health"); // placeholder ping
     });
     setHashRoute({ name: "onboarding" });
   }
 
   return (
-    <PageFrame title="Consent" back={{ name: "auth" }} backLabel="ZurÃ¼ck zu Login">
+    <PageFrame title="Consent" back={{ name: "auth" }} backLabel="ZurÃƒÆ’Ã‚Â¼ck zu Login">
       <div className="ltc-grid2">
         <SimpleCard title="Einwilligung">
           <div className="ltc-muted">
-            Ohne Consent ist die Nutzung geschÃ¼tzter Funktionen gesperrt (deny-by-default). Public/QR bleibt datenarm und Ã¶ffentlich.
+            Ohne Consent ist die Nutzung geschÃƒÆ’Ã‚Â¼tzter Funktionen gesperrt (deny-by-default). Public/QR bleibt datenarm und ÃƒÆ’Ã‚Â¶ffentlich.
           </div>
           <Hr />
           <form onSubmit={onAccept} className="ltc-form">
@@ -382,12 +382,12 @@ function ConsentPage() {
               <input type="checkbox" required /> Ich akzeptiere die erforderlichen Bedingungen (MVP).
             </label>
             <button className="ltc-primary" type="submit" disabled={state.loading}>
-              {state.loading ? "LÃ¤dtâ€¦" : "Akzeptieren & weiter"}
+              {state.loading ? "LÃƒÆ’Ã‚Â¤dtÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦" : "Akzeptieren & weiter"}
             </button>
           </form>
           {state.status ? (
             <div className="ltc-state">
-              <div className="ltc-muted">Status â†’ {state.status}</div>
+              <div className="ltc-muted">Status ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {state.status}</div>
               {state.text ? <pre className="ltc-pre">{state.text}</pre> : null}
             </div>
           ) : null}
@@ -395,7 +395,7 @@ function ConsentPage() {
 
         <SimpleCard title="Warum ist das wichtig?">
           <div className="ltc-muted">
-            LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist â€“ nicht "wie gut/schlecht" ein Fahrzeug ist.
+            LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ nicht "wie gut/schlecht" ein Fahrzeug ist.
           </div>
           <Hr />
           <div className="ltc-quote">
@@ -417,37 +417,37 @@ function OnboardingWizardPage() {
     e.preventDefault();
     setResult("");
     await run(async () => {
-      // Placeholder: echtes Onboarding lÃ¤uft im Page-File (pages/OnboardingWizardPage.tsx)
-      const masked = vin.trim().length >= 6 ? `${vin.trim().slice(0, 3)}â€¦${vin.trim().slice(-3)}` : vin.trim();
-      setResult(`VIN Ã¼bernommen (maskiert): ${masked}`);
+      // Placeholder: echtes Onboarding lÃƒÆ’Ã‚Â¤uft im Page-File (pages/OnboardingWizardPage.tsx)
+      const masked = vin.trim().length >= 6 ? `${vin.trim().slice(0, 3)}ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦${vin.trim().slice(-3)}` : vin.trim();
+      setResult(`VIN ÃƒÆ’Ã‚Â¼bernommen (maskiert): ${masked}`);
     });
     setHashRoute({ name: "vehicles" });
   }
 
   return (
-    <PageFrame title="Onboarding" back={{ name: "consent" }} backLabel="ZurÃ¼ck zu Consent">
+    <PageFrame title="Onboarding" back={{ name: "consent" }} backLabel="ZurÃƒÆ’Ã‚Â¼ck zu Consent">
       <div className="ltc-grid2">
         <SimpleCard title="VIN eingeben">
-          <div className="ltc-muted">Nur fÃ¼r UX. Backend speichert VIN nur gemÃ¤ÃŸ Policy (maskiert/geschÃ¼tzt).</div>
+          <div className="ltc-muted">Nur fÃƒÆ’Ã‚Â¼r UX. Backend speichert VIN nur gemÃƒÆ’Ã‚Â¤ÃƒÆ’Ã…Â¸ Policy (maskiert/geschÃƒÆ’Ã‚Â¼tzt).</div>
           <Hr />
           <form onSubmit={onSubmit} className="ltc-form">
             <label className="ltc-label">
               VIN
-              <input className="ltc-input" value={vin} onChange={(e) => setVin(e.target.value)} placeholder="z. B. W0L0â€¦123" />
+              <input className="ltc-input" value={vin} onChange={(e) => setVin(e.target.value)} placeholder="z. B. W0L0ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦123" />
             </label>
             <button className="ltc-primary" type="submit" disabled={state.loading || !vin.trim()}>
-              {state.loading ? "LÃ¤dtâ€¦" : "Weiter"}
+              {state.loading ? "LÃƒÆ’Ã‚Â¤dtÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦" : "Weiter"}
             </button>
           </form>
           {result ? <div className="ltc-ok">{result}</div> : null}
         </SimpleCard>
 
         <SimpleCard title="Next Steps">
-          <div className="ltc-muted">Nach dem Onboarding gehtâ€™s weiter zu Fahrzeuge â†’ Detail â†’ Dokumente.</div>
+          <div className="ltc-muted">Nach dem Onboarding gehtÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s weiter zu Fahrzeuge ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Detail ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dokumente.</div>
           <Hr />
           <div className="ltc-buttonsCol">
-            <LinkButton label="â†’ Fahrzeuge" onClick={() => setHashRoute({ name: "vehicles" })} />
-            <LinkButton label="â†’ Dokumente" onClick={() => setHashRoute({ name: "documents" })} kind="ghost" />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Fahrzeuge" onClick={() => setHashRoute({ name: "vehicles" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dokumente" onClick={() => setHashRoute({ name: "documents" })} kind="ghost" />
           </div>
         </SimpleCard>
       </div>
@@ -463,8 +463,8 @@ function VehiclesPage() {
     await run(async () => {
       // Placeholder: echte API in pages/VehiclesPage.tsx
       setVehicles([
-        { id: "veh_demo_1", vin_masked: "W0Lâ€¦123" },
-        { id: "veh_demo_2", vin_masked: "WVWâ€¦999" },
+        { id: "veh_demo_1", vin_masked: "W0LÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦123" },
+        { id: "veh_demo_2", vin_masked: "WVWÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦999" },
       ]);
     });
   }
@@ -492,7 +492,7 @@ function VehiclesPage() {
 
           {state.status ? (
             <div className="ltc-state">
-              <div className="ltc-muted">Status â†’ {state.status}</div>
+              <div className="ltc-muted">Status ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {state.status}</div>
               {state.text ? <pre className="ltc-pre">{state.text}</pre> : null}
             </div>
           ) : null}
@@ -503,7 +503,7 @@ function VehiclesPage() {
           <Hr />
           <div className="ltc-buttonsCol">
             <LinkButton label="Neu laden" onClick={() => void load()} />
-            <LinkButton label="â†’ Dokumente" kind="ghost" onClick={() => setHashRoute({ name: "documents" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dokumente" kind="ghost" onClick={() => setHashRoute({ name: "documents" })} />
           </div>
         </SimpleCard>
       </div>
@@ -524,19 +524,19 @@ function VehicleDetailPage(props: { vehicleId: string }) {
   }, [props.vehicleId]);
 
   return (
-    <PageFrame title="Fahrzeug-Detail" back={{ name: "vehicles" }} backLabel="ZurÃ¼ck zur Liste">
+    <PageFrame title="Fahrzeug-Detail" back={{ name: "vehicles" }} backLabel="ZurÃƒÆ’Ã‚Â¼ck zur Liste">
       <div className="ltc-grid2">
         <SimpleCard title="Details">
-          <div className="ltc-muted">{info || "â€¦"}</div>
+          <div className="ltc-muted">{info || "ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦"}</div>
           <Hr />
           <div className="ltc-buttonsCol">
-            <LinkButton label="â†’ Dokumente" onClick={() => setHashRoute({ name: "documents" })} />
-            <LinkButton label="â†’ Public/QR" kind="ghost" onClick={() => setHashRoute({ name: "publicqr" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Dokumente" onClick={() => setHashRoute({ name: "documents" })} />
+            <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Public/QR" kind="ghost" onClick={() => setHashRoute({ name: "publicqr" })} />
           </div>
 
           {state.status ? (
             <div className="ltc-state">
-              <div className="ltc-muted">Status â†’ {state.status}</div>
+              <div className="ltc-muted">Status ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {state.status}</div>
               {state.text ? <pre className="ltc-pre">{state.text}</pre> : null}
             </div>
           ) : null}
@@ -572,7 +572,7 @@ function DocumentsPage() {
     <PageFrame title="Dokumente" back={{ name: "front" }} backLabel="Zur Frontpage">
       <div className="ltc-grid2">
         <SimpleCard title="Upload / Liste">
-          <div className="ltc-muted">Uploads werden QuarantÃ¤ne-by-default gespeichert. Approve nur nach Scan CLEAN.</div>
+          <div className="ltc-muted">Uploads werden QuarantÃƒÆ’Ã‚Â¤ne-by-default gespeichert. Approve nur nach Scan CLEAN.</div>
           <Hr />
           <div className="ltc-buttonsRow">
             <LinkButton label="Refresh" onClick={() => void onRefresh()} />
@@ -581,7 +581,7 @@ function DocumentsPage() {
 
           {state.status ? (
             <div className="ltc-state">
-              <div className="ltc-muted">Status â†’ {state.status}</div>
+              <div className="ltc-muted">Status ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ {state.status}</div>
               {state.text ? <pre className="ltc-pre">{state.text}</pre> : null}
             </div>
           ) : null}
@@ -595,15 +595,15 @@ function DocumentsPage() {
             <li>Public/QR: datenarm (VIN maskiert)</li>
           </ul>
           <Hr />
-          <LinkButton label="â†’ Public/QR" onClick={() => setHashRoute({ name: "publicqr" })} kind="ghost" />
+          <LinkButton label="ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Public/QR" onClick={() => setHashRoute({ name: "publicqr" })} kind="ghost" />
         </SimpleCard>
       </div>
 
       {open ? (
-        <Modal title="Warum QuarantÃ¤ne?" onClose={() => setOpen(false)}>
+        <Modal title="Warum QuarantÃƒÆ’Ã‚Â¤ne?" onClose={() => setOpen(false)}>
           <div className="ltc-muted">
-            Uploads werden zunÃ¤chst isoliert gespeichert. Erst wenn ein Scan CLEAN ist, darf ein normaler User das Dokument als APPROVED sehen/downloaden.
-            Admin/Superadmin darf QuarantÃ¤ne zur PrÃ¼fung einsehen.
+            Uploads werden zunÃƒÆ’Ã‚Â¤chst isoliert gespeichert. Erst wenn ein Scan CLEAN ist, darf ein normaler User das Dokument als APPROVED sehen/downloaden.
+            Admin/Superadmin darf QuarantÃƒÆ’Ã‚Â¤ne zur PrÃƒÆ’Ã‚Â¼fung einsehen.
           </div>
         </Modal>
       ) : null}
@@ -618,10 +618,10 @@ function PublicQrPage() {
         <SimpleCard title="Trust-Ampel Pflichttext">
           <div className="ltc-quote">
             <div className="ltc-quote__q">"{TRUST_TEXT}"</div>
-            <div className="ltc-quote__h">Exakt, unverÃ¤ndert</div>
+            <div className="ltc-quote__h">Exakt, unverÃƒÆ’Ã‚Â¤ndert</div>
           </div>
           <Hr />
-          <div className="ltc-muted">Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t (keine Aussage Ã¼ber technischen Zustand).</div>
+          <div className="ltc-muted">Die Trust-Ampel bewertet ausschlieÃƒÆ’Ã…Â¸lich die Dokumentations- und NachweisqualitÃƒÆ’Ã‚Â¤t (keine Aussage ÃƒÆ’Ã‚Â¼ber technischen Zustand).</div>
         </SimpleCard>
 
         <SimpleCard title="Datenarm / Sicherheit">
@@ -665,9 +665,9 @@ export default function App() {
     <div className="ltc-app">
       {page}
 
-      {/* CSS â€“ Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles */}
+      {/* CSS ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles */}
       <style>{`
-/* âš¡ Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
+/* ÃƒÂ¢Ã…Â¡Ã‚Â¡ Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
 .ltc-app {
   min-height: 100vh;
   color: #fff;
