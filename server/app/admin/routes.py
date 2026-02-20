@@ -310,7 +310,7 @@ def _apply_role_change(
 @router.get("/users", response_model=List[AdminUserRow])
 def admin_list_users(_: AuthContext = Depends(require_roles("admin", "superadmin"))):
     """
-    Minimaler Admin-ÃƒÅ“berblick: keine Klartext-PII, nur user_id/role/created_at.
+    Minimaler Admin-Überblick: keine Klartext-PII, nur user_id/role/created_at.
     """
     settings = load_settings()
     with _connect(settings.db_path) as conn:
