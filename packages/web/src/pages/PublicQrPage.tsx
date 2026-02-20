@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 import { httpFetch } from "../lib/httpFetch";
 
@@ -12,7 +12,7 @@ type PublicQrResponse = {
 
 // SoT Pflichttext (exakt, UTF-8!)
 const PUBLIC_QR_DISCLAIMER_TEXT =
-  "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.";
+  "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
 function normalizeTrustLight(x: string): TrustLight {
   const v = (x || "").trim().toUpperCase();
@@ -149,3 +149,4 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
     </main>
   );
 }
+

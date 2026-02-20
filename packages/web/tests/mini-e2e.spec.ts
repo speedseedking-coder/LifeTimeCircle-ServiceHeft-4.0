@@ -1,10 +1,10 @@
-import { test, expect, Page } from "@playwright/test";
+﻿import { test, expect, Page } from "@playwright/test";
 
 const DISCLAIMER_TEXT =
-  "Die Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.";
+  "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
 /**
- * Mockt API-Responses fÃ¼r die E2E-Flows:
+ * Mockt API-Responses fÃƒÂ¼r die E2E-Flows:
  * - /api/public/qr/:id wird von PublicQrPage genutzt
  * - /api/vehicles* bleibt als Fallback (kann je nach App-Aufruf auftreten)
  */
@@ -100,6 +100,16 @@ test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ p
 
   await setHash(page, "#/public/qr/veh_test_1");
 
-  const loc = page.getByText(DISCLAIMER_TEXT, { exact: true });
-  await expect(loc).toHaveCount(1);
-});
+      // Visible disclaimer component must exist exactly once
+  const box = page.locator('section[aria-label="Trust-Ampel Hinweis"]');
+  await expect(box).toHaveCount(1);
+
+  // Visible text uses quotes „…“, so don’t use exact plain-string match
+  await expect(box).toContainText(DISCLAIMER_TEXT);
+
+  // Hidden verifier span must exist exactly once and contain the plain text exactly
+  const hidden = page.locator('[data-testid="public-qr-disclaimer"]');
+  await expect(hidden).toHaveCount(1);
+  await expect(hidden).toHaveText(DISCLAIMER_TEXT);});
+
+
