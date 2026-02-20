@@ -54,6 +54,15 @@ try {
 
       & npm run build
       if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit=$LASTEXITCODE)" }
+
+      # Optional: Mini-E2E (Playwright). Aktivieren mit: $env:LTC_RUN_E2E="1"
+      if ($env:LTC_RUN_E2E -eq "1") {
+        & npm run e2e
+        if ($LASTEXITCODE -ne 0) { throw "npm run e2e failed (exit=$LASTEXITCODE)" }
+      } else {
+        Write-Host ""
+        Write-Host "==> Web e2e (packages/web): SKIP (set LTC_RUN_E2E=1 to enable)"
+      }
     } finally {
       Pop-Location
     }

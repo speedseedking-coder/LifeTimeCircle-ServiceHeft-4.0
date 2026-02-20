@@ -9,13 +9,16 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.json && vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort"
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
