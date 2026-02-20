@@ -1,4 +1,4 @@
-﻿# Ensure text files use LF + UTF-8 consistently
+# Ensure text files use LF + UTF-8 consistently
 * text=auto eol=lf
 
 # Web sources
