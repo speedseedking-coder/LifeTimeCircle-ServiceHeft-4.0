@@ -59,3 +59,7 @@ data/
 
 # local dev logs (do not commit)
 packages/web/LTC_REAL_last_run.log
+
+# Playwright artifacts
+packages/web/test-results/
+
