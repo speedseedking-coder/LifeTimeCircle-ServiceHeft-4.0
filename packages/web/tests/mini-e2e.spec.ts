@@ -1,10 +1,10 @@
-﻿import { test, expect, Page } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 
 const DISCLAIMER_TEXT =
   "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
 /**
- * Mockt API-Responses fÃƒÂ¼r die E2E-Flows:
+ * Mockt API-Responses für die E2E-Flows:
  * - /api/public/qr/:id wird von PublicQrPage genutzt
  * - /api/vehicles* bleibt als Fallback (kann je nach App-Aufruf auftreten)
  */
