@@ -1,4 +1,3 @@
-﻿import { bootAuth } from "./lib/bootAuth";
 // packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
@@ -13,11 +12,11 @@ import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
 
 /**
- * LifeTimeCircle ServiceHeft 4.0:
+ * LifeTimeCircle ÔÇô ServiceHeft 4.0:
  * - Digitales Nachweis- & Dokumentationssystem (Proof statt Behauptung)
- * - Fokus: Uploads, Historie, prüfbare Belege / Audit-Trail
+ * - Fokus: Uploads, Historie, pr├╝fbare Belege / Audit-Trail
  * - Public/QR: datenarm, schnelle Checks / Reports
- * - Trust-Ampel bewertet ausschließlich Dokumentations- & Nachweisqualität (kein technischer Zustand)
+ * - Trust-Ampel bewertet ausschlie├ƒlich Dokumentations- & Nachweisqualit├ñt (kein technischer Zustand)
  */
 
 type Route =
@@ -215,7 +214,6 @@ function CookieBanner(props: { onOpenSettings: () => void }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    bootAuth();
     setMounted(true);
     setPrefs(loadCookiePrefs());
   }, []);
@@ -418,7 +416,7 @@ function Topbar(props: { right?: ReactNode }) {
 
 function Footer() {
   const trustText =
-    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschlie├ƒlich die Dokumentations- und Nachweisqualit├ñt. Sie ist keine Aussage ├╝ber den technischen Zustand des Fahrzeugs.";
 
   return (
     <footer id="footer" className="ltc-footer">
@@ -427,7 +425,7 @@ function Footer() {
           <div>
             <div className="ltc-footer__title">LifeTimeCircle</div>
             <div className="ltc-muted">
-              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prüfbare Nachweise.
+              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, pr├╝fbare Nachweise.
             </div>
           </div>
 
@@ -457,7 +455,7 @@ function Footer() {
           </div>
         </div>
 
-        <div className="ltc-footer__bottom">® {new Date().getFullYear()} LifeTimeCircle ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">┬® {new Date().getFullYear()} LifeTimeCircle ┬À ServiceHeft 4.0</div>
       </div>
     </footer>
   );
@@ -514,7 +512,6 @@ function ApiBox(props: { path: string; title: string }) {
   const [state, setState] = useState<{ loading: boolean; text: string; status?: number }>({ loading: true, text: "" });
 
   useEffect(() => {
-    bootAuth();
     let alive = true;
     setState({ loading: true, text: "" });
 
@@ -542,10 +539,10 @@ function ApiBox(props: { path: string; title: string }) {
     <Card title={props.title}>
       <div className="ltc-meta">
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` Ã”Ã¥Ã† ${state.status}` : ""}
+        {typeof state.status === "number" ? ` ÔåÆ ${state.status}` : ""}
       </div>
 
-      {state.loading ? <div className="ltc-muted">Lâ”œÃ±dtÃ”Ã‡Âª</div> : <pre className="ltc-pre">{state.text}</pre>}
+      {state.loading ? <div className="ltc-muted">L├ñdtÔÇª</div> : <pre className="ltc-pre">{state.text}</pre>}
     </Card>
   );
 }
@@ -560,7 +557,6 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
   }>({ loading: true });
 
   useEffect(() => {
-    bootAuth();
     let alive = true;
     setState({ loading: true });
 
@@ -603,11 +599,11 @@ function ItemsList(props: { title: string; path: string; kind: "blog" | "news" }
     <Card title={props.title}>
       <div className="ltc-meta">
         GET <code>{`/api${props.path.startsWith("/") ? props.path : `/${props.path}`}`}</code>
-        {typeof state.status === "number" ? ` Ã”Ã¥Ã† ${state.status}` : ""}
+        {typeof state.status === "number" ? ` ÔåÆ ${state.status}` : ""}
       </div>
 
       {state.loading ? (
-        <div className="ltc-muted">Lâ”œÃ±dtÃ”Ã‡Âª</div>
+        <div className="ltc-muted">L├ñdtÔÇª</div>
       ) : state.error ? (
         <pre className="ltc-pre">{state.error}</pre>
       ) : state.items ? (
@@ -633,7 +629,7 @@ function PostView(props: { title: string; path: string; backHref: string; backLa
     <>
       <div style={{ marginBottom: 12 }}>
         <a className="ltc-link" href={props.backHref}>
-          Ã”Ã¥Ã‰ {props.backLabel}
+          ÔåÉ {props.backLabel}
         </a>
       </div>
       <ApiBox path={props.path} title={props.title} />
@@ -651,7 +647,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
         <div className="ltc-modal__head">
           <div className="ltc-strong">{props.title}</div>
           <button type="button" className="ltc-btn ltc-btn--ghost" onClick={props.onClose}>
-            Schlieâ”œÆ’en
+            Schlie├ƒen
           </button>
         </div>
         <div className="ltc-modal__body">{props.children}</div>
@@ -661,7 +657,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
 }
 
 /** ---------------------------
- * Frontpage NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
+ * Frontpage ÔÇô NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
  * --------------------------- */
 function FrontPage() {
   const [email, setEmail] = useState("");
@@ -670,10 +666,9 @@ function FrontPage() {
   const [bgUrl, setBgUrl] = useState<string>(BG.frontpage2);
 
   useEffect(() => {
-    bootAuth();
     let alive = true;
 
-    // Fallback-Liste: wenn du spâ”œÃ±ter ein Landscape-Bild ergâ”œÃ±nzt, einfach vorne eintragen
+    // Fallback-Liste: wenn du sp├ñter ein Landscape-Bild erg├ñnzt, einfach vorne eintragen
     const tryList = [BG.frontpage2, "/images/frontpage_LiftimeCicrcle_safe.webp", "/images/frontpage_LiftimeCicrcle_safe.png"];
     let idx = 0;
 
@@ -707,7 +702,7 @@ function FrontPage() {
   };
 
   const trustText =
-    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschlie├ƒlich die Dokumentations- und Nachweisqualit├ñt. Sie ist keine Aussage ├╝ber den technischen Zustand des Fahrzeugs.";
 
   return (
     <div
@@ -716,7 +711,7 @@ function FrontPage() {
         ["--ltc-bg" as any]: `url("${bgUrl}")`,
         ["--ltc-bg-op" as any]: "1",
 
-        // Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
+        // Ô£à Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
         ["--ltc-bg-size" as any]: "cover",
         ["--ltc-bg-pos" as any]: "68% 12%",
       }}
@@ -823,14 +818,14 @@ function FrontPage() {
           </div>
         </section>
 
-        {/* Feature Cards (wie Beispiel: 2 groâ”œÆ’e Karten) */}
+        {/* Feature Cards (wie Beispiel: 2 gro├ƒe Karten) */}
         <section className="ltc-featureRow">
           <div className="ltc-featureCard">
             <div className="ltc-featureCard__head">
               <IconShield className="ltc-ic2" />
               <div>
                 <div className="ltc-featureCard__t">Fahrzeug-Trust Report</div>
-                <div className="ltc-muted">Transparente Historie und verlässliche Berichte</div>
+                <div className="ltc-muted">Transparente Historie und verl├ñssliche Berichte</div>
               </div>
             </div>
           </div>
@@ -839,7 +834,7 @@ function FrontPage() {
             <div className="ltc-featureCard__head">
               <IconCheck className="ltc-ic2" />
               <div>
-                <div className="ltc-featureCard__t">Verifizierte Einträge</div>
+                <div className="ltc-featureCard__t">Verifizierte Eintr├ñge</div>
                 <div className="ltc-muted">Wartung, Reparatur &amp; Unfalldokumentation</div>
               </div>
             </div>
@@ -851,7 +846,7 @@ function FrontPage() {
           <div className="ltc-showroom__card">
             <div className="ltc-showroom__meta">
               <span className="ltc-kicker">Nachweise sichtbar machen</span>
-              <span className="ltc-muted">ohne Datenballast im Public/QR</span>
+              <span className="ltc-muted">ÔÇö ohne Datenballast im Public/QR</span>
             </div>
 
             <div className="ltc-showroom__cars" aria-hidden="true">
@@ -909,14 +904,14 @@ function FrontPage() {
           <div className="ltc-card ltc-card--wide">
             <div className="ltc-card__title">Services</div>
             <ul className="ltc-list">
-              <li>Upload &amp; Dokumentenablage (Quarantäne-by-default, Approve nach Scan CLEAN)</li>
-              <li>Historie (Einträge, Timeline, Nachweislogik)</li>
-              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualität)</li>
+              <li>Upload &amp; Dokumentenablage (Quarant├ñne-by-default, Approve nach Scan CLEAN)</li>
+              <li>Historie (Eintr├ñge, Timeline, Nachweislogik)</li>
+              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualit├ñt)</li>
               <li>Public/QR Mini-Check (datenarm, VIN maskiert)</li>
             </ul>
             <div style={{ marginTop: 10 }}>
               <a className="ltc-link" href="#/faq">
-                Zu den FAQs
+                Zu den FAQs ÔåÆ
               </a>
             </div>
           </div>
@@ -928,7 +923,7 @@ function FrontPage() {
 
             <div className="ltc-prose">
               <p>
-                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist nicht—wie gut/schlecht ein
+                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist ÔÇô nicht ÔÇ×wie gut/schlechtÔÇ£ ein
                 Fahrzeug technisch ist.
               </p>
 
@@ -936,17 +931,17 @@ function FrontPage() {
                 <summary>Mehr lesen: Zeiten des Autokaufs, fehlendes Vertrauen, Nachweise</summary>
                 <p>
                   Vertrauen kippt oft dort, wo Dokumente fehlen: Recherche (viel Text, wenig Proof), Besichtigung (Aussagen vs. Belege), Verhandlung
-                  (Risikoaufschlag), â”œÂ£bergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
+                  (Risikoaufschlag), ├£bergabe (fehlende Unterlagen), Wiederverkauf (ohne Historie schwer vermittelbar).
                 </p>
                 <ul>
                   <li>
-                    <b>Nachweise erhöhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
+                    <b>Nachweise erh├Âhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
                   </li>
                   <li>
-                    <b>Proof reduziert Risiko:</b> weniger Gefühl-Nachweise erhöhen Vergleichbarkeit:, mehr belastbare Historie.
+                    <b>Proof reduziert Risiko:</b> weniger ÔÇ×Gef├╝hlÔÇ£, mehr belastbare Historie.
                   </li>
                   <li>
-                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhöhen und sich positiv auf den Wiederverkaufswert auswirken.
+                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erh├Âhen und sich positiv auf den Wiederverkaufswert auswirken.
                   </li>
                 </ul>
               </details>
@@ -954,7 +949,7 @@ function FrontPage() {
 
             <div className="ltc-quote ltc-quote--gold">
               <div className="ltc-quote__t">Zitat</div>
-              <div className="ltc-quote__q">{trustText}</div>
+              <div className="ltc-quote__q">ÔÇ×{trustText}ÔÇ£</div>
             </div>
 
             <div className="ltc-actions">
@@ -995,19 +990,19 @@ function FaqPage() {
     <StaticShell title="FAQ" bg={getBgForRoute({ kind: "faq" })}>
       <h2>Was ist das ServiceHeft 4.0?</h2>
       <p>
-        Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen prüfbar werden.
+        Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen pr├╝fbar werden.
       </p>
 
       <h2>Warum ist das beim Autokauf relevant?</h2>
       <p>
-        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil Käufer
+        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil K├ñufer
         weniger Risiko einpreisen.
       </p>
 
       <h2>Was zeigt Public/QR?</h2>
-      <p>Datenarm (z. B. VIN maskiert), aber geeignet fâ”œâ•r schnelle Checks &amp; Reports.</p>
+      <p>Datenarm (z. B. VIN maskiert), aber geeignet f├╝r schnelle Checks &amp; Reports.</p>
 
-      <h2>Wo â”œÃ±ndere ich Cookies?</h2>
+      <h2>Wo ├ñndere ich Cookies?</h2>
       <p>
         Unter <a href="#/cookies">Cookie-Einstellungen</a>.
       </p>
@@ -1020,7 +1015,7 @@ function CookiesPage() {
     <StaticShell title="Cookie-Einstellungen" bg={getBgForRoute({ kind: "cookies" })}>
       <CookieSettingsCard />
       <h2>Was wird gespeichert?</h2>
-      <p>Technisch notwendige Zustâ”œÃ±nde (z. B. Flow-/Session-Status) und deine Cookie-Auswahl. Marketing/Tracking ist deaktiviert.</p>
+      <p>Technisch notwendige Zust├ñnde (z. B. Flow-/Session-Status) und deine Cookie-Auswahl. Marketing/Tracking ist deaktiviert.</p>
     </StaticShell>
   );
 }
@@ -1059,7 +1054,7 @@ function DatenschutzPage() {
   return (
     <StaticShell title="Datenschutz" bg={getBgForRoute({ kind: "datenschutz" })}>
       <p>
-        Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind Quarantâ”œÃ±ne-by-default und werden erst nach Scan freigegeben. Keine PII in
+        Public/QR ist datenarm (z. B. VIN maskiert). Uploads sind Quarant├ñne-by-default und werden erst nach Scan freigegeben. Keine PII in
         Mockups/Exports/Logs.
       </p>
       <h2>Consent</h2>
@@ -1090,7 +1085,7 @@ export default function App() {
           <div className="ltc-container ltc-page">
             <div style={{ marginBottom: 12 }}>
               <a className="ltc-link" href="#/">
-                Ã”Ã¥Ã‰ Zur Frontpage
+                ÔåÉ Zur Frontpage
               </a>
             </div>
             <PublicQrPage vehicleId={vehicleId} />
@@ -1103,14 +1098,12 @@ export default function App() {
   const [route, setRoute] = useState<Route>(() => parseHash());
 
   useEffect(() => {
-    bootAuth();
     const onChange = () => setRoute(parseHash());
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
 
   useEffect(() => {
-    bootAuth();
     const raw = (window.location.hash || "").replace(/^#\/?/, "");
     if (raw.startsWith("public/site")) window.location.replace("#/");
   }, [route.kind]);
@@ -1118,7 +1111,7 @@ export default function App() {
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle ServiceHeft 4.0";
+        return "LifeTimeCircle ÔÇô ServiceHeft 4.0";
       case "debugPublicSite":
         return "Debug: Public Site (API)";
       case "faq":
@@ -1157,7 +1150,6 @@ export default function App() {
   }, [route]);
 
   useEffect(() => {
-    bootAuth();
     document.title = pageTitle;
   }, [pageTitle]);
 
@@ -1192,12 +1184,12 @@ export default function App() {
 
                 <div style={{ marginTop: 12 }}>
                   <a className="ltc-link" href="#/">
-                    Ã”Ã¥Ã‰ Zur Frontpage
+                    ÔåÉ Zur Frontpage
                   </a>
                   {import.meta.env.DEV && (
                     <>
                       {" "}
-                      â”¬Ã€{" "}
+                      ┬À{" "}
                       <a className="ltc-link" href="#/debug/public-site">
                         Debug Public Site
                       </a>
@@ -1250,7 +1242,7 @@ export default function App() {
   );
 }
 /** ---------------------------
- * CSS Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
+ * CSS ÔÇô Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
 const css = String.raw`
 :root{
@@ -1279,7 +1271,7 @@ body{
 a{color:inherit}
 code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
-/* Ã”Â£Ã  Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
+/* Ô£à Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
 .ltc-container{
   width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
   margin: 0 auto;
@@ -1321,7 +1313,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   filter: saturate(1.05) contrast(1.03);
 }
 
-/* Overlay â”œâ•ber ALLES */
+/* Overlay ├╝ber ALLES */
 .ltc-app--plain::after{
   content:"";
   position: fixed;
@@ -1334,7 +1326,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
     linear-gradient(to bottom, rgba(0,0,0,.44), rgba(0,0,0,.74));
 }
 
-/* HERO Overlay (mehr-Look) */
+/* HERO Overlay (mehr ÔÇ£BannerÔÇØ-Look) */
 .ltc-app--hero::after{
   content:"";
   position: fixed;
@@ -1557,7 +1549,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   flex-wrap:wrap;
 }
 
-/* Ã”Â£Ã  3 Punkte wie Beispiel: Desktop nebeneinander */
+/* Ô£à 3 Punkte wie Beispiel: Desktop nebeneinander */
 .ltc-hero__iconRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
