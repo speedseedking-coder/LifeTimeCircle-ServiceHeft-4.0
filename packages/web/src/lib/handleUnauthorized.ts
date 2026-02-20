@@ -1,6 +1,12 @@
 ﻿/**
  * Minimal, side-effect-only 401 handler.
- * Avoids TS narrowing traps by keeping logic in one place.
+ * Keeps redirect logic centralized and hash-router compatible.
+ *
+ * Rules:
+ * - Hash routing: redirect to "#/auth?next=..."
+ * - next is derived from current hash (incl. leading "#")
+ * - Loop guard: if already on "#/auth", do nothing
+ * - No typographic unicode characters (ASCII only)
  */
 export function handleUnauthorized(): void {
   try {
@@ -15,10 +21,13 @@ export function handleUnauthorized(): void {
     // ignore storage errors (private mode, denied, etc.)
   }
 
-  // Hard redirect to login (prevents SPA state inconsistencies)
-  if (typeof window !== "undefined") {
-    const current = window.location.pathname + window.location.search + window.location.hash;
-    const next = encodeURIComponent(current);
-    window.location.assign(`/login?next=${next}`);
-  }
+  if (typeof window === "undefined") return;
+
+  const hash = window.location.hash || "#/";
+  // Loop guard: if we are already on auth route, do not rewrite hash again.
+  // Accept both "#/auth" and "#/auth?next=..."
+  if (hash.startsWith("#/auth")) return;
+
+  const next = encodeURIComponent(hash);
+  window.location.hash = `#/auth?next=${next}`;
 }

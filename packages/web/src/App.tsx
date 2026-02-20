@@ -13,11 +13,11 @@ import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
 
 /**
- * LifeTimeCircle Ã”Ã‡Ã´ ServiceHeft 4.0:
+ * LifeTimeCircle ServiceHeft 4.0:
  * - Digitales Nachweis- & Dokumentationssystem (Proof statt Behauptung)
- * - Fokus: Uploads, Historie, prâ”œâ•fbare Belege / Audit-Trail
+ * - Fokus: Uploads, Historie, prüfbare Belege / Audit-Trail
  * - Public/QR: datenarm, schnelle Checks / Reports
- * - Trust-Ampel bewertet ausschlieâ”œÆ’lich Dokumentations- & Nachweisqualitâ”œÃ±t (kein technischer Zustand)
+ * - Trust-Ampel bewertet ausschließlich Dokumentations- & Nachweisqualität (kein technischer Zustand)
  */
 
 type Route =
@@ -418,7 +418,7 @@ function Topbar(props: { right?: ReactNode }) {
 
 function Footer() {
   const trustText =
-    "Die Trust-Ampel bewertet ausschlieâ”œÆ’lich die Dokumentations- und Nachweisqualitâ”œÃ±t. Sie ist keine Aussage â”œâ•ber den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
   return (
     <footer id="footer" className="ltc-footer">
@@ -427,7 +427,7 @@ function Footer() {
           <div>
             <div className="ltc-footer__title">LifeTimeCircle</div>
             <div className="ltc-muted">
-              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prâ”œâ•fbare Nachweise.
+              Digitales Fahrzeug-Serviceheft mit Fokus auf Dokumentation &amp; Proof: Uploads, Historie, prüfbare Nachweise.
             </div>
           </div>
 
@@ -457,7 +457,7 @@ function Footer() {
           </div>
         </div>
 
-        <div className="ltc-footer__bottom">â”¬Â® {new Date().getFullYear()} LifeTimeCircle â”¬Ã€ ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">® {new Date().getFullYear()} LifeTimeCircle ServiceHeft 4.0</div>
       </div>
     </footer>
   );
@@ -661,7 +661,7 @@ function Modal(props: { title: string; onClose: () => void; children: ReactNode 
 }
 
 /** ---------------------------
- * Frontpage Ã”Ã‡Ã´ NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
+ * Frontpage NEU (Proportionen wie Beispiel: Hero-Banner + Phone/QR Mock, danach Cards/Showroom/Bands)
  * --------------------------- */
 function FrontPage() {
   const [email, setEmail] = useState("");
@@ -707,7 +707,7 @@ function FrontPage() {
   };
 
   const trustText =
-    "Die Trust-Ampel bewertet ausschlieâ”œÆ’lich die Dokumentations- und Nachweisqualitâ”œÃ±t. Sie ist keine Aussage â”œâ•ber den technischen Zustand des Fahrzeugs.";
+    "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
   return (
     <div
@@ -716,7 +716,7 @@ function FrontPage() {
         ["--ltc-bg" as any]: `url("${bgUrl}")`,
         ["--ltc-bg-op" as any]: "1",
 
-        // Ã”Â£Ã  Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
+        // Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
         ["--ltc-bg-size" as any]: "cover",
         ["--ltc-bg-pos" as any]: "68% 12%",
       }}
@@ -830,7 +830,7 @@ function FrontPage() {
               <IconShield className="ltc-ic2" />
               <div>
                 <div className="ltc-featureCard__t">Fahrzeug-Trust Report</div>
-                <div className="ltc-muted">Transparente Historie und verlâ”œÃ±ssliche Berichte</div>
+                <div className="ltc-muted">Transparente Historie und verlässliche Berichte</div>
               </div>
             </div>
           </div>
@@ -839,7 +839,7 @@ function FrontPage() {
             <div className="ltc-featureCard__head">
               <IconCheck className="ltc-ic2" />
               <div>
-                <div className="ltc-featureCard__t">Verifizierte Eintrâ”œÃ±ge</div>
+                <div className="ltc-featureCard__t">Verifizierte Einträge</div>
                 <div className="ltc-muted">Wartung, Reparatur &amp; Unfalldokumentation</div>
               </div>
             </div>
@@ -851,7 +851,7 @@ function FrontPage() {
           <div className="ltc-showroom__card">
             <div className="ltc-showroom__meta">
               <span className="ltc-kicker">Nachweise sichtbar machen</span>
-              <span className="ltc-muted">Ã”Ã‡Ã¶ ohne Datenballast im Public/QR</span>
+              <span className="ltc-muted">ohne Datenballast im Public/QR</span>
             </div>
 
             <div className="ltc-showroom__cars" aria-hidden="true">
@@ -909,14 +909,14 @@ function FrontPage() {
           <div className="ltc-card ltc-card--wide">
             <div className="ltc-card__title">Services</div>
             <ul className="ltc-list">
-              <li>Upload &amp; Dokumentenablage (Quarantâ”œÃ±ne-by-default, Approve nach Scan CLEAN)</li>
-              <li>Historie (Eintrâ”œÃ±ge, Timeline, Nachweislogik)</li>
-              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualitâ”œÃ±t)</li>
+              <li>Upload &amp; Dokumentenablage (Quarantäne-by-default, Approve nach Scan CLEAN)</li>
+              <li>Historie (Einträge, Timeline, Nachweislogik)</li>
+              <li>Trust-Ampel (Dokumentations- &amp; Nachweisqualität)</li>
               <li>Public/QR Mini-Check (datenarm, VIN maskiert)</li>
             </ul>
             <div style={{ marginTop: 10 }}>
               <a className="ltc-link" href="#/faq">
-                Zu den FAQs Ã”Ã¥Ã†
+                Zu den FAQs
               </a>
             </div>
           </div>
@@ -928,7 +928,7 @@ function FrontPage() {
 
             <div className="ltc-prose">
               <p>
-                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist Ã”Ã‡Ã´ nicht Ã”Ã‡Ã—wie gut/schlechtÃ”Ã‡Â£ ein
+                LifeTimeCircle ist ein Nachweis- und Dokumentationssystem: Es macht sichtbar, <b>was belegt</b> ist nicht—wie gut/schlecht ein
                 Fahrzeug technisch ist.
               </p>
 
@@ -940,13 +940,13 @@ function FrontPage() {
                 </p>
                 <ul>
                   <li>
-                    <b>Nachweise erhâ”œÃ‚hen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
+                    <b>Nachweise erhöhen Vergleichbarkeit:</b> gleiche Fragen, gleiche Belege, bessere Entscheidungen.
                   </li>
                   <li>
-                    <b>Proof reduziert Risiko:</b> weniger Ã”Ã‡Ã—Gefâ”œâ•hlÃ”Ã‡Â£, mehr belastbare Historie.
+                    <b>Proof reduziert Risiko:</b> weniger Gefühl-Nachweise erhöhen Vergleichbarkeit:, mehr belastbare Historie.
                   </li>
                   <li>
-                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhâ”œÃ‚hen und sich positiv auf den Wiederverkaufswert auswirken.
+                    <b>Wiederverkauf:</b> saubere Dokumentation kann Vertrauen erhöhen und sich positiv auf den Wiederverkaufswert auswirken.
                   </li>
                 </ul>
               </details>
@@ -954,7 +954,7 @@ function FrontPage() {
 
             <div className="ltc-quote ltc-quote--gold">
               <div className="ltc-quote__t">Zitat</div>
-              <div className="ltc-quote__q">Ã”Ã‡Ã—{trustText}Ã”Ã‡Â£</div>
+              <div className="ltc-quote__q">{trustText}</div>
             </div>
 
             <div className="ltc-actions">
@@ -995,12 +995,12 @@ function FaqPage() {
     <StaticShell title="FAQ" bg={getBgForRoute({ kind: "faq" })}>
       <h2>Was ist das ServiceHeft 4.0?</h2>
       <p>
-        Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen prâ”œâ•fbar werden.
+        Ein digitales Nachweis- und Dokumentationssystem: Uploads, Historie und Belege werden strukturiert abgelegt, damit Aussagen prüfbar werden.
       </p>
 
       <h2>Warum ist das beim Autokauf relevant?</h2>
       <p>
-        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil Kâ”œÃ±ufer
+        Vertrauen scheitert oft an fehlenden Unterlagen. Saubere Dokumentation reduziert Unsicherheit und kann beim Wiederverkauf helfen, weil Käufer
         weniger Risiko einpreisen.
       </p>
 
@@ -1118,7 +1118,7 @@ export default function App() {
   const pageTitle = useMemo(() => {
     switch (route.kind) {
       case "home":
-        return "LifeTimeCircle Ã”Ã‡Ã´ ServiceHeft 4.0";
+        return "LifeTimeCircle ServiceHeft 4.0";
       case "debugPublicSite":
         return "Debug: Public Site (API)";
       case "faq":
@@ -1250,7 +1250,7 @@ export default function App() {
   );
 }
 /** ---------------------------
- * CSS Ã”Ã‡Ã´ Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
+ * CSS Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
 const css = String.raw`
 :root{
@@ -1334,7 +1334,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
     linear-gradient(to bottom, rgba(0,0,0,.44), rgba(0,0,0,.74));
 }
 
-/* HERO Overlay (mehr Ã”Ã‡Â£BannerÃ”Ã‡Ã˜-Look) */
+/* HERO Overlay (mehr-Look) */
 .ltc-app--hero::after{
   content:"";
   position: fixed;
