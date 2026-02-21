@@ -1,4 +1,37 @@
 import os
+
+# LTC_TEST_SECRET_KEY_IMPORTTIME
+# Ensure a valid secret key exists VERY early (import-time), before any cached settings are created.
+_key = "test_secret_key__0123456789abcdef"
+
+# Wide net: set common env names (harmless in tests, avoids guessing)
+for _name in (
+    "LTC_SECRET_KEY",
+    "SECRET_KEY",
+    "APP_SECRET_KEY",
+    "LTC__SECRET_KEY",
+    "LTC_APP_SECRET_KEY",
+):
+    os.environ.setdefault(_name, _key)
+
+# If settings are cached (lru_cache), clear it so env vars are picked up.
+try:
+    from app.settings import get_settings  # type: ignore
+    try:
+        get_settings.cache_clear()  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+    _s = get_settings()
+    try:
+        _s.secret_key = _key  # last-resort fallback if the object already exists
+    except Exception:
+        pass
+except Exception:
+    # Don't fail test import if module path differs; env vars are still set above.
+    pass
+
+import os
 import sys
 from pathlib import Path
 
@@ -151,3 +184,17 @@ def make_user_headers():
 
 
 
+
+import os
+import pytest
+
+# LTC_TEST_SECRET_KEY_AUTOUSE
+# Tests erwarten einen gültigen Secret-Key (>= 16 chars) für One-Time-Token Exporte.
+# In Prod MUSS das aus Env/Secrets kommen – hier nur für Tests.
+@pytest.fixture(autouse=True, scope="session")
+def _ltc_test_secret_key() -> None:
+    key = "test_secret_key__0123456789abcdef"
+    os.environ.setdefault("LTC_SECRET_KEY", key)
+    # optional Fallbacks, falls Settings andere Env-Namen akzeptieren:
+    os.environ.setdefault("SECRET_KEY", key)
+    os.environ.setdefault("APP_SECRET_KEY", key)
