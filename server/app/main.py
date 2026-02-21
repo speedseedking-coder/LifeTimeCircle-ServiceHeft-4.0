@@ -1,12 +1,13 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
-from app.auth.routes import router as auth_router
 from app.admin.routes import router as admin_router
+from app.auth.routes import router as auth_router
 from app.core.config import get_settings
 from app.db.session import init_db
 from app.guards import forbid_moderator
@@ -18,9 +19,10 @@ from app.routers.export import router as export_router
 from app.routers.export_servicebook import router as export_servicebook_router
 from app.routers.export_vehicle import router as export_vehicle_router
 from app.routers.masterclipboard import router as masterclipboard_router
-from app.routers.sale_transfer import router as sale_transfer_router
 from app.routers.public_site import router as public_site_router
+from app.routers.sale_transfer import router as sale_transfer_router
 from app.routers.vehicles import router as vehicles_router
+from app.security import RequestIdMiddleware, emit_security_event, map_status_to_event
 
 
 def create_app() -> FastAPI:
@@ -39,7 +41,8 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json" if settings.env != "prod" else None,
         lifespan=lifespan,
     )
-# Router
+
+    # Router
     app.include_router(auth_router)
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
@@ -83,7 +86,12 @@ app = create_app()
 def root():
     return RedirectResponse(url="/public/site")
 
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return Response(status_code=204)
+
+
 # LTC-AUTO: root-redirect end
+
+logger = logging.getLogger(__name__)
