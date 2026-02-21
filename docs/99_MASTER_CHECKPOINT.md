@@ -33,13 +33,25 @@ Projekt:
   - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
-### WIP: Vehicles MVP + Consent Gate (Next10 E2E)
-- Status: **PR offen** (Branch: `$marker`)
-- Scope:
-  - `/vehicles` Router (Create/List/Get), object-level, Moderator überall 403 (außer Blog/News/Public)
-  - VIN nur masked
-  - `require_consent(db, actor)` Gate (deny-by-default, **403** `consent_required`)
-  - Docs: Rights-Matrix korrigiert (Moderator strikt nur Blog/News; Consent/Profile/Support sonst 403)
+### WIP: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
+- Status: **WIP/PR in Arbeit** (Branch: `fix/vehicles-consent-gates`)
+- Ziel/Policy:
+  - **deny-by-default + least privilege**
+  - **Moderator strikt nur Blog/News** (sonst überall **403**)
+  - Vehicles endpoints sind **consent-gated** (403 `consent_required`)
+- Scope (Backend):
+  - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
+  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 `consent_required`)
+  - Behavior erhalten: Consent Required wird als 403 mit Code `consent_required` signalisiert
+- Docs (SoT-Konsistenz):
+  - `docs/03_RIGHTS_MATRIX.md` angepasst:
+    - Allowlist: `/public/*` entfernt
+    - Route `/public/* (Site/QR)`: Moderator **❌ (403)**
+- Evidence (lokal, Branch `fix/vehicles-consent-gates`):
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1` → **DONE**
+  - Mojibake-Scan: **grün**
+  - `poetry run pytest -q` → **[100%]**
+  - `npm ci` + `npm run build` → **grün**
 
 ---
 
