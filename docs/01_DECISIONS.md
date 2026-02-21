@@ -1,6 +1,6 @@
 ﻿# LifeTimeCircle - Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
-Stand: **2026-02-15**
+Stand: **2026-02-21**
 
 > Ziel: Kurze, nachvollziehbare Entscheidungen (warum / was / Konsequenzen).  
 > Regel: Wenn etwas nicht explizit erlaubt ist -> **deny-by-default**.
@@ -256,3 +256,18 @@ Stand: **2026-02-15**
 - Zusaetzlich muss `git ls-remote --heads origin` erfolgreich laufen (Erreichbarkeit + Auth pruefbar).  
 - Bei Fail: **STOP**, keine weiteren Commits/PR-Aktionen bis Remote korrekt konfiguriert ist.
 
+---
+
+## D-032: Encoding-/Mojibake-Gate ist deterministisch via JSONL-Scanner (path+line+col) + Fix nur auf gemeldete Stellen
+**Status:** beschlossen  
+**Datum:** 2026-02-21  
+**Warum:** Das Encoding-Gate war instabil/nicht-deterministisch (unzuverlaessige Datei-/Zeilenangaben, wechselnde Sortierung). Das fuehrt zu Blind-Fixes, Loopings und CI-Drift.  
+**Konsequenz:**  
+- Ein einziger deterministischer Scanner ist Source-of-Truth: `tools/mojibake_scan.js`  
+- Output ist **JSONL**, jede Zeile ein Record: `{path,line,col,kind,match,snippet}`  
+- Sortierung ist stabil: `path`, `line`, `col`, `kind`, `match`  
+- Allowlist: `.md,.ts,.tsx,.js,.py`  
+- Default-Exclude: `.git/`, `node_modules/`, `dist/`, `server/scripts/`, `tools/`, weitere Build-Artefakte (siehe Runbook)  
+- Exit-Code ist nur von Trefferanzahl abhaengig: `0` = keine Treffer, `1` = Treffer vorhanden  
+- **Fix-Policy:** Es werden **ausschliesslich** die im JSONL gemeldeten Stellen korrigiert (kein global replace, kein Guessing).  
+- Runbook ist bindend: `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`

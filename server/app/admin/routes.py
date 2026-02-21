@@ -17,7 +17,7 @@ from app.auth.settings import load_settings
 
 router = APIRouter(dependencies=[Depends(forbid_moderator)], prefix="/admin", tags=["admin"])
 
-# Wichtig: SUPERADMIN existiert als Rolle (fÃƒÂ¼r High-Risk-Gates)
+# Wichtig: SUPERADMIN existiert als Rolle (für High-Risk-Gates)
 ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin", "superadmin"}
 
 
@@ -387,7 +387,7 @@ def admin_create_vip_business(
     with _connect(settings.db_path) as conn:
         _ensure_vip_business_tables(conn)
 
-        # Insert (idempotent-ish): wenn exists, liefere bestehenden Zustand zurÃƒÂ¼ck
+        # Insert (idempotent-ish): wenn exists, liefere bestehenden Zustand zurück
         existing = conn.execute(
             "SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id FROM vip_businesses WHERE business_id=? LIMIT 1;",
             (business_id,),
@@ -497,7 +497,7 @@ def superadmin_add_vip_business_staff(
     actor: AuthContext = Depends(require_roles("superadmin")),
 ):
     """
-    VIP-Gewerbe Staff hinzufÃƒÆ’Ã‚Â¼gen:
+    VIP-Gewerbe Staff hinzufügen:
     - nur SUPERADMIN
     - nur wenn Business freigegeben
     - max. 2 Staff (hart enforced)
@@ -532,13 +532,13 @@ def superadmin_add_vip_business_staff(
             )
             return VipBusinessStaffAddResponse(ok=True, business_id=business_id, user_id=user_id, at=now)
 
-        # Limit prÃƒÆ’Ã‚Â¼fen (max 2 Staff)
+        # Limit prüfen (max 2 Staff)
         cnt = conn.execute(
             "SELECT COUNT(1) AS c FROM vip_business_staff WHERE business_id=?;",
             (business_id,),
         ).fetchone()["c"]
         if int(cnt) >= 2:
-            # keine Zahlen in Fehltexten nÃƒÆ’Ã‚Â¶tig
+            # keine Zahlen in Fehltexten nötig
             raise HTTPException(status_code=409, detail="staff_limit_reached")
 
         conn.execute(
