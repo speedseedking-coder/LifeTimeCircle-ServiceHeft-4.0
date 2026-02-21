@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.guards import forbid_moderator
 from fastapi.responses import HTMLResponse
 
-router = APIRouter()
-
+router = APIRouter(dependencies=[Depends(forbid_moderator)])
 _HTML = """<!doctype html>
 <html lang="de">
 <head>
