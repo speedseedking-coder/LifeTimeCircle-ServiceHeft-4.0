@@ -33,31 +33,41 @@ Projekt:
   - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
-### WIP: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
-- Status: **WIP/PR in Arbeit** (Branch: `fix/vehicles-consent-gates`)
+### ✅ GEMERGED: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
+- Status: **gemerged in `main`** (PR #167, Commit: `28ec3a6`)
 - Ziel/Policy:
   - **deny-by-default + least privilege**
   - **Moderator strikt nur Blog/News** (sonst überall **403**)
   - Vehicles endpoints sind **consent-gated** (403 `consent_required`)
 - Scope (Backend):
   - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
-  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 `consent_required`)
-  - Behavior erhalten: Consent Required wird als 403 mit Code `consent_required` signalisiert
+  - Consent-Gate zentral auf `/vehicles/*` via Router-Dependency (`Depends(_require_consent_dep)`)
+  - Fehlersemantik stabil: HTTP **403** + `detail.code == "consent_required"`
 - Docs (SoT-Konsistenz):
   - `docs/03_RIGHTS_MATRIX.md` angepasst:
-    - Allowlist: `/public/*` entfernt
+    - Moderator-Allowlist ohne `/public/*`
     - Route `/public/* (Site/QR)`: Moderator **❌ (403)**
-- Evidence (lokal, Branch `fix/vehicles-consent-gates`):
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1` → **DONE**
-  - Mojibake-Scan: **grün**
-  - `poetry run pytest -q` → **[100%]**
-  - `npm ci` + `npm run build` → **grün**
+- Evidence (lokal, verifiziert auf `main`):
+  - `cd server && poetry run pytest -q tests/test_rbac_fail_closed_regression_pack.py` → **grün**
+  - `cd server && poetry run pytest -q tests/test_rbac_guard_coverage.py tests/test_rbac_moderator_blog_only.py tests/test_moderator_block_coverage_runtime.py` → **grün**
+  - `cd server && poetry run pytest -q` → **[100%]**
 
 ---
 
 ## Aktueller Stand (main)
 
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+
+✅ PR #173 **gemerged**: `test(security): lock RBAC semantics + CI pwsh + paste-guard SoT`
+- Commit auf `main`: `3614741`
+- CI: `pwsh` wird auf Ubuntu-Runnern sichergestellt; `tools/test_all.ps1` läuft deterministisch.
+- Neu: `docs/07_POWERSHELL_PASTE_GUARD.md` (SoT) + `server/scripts/install_paste_guard_profile.ps1` (idempotent).
+- Neu: `server/tests/test_rbac_fail_closed_regression_pack.py` (P0) sichert:
+  - Moderator fail-closed: `/public/site`, `/public/qr/{token}`, repräsentativ `/vehicles/*` -> **403**
+  - Unauthenticated: **401** auf geschützten Routen
+  - Consent-Gate auf `/vehicles/*`: **403** + `detail.code == "consent_required"`
+- Lokal verifiziert:
+  - `cd server && poetry run pytest -q` → **[100%]**
 
 ✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
 - Fix: `server/app/rbac.py` Kommentar-Encoding repariert (mojibake: `ü`, `ä`)
