@@ -48,7 +48,7 @@ def get_current_user(
     creds: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
 ) -> Optional[Actor]:
     """
-    Liefert Actor (user_id/role/token) oder None, wenn kein/ungÃ¼ltiger Token vorhanden ist.
+    Liefert Actor (user_id/role/token) oder None, wenn kein/ungültiger Token vorhanden ist.
     """
     if creds is None or not creds.credentials:
         return None
@@ -69,7 +69,7 @@ def get_current_user(
             if hasattr(sess, "keys") and "revoked_at" in sess.keys() and sess["revoked_at"] is not None:
                 return None
         except Exception:
-            # falls Row-Objekt sich anders verhÃ¤lt: lieber fail-closed
+            # falls Row-Objekt sich anders verhält: lieber fail-closed
             return None
 
         try:
@@ -111,4 +111,5 @@ def require_roles(*roles: str) -> Callable[..., Actor]:
 
 # Telemetry helper: set role without identity
 # NOTE: ensure to call this where request is available
+
 
