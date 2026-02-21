@@ -8,11 +8,11 @@ const { spawnSync } = require("node:child_process");
 
 // Typische UTF-8->Latin1 Mojibake Sequenzen + kaputte Typo-Zeichen
 const PATTERNS = [
-  "fÃ¼","Ã¼","Ã¤","Ã¶","ÃŸ","Ã„","Ã–","Ãœ",
+  "fü","ü","ä","ö","ÃŸ","Ã„","Ã–","Ãœ",
   "â€“","â€”","â€ž","â€œ","â€\u009D","â€\u0098","â€\u0099","â€¦",
-  "Â ", "Â·", "Â°",
-  "ÔÇ", "â”œ", "Ã”Ã‡", "Ã¥Ã†", "Ã¥Ã‰",
-  "�"
+  " ", "·", "°",
+  "ÔÇ", "â”œ", "Ã”Ã‡", "åÆ", "åÉ",
+  ""
 ];
 
 const INCLUDE_GLOBS = [

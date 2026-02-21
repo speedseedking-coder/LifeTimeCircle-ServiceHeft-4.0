@@ -1,6 +1,6 @@
-?# LifeTimeCircle – Service Heft 4.0
+# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-17** (Europe/Berlin)
+Stand: **2026-02-21** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -20,24 +20,31 @@ Projekt:
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
-### Keine offenen PRs (Stand 2026-02-17)
-- Status: **clean**
+### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
+- Status: **WIP** (Branch: `fix/encoding-gitattributes`)
+- Problem: Encoding-Gate war nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
+- Fix-Strategie (P0):
+  1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
+  2) Report: `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
+  3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
+- Evidence (lokal):
+  - Run: `node tools/mojibake_scan.js --root . > artifacts/mojibake_report.jsonl`
+  - Treffer: **14**
+  - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
+- Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
+
+### WIP: Vehicles MVP + Consent Gate (Next10 E2E)
+- Status: **PR offen** (Branch: `$marker`)
+- Scope:
+  - `/vehicles` Router (Create/List/Get), object-level, Moderator überall 403 (außer Blog/News/Public)
+  - VIN nur masked
+  - `require_consent(db, actor)` Gate (deny-by-default, **403** `consent_required`)
+  - Docs: Rights-Matrix korrigiert (Moderator strikt nur Blog/News; Consent/Profile/Support sonst 403)
 
 ---
 
 ## Aktueller Stand (main)
 
-✅ PR #140 **gemerged**: feat(vehicles): persistent model + consent hardening + PR1 tests
-- Commit auf main: 942bc88
-- Evidence (lokal): pwsh .\server\scripts\ltc_verify_ist_zustand.ps1 ✅, pwsh .\tools\test_all.ps1 ✅
-
-
-
-✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
-- Branch: work  
-- Neu: /vehicles Router (Create/List/Get), object-level, Moderator 403, VIN nur masked  
-- Neu: equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
-- Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
 ✅ PR #122 **gemerged**: `fix(import): report hardening`
@@ -124,127 +131,3 @@ Projekt:
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`
-- `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)
-✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`
-- Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**
-✅ PR #33: **Public: blog/news endpoints**
-- Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`
-- Router wired in `server/app/main.py`
-✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`
-- Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)
-✅ PR #40: `Add web skeleton + root redirect + docs updates`
-- Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
-- API Root Redirect: `GET /` → 307 → `/public/site`
-- `GET /favicon.ico` → 204
-✅ PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)
-- Ohne Actor → **401**
-- DEV/Test Header-Override nur hinter Gate (nicht in Produktion)
-✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate** (serverseitig)
-- VIP-Gewerbe: **max. 2 Staff-Accounts**
-- Staff-Zuordnung/Freigabe/Erhöhung: **nur superadmin**
-✅ Tests grün: `poetry run pytest -q`
-
----
-
-## Web Frontend (Vite + React + TS) — DONE (main)
-Paths / URLs:
-- API: `http://127.0.0.1:8000`  (/, /public/site, /docs, /redoc)
-- Web: `http://127.0.0.1:5173`
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
-
-Gotchas:
-- API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
-- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). Für Commands extra Tab.
-
-Start (2 Tabs/Fenster A=API, B=WEB):
-- A (API):
-  - `cd .\server`
-  - `$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"`
-  - `poetry run uvicorn app.main:app --reload`
-- B (WEB):
-  - `cd .\packages\web`
-  - `npm install` (einmalig)
-  - `npm run dev`
-  - Browser: `http://127.0.0.1:5173/`
-
-Web Smoke (Build):
-- Root:
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_web_toolkit.ps1 -Smoke -Clean`
-
----
-
-## OpenAPI / Router Wiring — DONE (main)
-Thema:
-- FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
-
-Fix (PR #36):
-- `server/app/main.py`: Documents-Router **nur 1x** via `include_router(...)`
-
----
-
-## Public: Blog/News — DONE (main)
-Public Router:
-- `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
-- `GET /news` + `GET /news/` + `GET /news/{slug}`
-
----
-
-## P0: Actor Source of Truth — DONE (main)
-Regeln:
-- Actor wird serverseitig zentral bestimmt.
-- Ohne Actor → **401**.
-- DEV/Test: Header-Override ist **gated** (nicht in Produktion).
-
----
-
-## P0: Uploads Quarantäne (Documents) — DONE (main)
-Workflow:
-- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
-- Admin setzt `scan_status`: `CLEAN` oder `INFECTED`
-- `INFECTED` erzwingt `approval_status=REJECTED`
-- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409**)
-
-Download-Regeln:
-- **User/VIP/Dealer**: nur wenn `APPROVED` **und** Scope/Owner passt (object-level)
-- **Admin/Superadmin**: darf auch QUARANTINED/PENDING downloaden (Review)
-
----
-
-## Sale/Transfer Status (ID-Leak Fix) — DONE (main)
-Endpoint:
-- `GET /sale/transfer/status/{transfer_id}`
-
-Regeln:
-- Role-Gate: nur `vip|dealer` (alle anderen **403**)
-- Zusätzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
-
----
-
-## RBAC (SoT)
-- Default: **deny-by-default**
-- **Actor required**: ohne Actor → **401**
-- **Moderator**: strikt nur **Blog/News**; sonst überall **403**
-
-Allowlist Moderator (ohne 403):
-- `/auth/*`
-- `/health`
-- `/public/*`
-- `/blog/*`
-- `/news/*`
-
----
-
-## Public-QR Trust-Ampel (Pflichttext)
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
----
-
-## Tests / Lokal ausführen
-> Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
-
-One-Command (Root):
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
-

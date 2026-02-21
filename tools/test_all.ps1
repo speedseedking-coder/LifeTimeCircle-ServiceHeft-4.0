@@ -1,4 +1,4 @@
-# tools/test_all.ps1
+﻿# tools/test_all.ps1
 # LifeTimeCircle – ServiceHeft 4.0
 # Ziel: deterministisch fail-fast (kein "False-Green")
 # - Repo-Root Encoding/Mojibake Gate (rg-basiert)
@@ -31,8 +31,8 @@ try {
   Set-Location $repoRoot
   [Environment]::CurrentDirectory = $repoRoot
 
-  Invoke-Step -Name "Encoding gate (repo): node ./scripts/mojibake_scan.js" -Script {
-    & node ".\scripts\mojibake_scan.js"
+  Invoke-Step -Name "Encoding gate (repo): node ./tools/mojibake_scan.js --root ." -Script {
+    & node ".\tools\mojibake_scan.js" --root "."
     if ($LASTEXITCODE -ne 0) { throw "mojibake scan failed (exit=$LASTEXITCODE)" }
   }
 
@@ -88,3 +88,4 @@ catch {
   Write-Error $_
   exit 1
 }
+
