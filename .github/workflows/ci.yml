@@ -48,8 +48,39 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure PowerShell (pwsh) is available
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          if command -v pwsh >/dev/null 2>&1; then
+            echo "pwsh already present: $(pwsh -v)"
+            exit 0
+          fi
+
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https software-properties-common
+
+          # Microsoft repo for PowerShell
+          UBUNTU_VERSION_ID="$(. /etc/os-release; echo "$VERSION_ID")"
+          wget -q "https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION_ID}/packages-microsoft-prod.deb"
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y powershell
+
+          pwsh -v
+
+      - name: Ensure LTC_SECRET_KEY is set (CI fallback)
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LTC_SECRET_KEY:-}" ]; then
+            echo "LTC_SECRET_KEY=ci_dummy_secret_key_32chars_min16" >> "$GITHUB_ENV"
+          fi
+
       - name: CI guard - required job 'pytest'
-        shell: pwsh
+        shell: bash
         working-directory: ${{ github.workspace }}
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File server/scripts/ci_guard_required_job_pytest.ps1
 
