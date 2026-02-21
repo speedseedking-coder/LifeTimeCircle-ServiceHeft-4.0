@@ -9,7 +9,7 @@ import { apiGet, prettyBody } from "./api";
  *
  * Hinweis:
  * - Dieses File muss UTF-8 (ohne BOM) bleiben.
- * - Mojibake-Gate (scripts/mojibake_scan.js) prueft repo-weit.
+ * - Mojibake-Gate (tools/mojibake_scan.js) prueft repo-weit.
  */
 
 type Route =
