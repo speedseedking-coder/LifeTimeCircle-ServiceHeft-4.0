@@ -1,3 +1,6 @@
+﻿import logging
+from app.security import RequestIdMiddleware
+from app.security import emit_security_event, map_status_to_event
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -32,7 +35,7 @@ def create_app() -> FastAPI:
         yield
 
     app = FastAPI(
-        title="LifeTimeCircle – ServiceHeft 4.0",
+        title="LifeTimeCircle â€“ ServiceHeft 4.0",
         version="0.1.0",
         docs_url="/docs" if settings.env != "prod" else None,
         redoc_url="/redoc" if settings.env != "prod" else None,
@@ -62,7 +65,7 @@ def create_app() -> FastAPI:
     app.include_router(vehicles_router)
     app.include_router(sale_transfer_router)
 
-    # ✅ documents nur EINMAL registrieren
+    # âœ… documents nur EINMAL registrieren
     app.include_router(documents_router)
 
     app.include_router(servicebook.router)
@@ -87,3 +90,7 @@ def root():
 def favicon():
     return Response(status_code=204)
 # LTC-AUTO: root-redirect end
+
+
+logger = logging.getLogger(__name__)
+
