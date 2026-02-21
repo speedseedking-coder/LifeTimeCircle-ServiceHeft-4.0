@@ -1,36 +1,23 @@
 import os
 
 # LTC_TEST_SECRET_KEY_IMPORTTIME
-# Ensure a valid secret key exists VERY early (import-time), before any cached settings are created.
-_key = "test_secret_key__0123456789abcdef"
+import os
 
-# Wide net: set common env names (harmless in tests, avoids guessing)
-for _name in (
-    "LTC_SECRET_KEY",
-    "SECRET_KEY",
-    "APP_SECRET_KEY",
-    "LTC__SECRET_KEY",
-    "LTC_APP_SECRET_KEY",
-):
-    os.environ.setdefault(_name, _key)
+# Minimal deterministic test secret (>=16 chars) – test-only
+os.environ["LTC_SECRET_KEY"] = os.environ.get("LTC_SECRET_KEY") or "test-secret-key-1234567890"
 
-# If settings are cached (lru_cache), clear it so env vars are picked up.
+# Ensure settings read the env (cache clear if present)
 try:
     from app.settings import get_settings  # type: ignore
-    try:
-        get_settings.cache_clear()  # type: ignore[attr-defined]
-    except Exception:
-        pass
-
-    _s = get_settings()
-    try:
-        _s.secret_key = _key  # last-resort fallback if the object already exists
-    except Exception:
-        pass
+    if hasattr(get_settings, "cache_clear"):
+        get_settings.cache_clear()
 except Exception:
-    # Don't fail test import if module path differs; env vars are still set above.
-    pass
-
+    try:
+        from app.core.settings import get_settings  # type: ignore
+        if hasattr(get_settings, "cache_clear"):
+            get_settings.cache_clear()
+    except Exception:
+        pass
 import os
 import sys
 from pathlib import Path
