@@ -1,4 +1,4 @@
-﻿# server/scripts/ltc_verify_ist_zustand.ps1
+# server/scripts/ltc_verify_ist_zustand.ps1
 # LifeTimeCircle – ServiceHeft 4.0 (SoT: docs/)
 # Zweck: lokaler/CI Preflight "IST-Zustand" (fail-fast, audit-sicher)
 
@@ -68,7 +68,7 @@ $root = Get-RepoRoot
 Ok "Repo-Root: $root"
 
 Run "0.1) Encoding gate (repo)" {
-  & node ".\scripts\mojibake_scan.js"
+  & node ".\tools\mojibake_scan.js" --root .
   if ($LASTEXITCODE -ne 0) { throw "mojibake scan failed (exit=$LASTEXITCODE)" }
   Ok "Mojibake-Scan gruen"
 }
