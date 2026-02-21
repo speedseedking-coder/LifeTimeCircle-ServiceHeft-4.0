@@ -1,7 +1,6 @@
 ﻿import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 import { httpFetch } from "../lib/httpFetch";
-
 type TrustLight = "GREEN" | "YELLOW" | "RED";
 
 type PublicQrResponse = {

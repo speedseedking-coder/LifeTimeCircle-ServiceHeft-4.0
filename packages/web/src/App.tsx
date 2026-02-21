@@ -1,4 +1,4 @@
-// packages/web/src/App.tsx
+﻿// packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 
@@ -10,7 +10,7 @@ import VehiclesPage from "./pages/VehiclesPage";
 import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
-
+import { AppLayout } from "./components/layout/AppLayout";
 /**
  * LifeTimeCircle – ServiceHeft 4.0:
  * - Digitales Nachweis- & Dokumentationssystem (Proof statt Behauptung)
@@ -455,7 +455,9 @@ function Footer() {
           </div>
         </div>
 
-        <div className="ltc-footer__bottom">{"" + "\u00A9"} {new Date().getFullYear()} LifeTimeCircle {"" + "\u00B7"} ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">
+          {"\u00A9"} {new Date().getFullYear()} LifeTimeCircle {"\u00B7"} ServiceHeft 4.0
+        </div>
       </div>
     </footer>
   );
@@ -711,7 +713,7 @@ function FrontPage() {
         ["--ltc-bg" as any]: `url("${bgUrl}")`,
         ["--ltc-bg-op" as any]: "1",
 
-        // Ô£à Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
+        // Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
         ["--ltc-bg-size" as any]: "cover",
         ["--ltc-bg-pos" as any]: "68% 12%",
       }}
@@ -841,7 +843,7 @@ function FrontPage() {
           </div>
         </section>
 
-        {/* Showroom Band (Autos-Look wie Beispiel) */}
+        {/* Showroom Band */}
         <section className="ltc-showroom">
           <div className="ltc-showroom__card">
             <div className="ltc-showroom__meta">
@@ -857,7 +859,7 @@ function FrontPage() {
           </div>
         </section>
 
-        {/* ServiceHeft Band (wie Beispiel: Headline links + Dokument/Tablet Mock rechts) */}
+        {/* ServiceHeft Band */}
         <section className="ltc-band">
           <div className="ltc-band__grid">
             <div className="ltc-band__copy">
@@ -886,7 +888,7 @@ function FrontPage() {
           </div>
         </section>
 
-        {/* Pflicht-Disclaimer (wie Beispiel separat sichtbar) */}
+        {/* Pflicht-Disclaimer */}
         <section className="ltc-disclaimerBand">
           <div className="ltc-disclaimerBand__card">
             <div className="ltc-disclaimerBand__left">
@@ -899,7 +901,7 @@ function FrontPage() {
           </div>
         </section>
 
-        {/* Services / About bleiben inhaltlich gleich (nur spacing/Container korrekt) */}
+        {/* Services / About */}
         <div id="services" className="ltc-section">
           <div className="ltc-card ltc-card--wide">
             <div className="ltc-card__title">Services</div>
@@ -1173,29 +1175,27 @@ export default function App() {
         route.kind !== "jobs" &&
         route.kind !== "impressum" &&
         route.kind !== "datenschutz" && (
-          <div className="ltc-app ltc-app--plain" style={bgStyle(nonHomeBg)}>
-            <div className="ltc-container ltc-page">
-              <h1 className="ltc-h1">{pageTitle}</h1>
+          <AppLayout variant="plain" style={bgStyle(nonHomeBg)} container={true} containerClassName="ltc-page">
+            <h1 className="ltc-h1">{pageTitle}</h1>
 
-              <div className="ltc-card">
-                <div className="ltc-muted">
-                  Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
-                </div>
+            <div className="ltc-card">
+              <div className="ltc-muted">
+                Scaffold/Debug Container. Produktseiten liegen in <code>packages/web/src/pages/*</code>.
+              </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <a className="ltc-link" href="#/">
-                    ← Zur Frontpage
-                  </a>
-                  {import.meta.env.DEV && (
-                    <>
-                      {" "}
-                      ·{" "}
-                      <a className="ltc-link" href="#/debug/public-site">
-                        Debug Public Site
-                      </a>
-                    </>
-                  )}
-                </div>
+              <div style={{ marginTop: 12 }}>
+                <a className="ltc-link" href="#/">
+                  ← Zur Frontpage
+                </a>
+
+                {import.meta.env.DEV && (
+                  <>
+                    {" · "}
+                    <a className="ltc-link" href="#/debug/public-site">
+                      Debug Public Site
+                    </a>
+                  </>
+                )}
               </div>
 
               {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
@@ -1236,11 +1236,12 @@ export default function App() {
 
               <Footer />
             </div>
-          </div>
+          </AppLayout>
         )}
     </>
   );
 }
+
 /** ---------------------------
  * CSS – Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
@@ -1271,7 +1272,7 @@ body{
 a{color:inherit}
 code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
-/* Ô£à Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
+/* Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
 .ltc-container{
   width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
   margin: 0 auto;
@@ -1549,7 +1550,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   flex-wrap:wrap;
 }
 
-/* Ô£à 3 Punkte wie Beispiel: Desktop nebeneinander */
+/* 3 Punkte wie Beispiel: Desktop nebeneinander */
 .ltc-hero__iconRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
