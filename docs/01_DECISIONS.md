@@ -271,3 +271,32 @@ Stand: **2026-02-21**
 - Exit-Code ist nur von Trefferanzahl abhaengig: `0` = keine Treffer, `1` = Treffer vorhanden  
 - **Fix-Policy:** Es werden **ausschliesslich** die im JSONL gemeldeten Stellen korrigiert (kein global replace, kein Guessing).  
 - Runbook ist bindend: `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
+
+---
+
+## D-033: Security Telemetry ist erlaubt, aber strikt no-PII (Redaction + Request-ID)
+**Status:** beschlossen  
+**Datum:** 2026-02-21  
+
+**Warum:**  
+Security-Events (401/403/5xx, RBAC-Verstoesse, Guard-Hits) sind fuer Incident-Analyse und Missbrauchserkennung notwendig.  
+Gleichzeitig darf Telemetrie niemals personenbezogene Daten (PII) enthalten.
+
+**Konsequenz:**  
+- Security-Telemetry ist **zulaessig**, aber ausschliesslich **no-PII**.
+- Es duerfen geloggt werden:
+  - Event-Typ (z. B. `unauthorized`, `forbidden`, `server_error`)
+  - HTTP-Status
+  - Route/Endpoint (ohne sensible Path-Parameter)
+  - interne Rollen-Kategorie (z. B. `vip`, `admin`)
+  - technische `request_id` zur Korrelation
+- Es duerfen **nicht** geloggt werden:
+  - Tokens (JWT, Bearer, Refresh)
+  - E-Mail-Adressen
+  - VIN
+  - Namen
+  - Freitext-Payloads
+  - Dokument-Inhalte
+- Redaction ist verpflichtend (`server/app/security/redaction.py`).
+- Mapping von Status -> Event erfolgt zentral (`map_status_to_event`).
+- Telemetrie unterliegt **deny-by-default**: neue Felder sind nur erlaubt, wenn sie explizit als no-PII geprueft sind.
