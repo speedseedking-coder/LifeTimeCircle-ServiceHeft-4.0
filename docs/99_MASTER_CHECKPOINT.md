@@ -59,6 +59,32 @@ Projekt:
 
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
+✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
+- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (mojibake: `ü`, `ä`)
+- Gate wieder gruen: `tools/test_all.ps1` → **ALL GREEN**
+- CI Checks: **2 checks passed**
+
+✅ PR #170 **gemerged**: `feat(security): add no-PII security telemetry (audit events + redaction + request id)`
+- Commit auf `main`: `e9f0fdb`
+- Neue Module:
+  - `server/app/security/telemetry.py`
+  - `server/app/security/redaction.py`
+  - `server/app/security/request_id.py`
+  - `server/app/security/__init__.py`
+- Integration:
+  - Middleware: `RequestIdMiddleware`
+  - Status -> Event Mapping (`map_status_to_event`)
+  - zentrale Event-Emission (`emit_security_event`)
+- Policy:
+  - strikt **no-PII**
+  - Redaction verpflichtend
+  - Request-ID erlaubt zur technischen Korrelation
+- Tests:
+  - `server/tests/test_security_telemetry.py`
+  - `pytest` gruen
+- Lokal verifiziert:
+  - `tools/test_all.ps1` → **ALL GREEN**
+
 ✅ PR #122 **gemerged**: `fix(import): report hardening`
 - Commit auf `main`: `f24a52e`
 - Repo-Pfad-Cleanup (Windows): Repo-Root wieder korrekt und clean
