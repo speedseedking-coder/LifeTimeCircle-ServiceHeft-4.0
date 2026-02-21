@@ -84,7 +84,12 @@ class VehicleOut(BaseModel):
     meta: Optional[dict[str, Any]] = None
 
 
-router = APIRouter(prefix="/vehicles", tags=["vehicles"], dependencies=[Depends(forbid_moderator)])
+def _require_consent_dep(
+    db: Session = Depends(get_db),
+    actor: Any = Depends(require_actor),
+) -> None:
+    require_consent(db, actor)
+router = APIRouter(prefix="/vehicles", tags=["vehicles"], dependencies=[Depends(forbid_moderator), Depends(_require_consent_dep)])
 
 
 def _enforce_role(actor: Any) -> str:
@@ -106,7 +111,6 @@ def _to_out(v: Vehicle) -> VehicleOut:
 def create_vehicle(payload: VehicleCreateIn, db: Session = Depends(get_db), actor: Any = Depends(require_actor)) -> VehicleOut:
     try:
         role = _enforce_role(actor)
-        require_consent(db, actor)
         uid = _user_id_of(actor)
 
         if role == "user":
@@ -138,7 +142,6 @@ def create_vehicle(payload: VehicleCreateIn, db: Session = Depends(get_db), acto
 def list_vehicles(db: Session = Depends(get_db), actor: Any = Depends(require_actor)) -> list[VehicleOut]:
     try:
         role = _enforce_role(actor)
-        require_consent(db, actor)
         uid = _user_id_of(actor)
 
         q = db.query(Vehicle)
@@ -157,7 +160,6 @@ def list_vehicles(db: Session = Depends(get_db), actor: Any = Depends(require_ac
 def get_vehicle(vehicle_id: str, db: Session = Depends(get_db), actor: Any = Depends(require_actor)) -> VehicleOut:
     try:
         role = _enforce_role(actor)
-        require_consent(db, actor)
         uid = _user_id_of(actor)
 
         v = db.query(Vehicle).filter(Vehicle.public_id == str(vehicle_id)).first()
