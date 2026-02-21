@@ -1,4 +1,4 @@
-?# LifeTimeCircle – Service Heft 4.0
+﻿?# LifeTimeCircle â€“ Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-17** (Europe/Berlin)
 
@@ -11,10 +11,10 @@ Projekt:
 
 ---
 
-## Produkt-Spezifikation (Unified) — SoT
-- **Ab jetzt nur noch „LifeTimeCircle · Service Heft (Unified)“** (kein Parallelzweig „2.0“)
-- Vollständige Spezifikation: `docs/02_PRODUCT_SPEC_UNIFIED.md`
-- Spezifikation ist erweitert/finalisiert (E2E-Flow, Trust/Unfalltrust, PII, Module, Transfer/Dealer, PDFs/TTL, Notifications, Import, Packaging) – siehe `docs/02_PRODUCT_SPEC_UNIFIED.md`
+## Produkt-Spezifikation (Unified) â€” SoT
+- **Ab jetzt nur noch â€žLifeTimeCircle Â· Service Heft (Unified)â€œ** (kein Parallelzweig â€ž2.0â€œ)
+- VollstÃ¤ndige Spezifikation: `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- Spezifikation ist erweitert/finalisiert (E2E-Flow, Trust/Unfalltrust, PII, Module, Transfer/Dealer, PDFs/TTL, Notifications, Import, Packaging) â€“ siehe `docs/02_PRODUCT_SPEC_UNIFIED.md`
 
 ---
 
@@ -27,60 +27,61 @@ Projekt:
 
 ## Aktueller Stand (main)
 
-✅ PR #140 **gemerged**: feat(vehicles): persistent model + consent hardening + PR1 tests
+âœ… PR #140 **gemerged**: feat(vehicles): persistent model + consent hardening + PR1 tests
 - Commit auf main: 942bc88
-- Evidence (lokal): pwsh .\server\scripts\ltc_verify_ist_zustand.ps1 ✅, pwsh .\tools\test_all.ps1 ✅
+- Evidence (lokal): pwsh .\server\scripts\ltc_verify_ist_zustand.ps1 âœ…, pwsh .\tools\test_all.ps1 âœ…
 
 
 
-✅ PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
+âœ… PR (offen): **Vehicles MVP + Consent Gate (Next10 E2E)**  
 - Branch: work  
 - Neu: /vehicles Router (Create/List/Get), object-level, Moderator 403, VIN nur masked  
-- Neu: equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
+- Neu: 
+equire_consent(db, actor) Gate (deny-by-default, 403 consent_required)  
 - Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
-✅ PR #122 **gemerged**: `fix(import): report hardening`
+âœ… PR #122 **gemerged**: `fix(import): report hardening`
 - Commit auf `main`: `f24a52e`
 - Repo-Pfad-Cleanup (Windows): Repo-Root wieder korrekt und clean
 - Docs aktualisiert: `docs/00_CODEX_CONTEXT.md`, `docs/04_REPO_STRUCTURE.md`, `docs/05_MAINTENANCE_RUNBOOK.md`
 
-✅ PR #121 **gemerged**: `chore: add one-command test runner (backend+web)`
+âœ… PR #121 **gemerged**: `chore: add one-command test runner (backend+web)`
 - Commit auf `main`: `8efc913`
 - Neu: `tools/test_all.ps1` (One-Command Runner: backend+web)
 - Updates: `.gitignore`, `README.md`, `docs/01_DECISIONS.md`
 
-✅ PR #95 **gemerged**: `chore/ci-helper-script`
-- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
+âœ… PR #95 **gemerged**: `chore/ci-helper-script`
+- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefÃ¼gt (helper patch script, kein Workflow-Change)
 
-✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
-- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
+âœ… PR #94 **gemerged**: `chore/poetry-lock-py311`
+- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grÃ¼n
 
-✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
+âœ… PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
 
-✅ PR #89 gemerged: `chore(web): declare node engine >=20.19.0 (vite 7)`
+âœ… PR #89 gemerged: `chore(web): declare node engine >=20.19.0 (vite 7)`
 - `packages/web/package.json`: `engines.node` auf **>=20.19.0** gesetzt (Vite 7 Requirement / verhindert lokale Mismatch-Setups)
 
-✅ PR #87 gemerged: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
+âœ… PR #87 gemerged: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
 - Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
-- Hinweis: Vite 7 benötigt Node.js >= 20.19
+- Hinweis: Vite 7 benÃ¶tigt Node.js >= 20.19
 
-✅ PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
-- Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhängen (Consent wird separat getestet)
-- Fix: Collect-time Crash (NameError) durch kaputte/teilweise Einfügungen rund um `_require_consent` beseitigt
+âœ… PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
+- Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhÃ¤ngen (Consent wird separat getestet)
+- Fix: Collect-time Crash (NameError) durch kaputte/teilweise EinfÃ¼gungen rund um `_require_consent` beseitigt
 - Files:
   - `server/tests/test_vehicles_entries_api_p0.py` (Consent-Token-Snippets entfernt; `_ensure_consent()` = No-Op)
   - `server/scripts/patch_vehicle_tests_bypass_consent_dependency_p0.ps1` (idempotent)
-- Tests grün: `poetry run pytest -q`
+- Tests grÃ¼n: `poetry run pytest -q`
 
-✅ PR #83 **gemerged** (Squash): `CI Guard Conflict Fix (pytest job detection)`
-- Fix: Conflict-Marker entfernt + Job-Name-Erkennung für `name: pytest` stabilisiert
+âœ… PR #83 **gemerged** (Squash): `CI Guard Conflict Fix (pytest job detection)`
+- Fix: Conflict-Marker entfernt + Job-Name-Erkennung fÃ¼r `name: pytest` stabilisiert
 - Lokal verifiziert:
   - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ci_guard_required_job_pytest.ps1`
-  - Output: `OK: CI Guard – required job 'pytest' ist vorhanden.`
+  - Output: `OK: CI Guard â€“ required job 'pytest' ist vorhanden.`
 
-✅ PR #75 **gemerged** (Auto-Merge squash): `Docs: CI context + UTF-8 encoding fix (SoT)`
-- Fix für Mojibake/UTF-8 in SoT-Dokumenten:
+âœ… PR #75 **gemerged** (Auto-Merge squash): `Docs: CI context + UTF-8 encoding fix (SoT)`
+- Fix fÃ¼r Mojibake/UTF-8 in SoT-Dokumenten:
   - `docs/99_MASTER_CHECKPOINT.md`
   - `docs/01_DECISIONS.md`
 - Script:
@@ -90,73 +91,73 @@ Projekt:
   - Verifikation via Check-Runs:
     - `gh api "repos/$repo/commits/$sha/check-runs" --jq ".check_runs[].name"`
 
-✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
-- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+âœ… PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
+- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** lÃ¤uft aus Repo-Root und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
 - Script: `server/scripts/patch_ci_fix_docs_validator_step.ps1`
-- CI grün: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
+- CI grÃ¼n: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
 
-✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
+âœ… PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
 - Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
 - Updates: `docs/01_DECISIONS.md`, `docs/03_RIGHTS_MATRIX.md`, `docs/04_REPO_STRUCTURE.md`, `docs/06_WORK_RULES.md`, `docs/99_MASTER_CHECKPOINT.md`
-- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (Validator; idempotent; keine Änderungen an bestehenden Docs)
+- Script: `server/scripts/patch_docs_unified_final_refresh.ps1` (Validator; idempotent; keine Ã„nderungen an bestehenden Docs)
 
-✅ PR #54: `fix(web): add mandatory Public QR disclaimer`
+âœ… PR #54: `fix(web): add mandatory Public QR disclaimer`
 - Pflichttext ist exakt in `packages/web/src/pages/PublicQrPage.tsx`:
-  - „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+  - â€žDie Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.â€œ
 - Script: `server/scripts/patch_public_qr_disclaimer.ps1` (idempotent)
 
-✅ PR #53: `chore(web): add web smoke toolkit script`
+âœ… PR #53: `chore(web): add web smoke toolkit script`
 - Script: `server/scripts/ltc_web_toolkit.ps1`
   - quiet kill-node
   - optional `-Clean`
   - `npm ci` + `npm run build`
 
-✅ PR #57: `docs: master checkpoint 2026-02-06 (PR #53/#54)`
+âœ… PR #57: `docs: master checkpoint 2026-02-06 (PR #53/#54)`
 - Script: `server/scripts/patch_master_checkpoint_pr53_pr54.ps1` (idempotent)
 
-✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
-- `server/scripts/ltc_web_toolkit.ps1` enthält:
+âœ… PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
+- `server/scripts/ltc_web_toolkit.ps1` enthÃ¤lt:
   - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
 - Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
 
-✅ PR #59: `docs: master checkpoint add PR #58`
+âœ… PR #59: `docs: master checkpoint add PR #58`
 - Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM)
 
-✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
-✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`
+âœ… P0 Uploads-QuarantÃ¤ne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
+âœ… Fix Windows-SQLite-Locks: Connections sauber schlieÃŸen (Tempdir/cleanup stabil)
+âœ… PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`
 - `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)
-✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`
-- Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**
-✅ PR #33: **Public: blog/news endpoints**
+âœ… PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`
+- Runtime-Scan Ã¼ber alle registrierten Routes, Moderator auÃŸerhalb Allowlist â†’ **403**
+âœ… PR #33: **Public: blog/news endpoints**
 - Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`
 - Router wired in `server/app/main.py`
-✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`
+âœ… PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`
 - Documents-Router in `server/app/main.py` nur **einmal** registriert (keine Duplicate Operation ID Warnungen mehr)
-✅ PR #40: `Add web skeleton + root redirect + docs updates`
+âœ… PR #40: `Add web skeleton + root redirect + docs updates`
 - Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
-- API Root Redirect: `GET /` → 307 → `/public/site`
-- `GET /favicon.ico` → 204
-✅ PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)
-- Ohne Actor → **401**
+- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
+- API Root Redirect: `GET /` â†’ 307 â†’ `/public/site`
+- `GET /favicon.ico` â†’ 204
+âœ… PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)
+- Ohne Actor â†’ **401**
 - DEV/Test Header-Override nur hinter Gate (nicht in Produktion)
-✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate** (serverseitig)
+âœ… PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate** (serverseitig)
 - VIP-Gewerbe: **max. 2 Staff-Accounts**
-- Staff-Zuordnung/Freigabe/Erhöhung: **nur superadmin**
-✅ Tests grün: `poetry run pytest -q`
+- Staff-Zuordnung/Freigabe/ErhÃ¶hung: **nur superadmin**
+âœ… Tests grÃ¼n: `poetry run pytest -q`
 
 ---
 
-## Web Frontend (Vite + React + TS) — DONE (main)
+## Web Frontend (Vite + React + TS) â€” DONE (main)
 Paths / URLs:
 - API: `http://127.0.0.1:8000`  (/, /public/site, /docs, /redoc)
 - Web: `http://127.0.0.1:5173`
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
+- Vite Proxy: `/api/*` â†’ `http://127.0.0.1:8000/*`
 
 Gotchas:
 - API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
-- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). Für Commands extra Tab.
+- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). FÃ¼r Commands extra Tab.
 
 Start (2 Tabs/Fenster A=API, B=WEB):
 - A (API):
@@ -175,7 +176,7 @@ Web Smoke (Build):
 
 ---
 
-## OpenAPI / Router Wiring — DONE (main)
+## OpenAPI / Router Wiring â€” DONE (main)
 Thema:
 - FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
 
@@ -184,24 +185,24 @@ Fix (PR #36):
 
 ---
 
-## Public: Blog/News — DONE (main)
+## Public: Blog/News â€” DONE (main)
 Public Router:
 - `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
 - `GET /news` + `GET /news/` + `GET /news/{slug}`
 
 ---
 
-## P0: Actor Source of Truth — DONE (main)
+## P0: Actor Source of Truth â€” DONE (main)
 Regeln:
 - Actor wird serverseitig zentral bestimmt.
-- Ohne Actor → **401**.
+- Ohne Actor â†’ **401**.
 - DEV/Test: Header-Override ist **gated** (nicht in Produktion).
 
 ---
 
-## P0: Uploads Quarantäne (Documents) — DONE (main)
+## P0: Uploads QuarantÃ¤ne (Documents) â€” DONE (main)
 Workflow:
-- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
+- Upload â†’ `approval_status=QUARANTINED`, `scan_status=PENDING`
 - Admin setzt `scan_status`: `CLEAN` oder `INFECTED`
 - `INFECTED` erzwingt `approval_status=REJECTED`
 - Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409**)
@@ -212,20 +213,20 @@ Download-Regeln:
 
 ---
 
-## Sale/Transfer Status (ID-Leak Fix) — DONE (main)
+## Sale/Transfer Status (ID-Leak Fix) â€” DONE (main)
 Endpoint:
 - `GET /sale/transfer/status/{transfer_id}`
 
 Regeln:
 - Role-Gate: nur `vip|dealer` (alle anderen **403**)
-- Zusätzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
+- ZusÃ¤tzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
 
 ---
 
 ## RBAC (SoT)
 - Default: **deny-by-default**
-- **Actor required**: ohne Actor → **401**
-- **Moderator**: strikt nur **Blog/News**; sonst überall **403**
+- **Actor required**: ohne Actor â†’ **401**
+- **Moderator**: strikt nur **Blog/News**; sonst Ã¼berall **403**
 
 Allowlist Moderator (ohne 403):
 - `/auth/*`
@@ -237,14 +238,18 @@ Allowlist Moderator (ohne 403):
 ---
 
 ## Public-QR Trust-Ampel (Pflichttext)
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+â€žDie Trust-Ampel bewertet ausschlieÃŸlich die Dokumentations- und NachweisqualitÃ¤t. Sie ist keine Aussage Ã¼ber den technischen Zustand des Fahrzeugs.â€œ
 
 ---
 
-## Tests / Lokal ausführen
-> Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
+## Tests / Lokal ausfÃ¼hren
+> Env-Hinweis: Export/Redaction/HMAC benÃ¶tigt `LTC_SECRET_KEY` (>=16). FÃ¼r DEV/Tests explizit setzen.
 
 One-Command (Root):
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
+
+
+
+
 
