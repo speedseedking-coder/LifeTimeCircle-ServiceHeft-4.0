@@ -179,3 +179,13 @@ Projekt:
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
+
+## Tooling Guard: Mojibake + node_modules__old_ (P0)
+
+- Script: `server/scripts/ltc_guard_mojibake.ps1`
+- Zweck:
+  - blockt `node_modules__old_*` Snapshots (dürfen nicht ins Repo)
+  - erzwingt Mojibake-Scan: **0 Treffer** (SoT: `tools/mojibake_scan.js`)
+- Run:
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_guard_mojibake.ps1`
+- Eingeführt via: PR **#177** (Merge-Commit: `eb21f53`)
