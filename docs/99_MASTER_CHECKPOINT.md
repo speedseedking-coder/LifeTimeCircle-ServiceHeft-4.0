@@ -30,7 +30,7 @@ Projekt:
 - Evidence (lokal):
   - Run: `node tools/mojibake_scan.js --root . > artifacts/mojibake_report.jsonl`
   - Treffer: **14**
-  - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
+  - Beispiele: `tools/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
 ### ✅ GEMERGED: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)

@@ -67,3 +67,7 @@ packages/web/test-results/
 # build/test artifacts
 artifacts/
 
+
+# Safety: never commit "old node_modules" snapshots/backups
+**/node_modules__old_*/
+**/node_modules__old_*
