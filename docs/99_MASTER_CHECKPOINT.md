@@ -56,6 +56,11 @@ Projekt:
 
 ## Aktueller Stand (main)
 
+
+- Neu (Phase 1 Ops/Security SoT): **Production Baseline + Threat Model v1 + SLO/Error Budget**
+  - docs/07_PRODUCTION_BASELINE.md
+  - docs/08_THREAT_MODEL_V1.md
+  - docs/09_SLO_ERROR_BUDGET.md
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
 ✅ PR #173 **gemerged**: `test(security): lock RBAC semantics + CI pwsh + paste-guard SoT`
