@@ -1,165 +1,115 @@
 #!/usr/bin/env node
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const { TextDecoder } = require("util");
-
 /**
- * Deterministischer Mojibake/Replacement-Char Scanner (JSONL)
- * Records: { path, line, col, kind, match, snippet }
+ * LifeTimeCircle – Service Heft 4.0
+ * Deterministischer Encoding-/Mojibake-Scan (SoT)
  *
- * Exit code:
- *  - 0: keine Treffer
- *  - 1: Treffer vorhanden
- *  - 2: CLI/Runtime error
+ * Output: JSONL (eine Zeile pro Treffer)
+ * Record: { path, line, col, kind, match, snippet }
+ *
+ * Exit-Code:
+ *   0 = keine Treffer
+ *   1 = Treffer vorhanden
+ *   2 = Tool-Error (z.B. Root invalid / Read error)
+ *
+ * WICHTIG:
+ * - Das Tool enthält selbst Mojibake-Detektor-Literale (Ã/Â/â) in Regexen.
+ *   Daher ist `tools/` standardmäßig excluded, um Self-Flagging zu vermeiden.
  */
 
-const DEFAULT_ALLOW_EXT = [".md", ".ts", ".tsx", ".js", ".py"];
-const DEFAULT_EXCLUDE_SEGMENTS = [
+const fs = require("fs");
+const path = require("path");
+
+// -------------------------
+// Konfiguration (SoT)
+// -------------------------
+
+const ALLOWED_EXTS = new Set([".md", ".ts", ".tsx", ".js", ".py"]);
+
+const REPLACEMENT_CHAR = "\uFFFD";
+const REPLACEMENT_REGEX = /\uFFFD/g;
+
+// Mojibake-Detektoren (typische UTF-8-as-Latin1/Win1252 Sequenzen)
+const MOJIBAKE_DETECTORS = [
+  // UTF-8 0xC3 xx -> "Ã" + Latin-1/Win1252 Char
+  { kind: "mojibake_c3", regex: /Ã[\u00A0-\u00FF]/g },
+  // UTF-8 0xC2 xx -> "Â" + Latin-1/Win1252 Char (häufig: NBSP)
+  { kind: "mojibake_c2", regex: /Â[\u00A0-\u00FF]/g },
+  // UTF-8 0xE2 0x80/0x84 ... -> typisches "â€…" / "â„…"
+  { kind: "mojibake_e2_euro", regex: /â€[\s\S]/g },
+  { kind: "mojibake_e2_tm", regex: /â„[\s\S]/g },
+];
+
+// Globale Excludes: diese Ordnernamen werden überall (auf jedem Level) ausgeschlossen
+const EXCLUDE_DIR_NAMES_GLOBAL = new Set([
   ".git",
   "node_modules",
   "dist",
-  "server/scripts",
-  // "tools", // bewusst NICHT default-excluded (Scanner soll Tools selbst prüfen können)
-  "server/data",
-  "server/storage",
-  "packages/web/dist",
-  "packages/web/node_modules",
-  "packages/web/.vite",
-].map((s) => s.toLowerCase());
+  "build",
+  "coverage",
+  ".pytest_cache",
+  "artifacts",
+  ".vite",
+]);
 
-const decoder = new TextDecoder("utf-8", { fatal: false });
+// Prefix-Excludes (Pfad relativ zu --root, POSIX):
+// Für projekt-spezifische Laufzeitdaten/Helpers/Outputs, die nicht Bestandteil des Scans sein sollen.
+const EXCLUDE_PREFIXES = [
+  "tools/", // Self-flagging vermeiden (Regex enthält Mojibake-Literale)
+  "server/scripts/",
+  "server/data/",
+  "server/storage/",
+  "data/", // lokale Rescue-Backups / Runtime
+  "storage/",
 
-function toPosix(p) {
-  return p.split(path.sep).join("/");
+  // web-spezifisch (redundant zu globalen dir-names, aber explizit erlaubt)
+  "packages/web/node_modules/",
+  "packages/web/dist/",
+  "packages/web/.vite/",
+];
+
+function normalizePosixRel(posixRelPath) {
+  // ensure POSIX slashes + remove leading "./"
+  let p = posixRelPath.replace(/\\/g, "/");
+  if (p.startsWith("./")) p = p.slice(2);
+  return p;
 }
 
-function relPosix(rootAbs, abs) {
-  return toPosix(path.relative(rootAbs, abs)).replace(/^(\.\/)+/, "");
+function toPosixRelative(rootAbs, fileAbs) {
+  const rel = path.relative(rootAbs, fileAbs);
+  return rel.split(path.sep).join("/");
 }
 
-function parseExtList(s) {
-  return s
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean)
-    .map((x) => (x.startsWith(".") ? x.toLowerCase() : "." + x.toLowerCase()));
-}
+function isExcluded(posixRelPath) {
+  const p = normalizePosixRel(posixRelPath);
 
-function parseArgs(argv) {
-  const args = {
-    root: process.cwd(),
-    allowExt: new Set(DEFAULT_ALLOW_EXT),
-    excludeSegments: new Set(DEFAULT_EXCLUDE_SEGMENTS),
-    maxBytes: 2 * 1024 * 1024, // 2MB default safety
-    help: false,
-  };
+  // 1) Prefix-Excludes (project-specific)
+  if (EXCLUDE_PREFIXES.some((pref) => p === pref.slice(0, -1) || p.startsWith(pref))) return true;
 
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-
-    if (a === "-h" || a === "--help") {
-      args.help = true;
-      continue;
-    }
-
-    if (a === "--root") {
-      const v = argv[++i];
-      if (!v) throw new Error("Missing value for --root");
-      args.root = path.resolve(v);
-      continue;
-    }
-
-    if (a === "--exclude") {
-      const v = argv[++i];
-      if (!v) throw new Error("Missing value for --exclude");
-      args.excludeSegments.add(v.toLowerCase());
-      continue;
-    }
-
-    if (a === "--ext") {
-      const v = argv[++i];
-      if (!v) throw new Error("Missing value for --ext");
-      args.allowExt = new Set(parseExtList(v));
-      continue;
-    }
-
-    if (a === "--max-bytes") {
-      const v = argv[++i];
-      if (!v) throw new Error("Missing value for --max-bytes");
-      const n = Number(v);
-      if (!Number.isFinite(n) || n < 0) throw new Error("Invalid --max-bytes");
-      args.maxBytes = n;
-      continue;
-    }
-
-    throw new Error(`Unknown arg: ${a}`);
-  }
-
-  return args;
-}
-
-function printHelp() {
-  const msg = `
-Usage:
-  node tools/mojibake_scan.js [--root <path>] [--exclude <segment> ...] [--ext <list>] [--max-bytes <n>]
-
-Options:
-  --root <path>         Repo root (default: cwd)
-  --exclude <segment>   Exclude a path segment or prefix (repeatable)
-  --ext <list>          Allowed extensions, comma-separated (default: ${DEFAULT_ALLOW_EXT.join(",")})
-  --max-bytes <n>       Skip files larger than n bytes (default: 2097152)
-  -h, --help            Show help
-`.trim();
-  process.stdout.write(msg + "\n");
-}
-
-function shouldExclude(relPosixPath, excludeSegmentsSet) {
-  const relLower = relPosixPath.toLowerCase();
-
-  // segment-based check (safer than substring tricks)
-  const segs = relLower.split("/").filter(Boolean);
-
-  for (const ex of excludeSegmentsSet) {
-    const exLower = ex.toLowerCase();
-
-    // Allow both:
-    // 1) exact segment match (e.g. "node_modules")
-    // 2) prefix path match (e.g. "server/scripts")
-    if (exLower.includes("/")) {
-      if (relLower === exLower || relLower.startsWith(exLower + "/")) return true;
-      continue;
-    }
-
-    if (segs.includes(exLower)) return true;
+  // 2) Global dir-name excludes (any level)
+  const segs = p.split("/").filter(Boolean);
+  for (const s of segs) {
+    if (EXCLUDE_DIR_NAMES_GLOBAL.has(s)) return true;
   }
 
   return false;
 }
 
-function listFilesDeterministic(rootAbs, allowExt, excludeSegmentsSet, maxBytes) {
+function listFilesDeterministic(rootAbs) {
+  /** @type {string[]} */
   const out = [];
 
   function walk(dirAbs) {
-    let entries;
-    try {
-      entries = fs.readdirSync(dirAbs, { withFileTypes: true });
-    } catch {
-      return;
-    }
-
-    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    const entries = fs.readdirSync(dirAbs, { withFileTypes: true });
+    // deterministisch: lexikografisch sortieren
+    entries.sort((a, b) => a.name.localeCompare(b.name, "en"));
 
     for (const ent of entries) {
       const abs = path.join(dirAbs, ent.name);
-      const rel = relPosix(rootAbs, abs);
-      if (!rel || rel.startsWith("..")) continue;
+      const relPosix = toPosixRelative(rootAbs, abs);
 
-      if (shouldExclude(rel, excludeSegmentsSet)) continue;
-
-      // symlinks: skip to avoid loops
-      if (ent.isSymbolicLink()) continue;
+      if (isExcluded(relPosix)) continue;
 
       if (ent.isDirectory()) {
         walk(abs);
@@ -169,15 +119,7 @@ function listFilesDeterministic(rootAbs, allowExt, excludeSegmentsSet, maxBytes)
       if (!ent.isFile()) continue;
 
       const ext = path.extname(ent.name).toLowerCase();
-      if (!allowExt.has(ext)) continue;
-
-      // size guard
-      try {
-        const st = fs.statSync(abs);
-        if (maxBytes > 0 && st.size > maxBytes) continue;
-      } catch {
-        continue;
-      }
+      if (!ALLOWED_EXTS.has(ext)) continue;
 
       out.push(abs);
     }
@@ -185,89 +127,83 @@ function listFilesDeterministic(rootAbs, allowExt, excludeSegmentsSet, maxBytes)
 
   walk(rootAbs);
 
-  // final deterministic sort by relative path
+  // deterministisch: Pfade sortieren (über rel-posix, OS-unabhängig)
   out.sort((a, b) => {
-    const ra = relPosix(rootAbs, a);
-    const rb = relPosix(rootAbs, b);
-    return ra < rb ? -1 : ra > rb ? 1 : 0;
+    const ra = toPosixRelative(rootAbs, a);
+    const rb = toPosixRelative(rootAbs, b);
+    return ra.localeCompare(rb, "en");
   });
 
   return out;
 }
 
-function truncate(s, max) {
-  return s.length <= max ? s : s.slice(0, max - 1) + "…";
-}
-
-function sanitizeSnippet(line) {
-  return truncate(
-    line.replace(/\t/g, " ").replace(/\r?\n$/, ""),
-    200
-  );
-}
-
-function findAllMatches(line, regex) {
-  const matches = [];
-  regex.lastIndex = 0;
-  let m;
-  while ((m = regex.exec(line)) !== null) {
-    matches.push({ index: m.index, match: m[0] });
-    if (m.index === regex.lastIndex) regex.lastIndex++;
+function buildLineStarts(text) {
+  const starts = [0];
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) starts.push(i + 1); // "\n"
   }
-  return matches;
+  return starts;
 }
 
-function decodeUtf8Lossy(buf) {
-  // strips UTF-8 BOM if present
-  let s = decoder.decode(buf);
-  if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
-  return s;
-}
-
-function scanFile(rootAbs, fileAbs) {
-  const rel = relPosix(rootAbs, fileAbs);
-
-  let buf;
-  try {
-    buf = fs.readFileSync(fileAbs);
-  } catch {
-    return [];
+function findLineCol(lineStarts, index) {
+  // Binary search: größte start <= index
+  let lo = 0;
+  let hi = lineStarts.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const v = lineStarts[mid];
+    if (v <= index) lo = mid + 1;
+    else hi = mid - 1;
   }
+  const lineIdx = Math.max(0, hi);
+  const line = lineIdx + 1;
+  const col = index - lineStarts[lineIdx] + 1;
+  return { line, col };
+}
 
-  const content = decodeUtf8Lossy(buf);
+function makeSnippet(text, index, length) {
+  const before = 30;
+  const after = 30;
+  const start = Math.max(0, index - before);
+  const end = Math.min(text.length, index + length + after);
+  const raw = text.slice(start, end);
+  return raw.replace(/\r/g, "").replace(/\n/g, "\\n");
+}
 
-  // split robustly
-  const lines = content.split("\n");
+function scanText(posixPath, text) {
+  /** @type {{path:string,line:number,col:number,kind:string,match:string,snippet:string}[]} */
   const records = [];
+  const lineStarts = buildLineStarts(text);
 
-  // Mojibake patterns (common UTF-8->Latin1 artifacts)
-  const mojibakeRegex = /Ã[\u0080-\u00BF]|Â[\u0080-\u00BF]|â[\u0080-\u00BF]/g;
+  // 1) Replacement Char (U+FFFD)
+  REPLACEMENT_REGEX.lastIndex = 0;
+  for (let m = REPLACEMENT_REGEX.exec(text); m !== null; m = REPLACEMENT_REGEX.exec(text)) {
+    const idx = m.index;
+    const lc = findLineCol(lineStarts, idx);
+    records.push({
+      path: posixPath,
+      line: lc.line,
+      col: lc.col,
+      kind: "replacement_char",
+      match: REPLACEMENT_CHAR,
+      snippet: makeSnippet(text, idx, 1),
+    });
+  }
 
-  // Unicode replacement char
-  const replacementRegex = /\uFFFD/g;
-
-  for (let i = 0; i < lines.length; i++) {
-    const lineText = lines[i];
-
-    for (const mm of findAllMatches(lineText, replacementRegex)) {
+  // 2) Mojibake-Sequenzen
+  for (const det of MOJIBAKE_DETECTORS) {
+    det.regex.lastIndex = 0;
+    for (let m = det.regex.exec(text); m !== null; m = det.regex.exec(text)) {
+      const idx = m.index;
+      const match = String(m[0] ?? "");
+      const lc = findLineCol(lineStarts, idx);
       records.push({
-        path: rel,
-        line: i + 1,
-        col: mm.index + 1,
-        kind: "replacement_char",
-        match: "\uFFFD",
-        snippet: sanitizeSnippet(lineText),
-      });
-    }
-
-    for (const mm of findAllMatches(lineText, mojibakeRegex)) {
-      records.push({
-        path: rel,
-        line: i + 1,
-        col: mm.index + 1,
-        kind: "mojibake",
-        match: truncate(mm.match, 32),
-        snippet: sanitizeSnippet(lineText),
+        path: posixPath,
+        line: lc.line,
+        col: lc.col,
+        kind: det.kind,
+        match,
+        snippet: makeSnippet(text, idx, match.length),
       });
     }
   }
@@ -275,49 +211,102 @@ function scanFile(rootAbs, fileAbs) {
   return records;
 }
 
-function sortRecords(records) {
+function sortRecordsDeterministic(records) {
   records.sort((a, b) => {
-    if (a.path !== b.path) return a.path < b.path ? -1 : 1;
+    const p = a.path.localeCompare(b.path, "en");
+    if (p !== 0) return p;
     if (a.line !== b.line) return a.line - b.line;
     if (a.col !== b.col) return a.col - b.col;
-    if (a.kind !== b.kind) return a.kind < b.kind ? -1 : 1;
-    if (a.match !== b.match) return a.match < b.match ? -1 : 1;
-    return 0;
+    const k = a.kind.localeCompare(b.kind, "en");
+    if (k !== 0) return k;
+    return a.match.localeCompare(b.match, "en");
   });
-  return records;
+}
+
+function parseArgs(argv) {
+  /** @type {{root:string}} */
+  const opts = { root: "." };
+
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+
+    if (a === "--root") {
+      const v = argv[i + 1];
+      if (!v) throw new Error("Missing value for --root");
+      opts.root = v;
+      i++;
+      continue;
+    }
+
+    if (a === "-h" || a === "--help") {
+      printHelpAndExit(0);
+    }
+
+    throw new Error(`Unknown arg: ${a}`);
+  }
+
+  return opts;
+}
+
+function printHelpAndExit(code) {
+  const msg = [
+    "Usage:",
+    "  node tools/mojibake_scan.js --root <path>",
+    "",
+    "Exit codes:",
+    "  0 = no hits",
+    "  1 = hits found",
+    "  2 = tool error",
+    "",
+    "Output:",
+    "  JSONL to stdout: {path,line,col,kind,match,snippet}",
+  ].join("\n");
+  process.stdout.write(msg + "\n");
+  process.exit(code);
 }
 
 function main() {
-  try {
-    const args = parseArgs(process.argv);
+  const opts = parseArgs(process.argv);
 
-    if (args.help) {
-      printHelp();
-      process.exit(0);
-      return;
+  const rootAbs = path.resolve(process.cwd(), opts.root);
+  if (!fs.existsSync(rootAbs) || !fs.statSync(rootAbs).isDirectory()) {
+    throw new Error(`--root is not a directory: ${rootAbs}`);
+  }
+
+  const files = listFilesDeterministic(rootAbs);
+
+  /** @type {{path:string,line:number,col:number,kind:string,match:string,snippet:string}[]} */
+  const all = [];
+
+  for (const fileAbs of files) {
+    const relPosix = toPosixRelative(rootAbs, fileAbs);
+
+    let text;
+    try {
+      text = fs.readFileSync(fileAbs, "utf8");
+    } catch {
+      throw new Error(`Failed to read UTF-8: ${relPosix}`);
     }
 
-    const rootAbs = path.resolve(args.root);
+    const recs = scanText(relPosix, text);
+    for (const r of recs) all.push(r);
+  }
 
-    const files = listFilesDeterministic(
-      rootAbs,
-      args.allowExt,
-      args.excludeSegments,
-      args.maxBytes
-    );
+  sortRecordsDeterministic(all);
 
-    let all = [];
-    for (const f of files) all = all.concat(scanFile(rootAbs, f));
+  for (const r of all) {
+    process.stdout.write(JSON.stringify(r) + "\n");
+  }
 
-    sortRecords(all);
+  process.exitCode = all.length > 0 ? 1 : 0;
+}
 
-    for (const r of all) process.stdout.write(JSON.stringify(r) + "\n");
-
-    process.exit(all.length > 0 ? 1 : 0);
-  } catch (e) {
-    process.stderr.write(String(e && e.stack ? e.stack : e) + "\n");
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`ERROR: ${msg}\n`);
     process.exit(2);
   }
 }
-
-main();
