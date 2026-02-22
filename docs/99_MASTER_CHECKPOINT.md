@@ -18,28 +18,38 @@ Projekt:
 
 ---
 
-## WIP / Offene PRs / Branch-Stand (nicht main)
+## WIP / Offene PRs / Branch-Stand (Workspace)
 
 ### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
-- Status: **WIP – Evidence aktualisiert** (Branch: `fix/mojibake-determinism`, Commit: `ac07de1`)
+- Status: **Determinismus belegt (Hashes gleich + Diff leer); Repo-Scan Records 5/5/5 (EXIT 1/1/1); Fixture Records 5/5/5 (EXIT 1/1/1) - Workspace-Checkout**
 - Hinweis (Workspace): In diesem Checkout existiert kein lokaler Branch `main` (Basis war `work`); Evidence bezieht sich auf diesen Workspace-Stand.
 - Problemhistorie: Encoding-Gate war zeitweise nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
 - Fix-Strategie (P0):
   1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
   2) Report (SoT): `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
   3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
-- Evidence (lokal, 3x Repro-Lauf; 0 Treffer):
-  - Runs:
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_1.txt`
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_2.txt`
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_3.txt`
-  - Ergebnis: Exit Code **0**; Outputs **0 Bytes** (keine Treffer => keine JSONL-Records/keine Ausgabe)
-  - Hashes (SHA256):
-    - `artifacts/mojibake_scan_1.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-    - `artifacts/mojibake_scan_2.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-    - `artifacts/mojibake_scan_3.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-  - Compare: `diff -u` zwischen 1↔2 und 2↔3 leer
-  - Hinweis zur Beweiskraft: Bei **0 Treffern** ist die Ausgabe leer (Hash identisch). Determinismus bei **>0 Treffern** ist über Sortierung der File-Liste + Record-Sort im Scanner abgesichert; zusätzlich sollte Evidence im SoT-Format (`artifacts/mojibake_report.jsonl`) erzeugt werden, sobald Treffer >0 auftreten.
+- Evidence (lokal, SoT-konform, 3x Repro-Lauf) - Repo-Scan (--root .):
+  - Run1: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_1.jsonl (EXIT1:1)
+  - Run2: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_2.jsonl (EXIT2:1)
+  - Run3: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_3.jsonl (EXIT3:1)
+  - SHA256: report_1=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
+           report_2=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
+           report_3=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
+  - Records: 5/5/5
+  - Compare (no-index): 1<->2: leer; 2<->3: leer
+  - Ergebnis: Records siehe oben (EXIT=1 bedeutet: Treffer gefunden)
+- Zusatz-Evidence (nicht-leer, deterministische Ausgabe) - Fixture-Scan (--root tools/_mojibake_fixture_local):
+  - Fixture-Datei (lokal, nicht versioniert): tools/_mojibake_fixture_local/sample.md (enthaelt typische Mojibake-Patterns)
+  - RunF1: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_1.jsonl (EXITF1:1)
+  - RunF2: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_2.jsonl (EXITF2:1)
+  - RunF3: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_3.jsonl (EXITF3:1)
+  - SHA256: fixture_1=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
+           fixture_2=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
+           fixture_3=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
+  - Records: 5/5/5
+  - Compare (no-index): 1<->2: leer; 2<->3: leer
+- Artefakt-Hinweis:
+  - artifacts/* und tools/_mojibake_fixture_local/* sind lokale Evidence-Dateien und werden nicht versioniert/committed.
 - Umgebungslimitierung: `pwsh` ist hier nicht verfügbar → `tools/test_all.ps1` in diesem Workspace nicht ausführbar; Pflicht ist Lauf lokal/CI.
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
