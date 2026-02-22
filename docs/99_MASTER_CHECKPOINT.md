@@ -1,4 +1,3 @@
-﻿# docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-22** (Europe/Berlin)
