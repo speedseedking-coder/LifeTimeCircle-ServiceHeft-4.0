@@ -1,6 +1,7 @@
+﻿# docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-21** (Europe/Berlin)
+Stand: **2026-02-22** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -21,16 +22,26 @@ Projekt:
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
 ### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
-- Status: **WIP** (Branch: `fix/encoding-gitattributes`)
-- Problem: Encoding-Gate war nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
+- Status: **WIP – Evidence aktualisiert** (Branch: `fix/mojibake-determinism`, Commit: `ac07de1`)
+- Hinweis (Workspace): In diesem Checkout existiert kein lokaler Branch `main` (Basis war `work`); Evidence bezieht sich auf diesen Workspace-Stand.
+- Problemhistorie: Encoding-Gate war zeitweise nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
 - Fix-Strategie (P0):
   1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
-  2) Report: `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
+  2) Report (SoT): `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
   3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
-- Evidence (lokal):
-  - Run: `node tools/mojibake_scan.js --root . > artifacts/mojibake_report.jsonl`
-  - Treffer: **14**
-  - Beispiele: `tools/mojibake_scan.js` (Tooling mit Mojibake + ` `), `server/app/admin/routes.py` (Kommentar-Mojibake)
+- Evidence (lokal, 3x Repro-Lauf; 0 Treffer):
+  - Runs:
+    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_1.txt`
+    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_2.txt`
+    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_3.txt`
+  - Ergebnis: Exit Code **0**; Outputs **0 Bytes** (keine Treffer => keine JSONL-Records/keine Ausgabe)
+  - Hashes (SHA256):
+    - `artifacts/mojibake_scan_1.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+    - `artifacts/mojibake_scan_2.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+    - `artifacts/mojibake_scan_3.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+  - Compare: `diff -u` zwischen 1↔2 und 2↔3 leer
+  - Hinweis zur Beweiskraft: Bei **0 Treffern** ist die Ausgabe leer (Hash identisch). Determinismus bei **>0 Treffern** ist über Sortierung der File-Liste + Record-Sort im Scanner abgesichert; zusätzlich sollte Evidence im SoT-Format (`artifacts/mojibake_report.jsonl`) erzeugt werden, sobald Treffer >0 auftreten.
+- Umgebungslimitierung: `pwsh` ist hier nicht verfügbar → `tools/test_all.ps1` in diesem Workspace nicht ausführbar; Pflicht ist Lauf lokal/CI.
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
 ### ✅ GEMERGED: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
@@ -56,7 +67,6 @@ Projekt:
 
 ## Aktueller Stand (main)
 
-
 - Neu (Phase 1 Ops/Security SoT): **Production Baseline + Threat Model v1 + SLO/Error Budget**
   - docs/07_PRODUCTION_BASELINE.md
   - docs/08_THREAT_MODEL_V1.md
@@ -76,7 +86,7 @@ Projekt:
 
 ✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
 - Fix: `server/app/rbac.py` Kommentar-Encoding repariert (mojibake: `ü`, `ä`)
-- Gate wieder gruen: `tools/test_all.ps1` → **ALL GREEN**
+- Gate wieder grün: `tools/test_all.ps1` → **ALL GREEN**
 - CI Checks: **2 checks passed**
 
 ✅ PR #170 **gemerged**: `feat(security): add no-PII security telemetry (audit events + redaction + request id)`
@@ -96,7 +106,7 @@ Projekt:
   - Request-ID erlaubt zur technischen Korrelation
 - Tests:
   - `server/tests/test_security_telemetry.py`
-  - `pytest` gruen
+  - `pytest` grün
 - Lokal verifiziert:
   - `tools/test_all.ps1` → **ALL GREEN**
 
@@ -194,3 +204,4 @@ Projekt:
 - Run:
   - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_guard_mojibake.ps1`
 - Eingeführt via: PR **#177** (Merge-Commit: `eb21f53`)
+
