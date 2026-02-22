@@ -44,7 +44,7 @@ Stand: **2026-02-06** (Europe/Berlin)
 ## 3) Enforcement (Tests)
 - Runtime-Scan (Moderator):
   - iteriert über alle registrierten Routes
-  - Allowlist (ohne 403): `/auth/*`, `/health`, `/public/*`, `/blog/*`, `/news/*`
+  - Allowlist (ohne 403): `/auth/*`, `/health`, `/blog/*`, `/news/*`
   - außerhalb der Allowlist muss `moderator` 403 bekommen
 
 ---
@@ -54,8 +54,7 @@ Stand: **2026-02-06** (Europe/Berlin)
 ### 4.1 Public Site / Public QR Mini-Check
 | Route-Group | superadmin | admin | dealer | vip | user | moderator | public |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `/public/*` (Site/QR) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-
+| `/public/*` (Site/QR) | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (403) | ✅ |
 Public Daten-Regeln (bindend):
 - datenarm: Klasse, Marke/Modell, Baujahr, Motor/Antrieb grob
 - VIN maskiert: erste 3 + letzte 4
