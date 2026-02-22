@@ -1,6 +1,6 @@
-# LifeTimeCircle – Service Heft 4.0
+﻿# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-22** (Europe/Berlin)
+Stand: **2026-02-21** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -18,83 +18,49 @@ Projekt:
 
 ---
 
-## WIP / Offene PRs / Branch-Stand (Workspace)
+## WIP / Offene PRs / Branch-Stand (nicht main)
 
 ### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
-- Status: **Determinismus belegt (Hashes gleich + Diff leer); Repo-Scan Records 5/5/5 (EXIT 1/1/1); Fixture Records 5/5/5 (EXIT 1/1/1) - Workspace-Checkout**
-- Hinweis (Workspace): In diesem Checkout existiert kein lokaler Branch `main` (Basis war `work`); Evidence bezieht sich auf diesen Workspace-Stand.
-- Problemhistorie: Encoding-Gate war zeitweise nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
+- Status: **WIP** (Branch: `fix/encoding-gitattributes`)
+- Problem: Encoding-Gate war nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
 - Fix-Strategie (P0):
   1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
-  2) Report (SoT): `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
+  2) Report: `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
   3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
-- Evidence (lokal, SoT-konform, 3x Repro-Lauf) - Repo-Scan (--root .):
-  - Run1: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_1.jsonl (EXIT1:1)
-  - Run2: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_2.jsonl (EXIT2:1)
-  - Run3: node tools/mojibake_scan.js --root . > artifacts/mojibake_report_3.jsonl (EXIT3:1)
-  - SHA256: report_1=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
-           report_2=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
-           report_3=86176d36a4acedc965cbb8a0d29083b8dfc3ba2f41ffb606431b3de4b184a531
-  - Records: 5/5/5
-  - Compare (no-index): 1<->2: leer; 2<->3: leer
-  - Ergebnis: Records siehe oben (EXIT=1 bedeutet: Treffer gefunden)
-- Zusatz-Evidence (nicht-leer, deterministische Ausgabe) - Fixture-Scan (--root tools/_mojibake_fixture_local):
-  - Fixture-Datei (lokal, nicht versioniert): tools/_mojibake_fixture_local/sample.md (enthaelt typische Mojibake-Patterns)
-  - RunF1: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_1.jsonl (EXITF1:1)
-  - RunF2: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_2.jsonl (EXITF2:1)
-  - RunF3: node tools/mojibake_scan.js --root tools/_mojibake_fixture_local > artifacts/mojibake_fixture_3.jsonl (EXITF3:1)
-  - SHA256: fixture_1=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
-           fixture_2=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
-           fixture_3=e30b1cf6191b6e053643804b6166b794116ece9658d6a8f847bdffaa90e2f6cd
-  - Records: 5/5/5
-  - Compare (no-index): 1<->2: leer; 2<->3: leer
-- Artefakt-Hinweis:
-  - artifacts/* und tools/_mojibake_fixture_local/* sind lokale Evidence-Dateien und werden nicht versioniert/committed.
-- Umgebungslimitierung: `pwsh` ist hier nicht verfügbar → `tools/test_all.ps1` in diesem Workspace nicht ausführbar; Pflicht ist Lauf lokal/CI.
+- Evidence (lokal):
+  - Run: `node tools/mojibake_scan.js --root . > artifacts/mojibake_report.jsonl`
+  - Treffer: **14**
+  - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + Replacement-Char (U+FFFD)), `server/app/admin/routes.py` (Kommentar-Mojibake)
 - Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
 
-### ✅ GEMERGED: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
-- Status: **gemerged in `main`** (PR #167, Commit: `28ec3a6`)
+### WIP: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
+- Status: **WIP/PR in Arbeit** (Branch: `fix/vehicles-consent-gates`)
 - Ziel/Policy:
   - **deny-by-default + least privilege**
   - **Moderator strikt nur Blog/News** (sonst überall **403**)
   - Vehicles endpoints sind **consent-gated** (403 `consent_required`)
 - Scope (Backend):
   - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
-  - Consent-Gate zentral auf `/vehicles/*` via Router-Dependency (`Depends(_require_consent_dep)`)
-  - Fehlersemantik stabil: HTTP **403** + `detail.code == "consent_required"`
+  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 `consent_required`)
+  - Behavior erhalten: Consent Required wird als 403 mit Code `consent_required` signalisiert
 - Docs (SoT-Konsistenz):
   - `docs/03_RIGHTS_MATRIX.md` angepasst:
-    - Moderator-Allowlist ohne `/public/*`
+    - Allowlist: `/public/*` entfernt
     - Route `/public/* (Site/QR)`: Moderator **❌ (403)**
-- Evidence (lokal, verifiziert auf `main`):
-  - `cd server && poetry run pytest -q tests/test_rbac_fail_closed_regression_pack.py` → **grün**
-  - `cd server && poetry run pytest -q tests/test_rbac_guard_coverage.py tests/test_rbac_moderator_blog_only.py tests/test_moderator_block_coverage_runtime.py` → **grün**
-  - `cd server && poetry run pytest -q` → **[100%]**
+- Evidence (lokal, Branch `fix/vehicles-consent-gates`):
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1` → **DONE**
+  - Mojibake-Scan: **grün**
+  - `poetry run pytest -q` → **[100%]**
+  - `npm ci` + `npm run build` → **grün**
 
 ---
 
 ## Aktueller Stand (main)
 
-- Neu (Phase 1 Ops/Security SoT): **Production Baseline + Threat Model v1 + SLO/Error Budget**
-  - docs/07_PRODUCTION_BASELINE.md
-  - docs/08_THREAT_MODEL_V1.md
-  - docs/09_SLO_ERROR_BUDGET.md
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
-✅ PR #173 **gemerged**: `test(security): lock RBAC semantics + CI pwsh + paste-guard SoT`
-- Commit auf `main`: `3614741`
-- CI: `pwsh` wird auf Ubuntu-Runnern sichergestellt; `tools/test_all.ps1` läuft deterministisch.
-- Neu: `docs/07_POWERSHELL_PASTE_GUARD.md` (SoT) + `server/scripts/install_paste_guard_profile.ps1` (idempotent).
-- Neu: `server/tests/test_rbac_fail_closed_regression_pack.py` (P0) sichert:
-  - Moderator fail-closed: `/public/site`, `/public/qr/{token}`, repräsentativ `/vehicles/*` -> **403**
-  - Unauthenticated: **401** auf geschützten Routen
-  - Consent-Gate auf `/vehicles/*`: **403** + `detail.code == "consent_required"`
-- Lokal verifiziert:
-  - `cd server && poetry run pytest -q` → **[100%]**
-
 ✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
-- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (mojibake: `ü`, `ä`)
+- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (Beispiel-Codepoints: U+00C3 U+00BC, U+00C3 U+00A4)
 - Gate wieder grün: `tools/test_all.ps1` → **ALL GREEN**
 - CI Checks: **2 checks passed**
 
@@ -196,21 +162,10 @@ Projekt:
 ✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
 - `server/scripts/ltc_web_toolkit.ps1` enthält:
   - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
-- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent, UTF-8 no BOM)
 
 ✅ PR #59: `docs: master checkpoint add PR #58`
 - Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM)
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-
-## Tooling Guard: Mojibake + node_modules__old_ (P0)
-
-- Script: `server/scripts/ltc_guard_mojibake.ps1`
-- Zweck:
-  - blockt `node_modules__old_*` Snapshots (dürfen nicht ins Repo)
-  - erzwingt Mojibake-Scan: **0 Treffer** (SoT: `tools/mojibake_scan.js`)
-- Run:
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_guard_mojibake.ps1`
-- Eingeführt via: PR **#177** (Merge-Commit: `eb21f53`)
-
