@@ -1,4 +1,4 @@
-// packages/web/src/App.tsx
+﻿// packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 
