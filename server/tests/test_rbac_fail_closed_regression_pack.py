@@ -186,7 +186,7 @@ def test_authenticated_without_consent_gets_403_consent_required_on_vehicles(mon
     """
     Contract:
     - Authenticated user ohne Consent bekommt auf /vehicles/*:
-      403 + detail.code == "consent_required"
+      403 + detail == "consent_required"
     """
     app = _make_app()
     actor = SimpleNamespace(uid="test_user", user_id="test_user", role="user", roles=["user"])
@@ -195,7 +195,7 @@ def test_authenticated_without_consent_gets_403_consent_required_on_vehicles(mon
     import app.routers.vehicles as vehicles_mod  # type: ignore
 
     def _deny_due_to_missing_consent(*args, **kwargs):
-        raise HTTPException(status_code=403, detail={"code": "consent_required"})
+        raise HTTPException(status_code=403, detail="consent_required")
 
     monkeypatch.setattr(vehicles_mod, "require_consent", _deny_due_to_missing_consent, raising=True)
 
@@ -215,11 +215,9 @@ def test_authenticated_without_consent_gets_403_consent_required_on_vehicles(mon
         if not (res.headers.get("content-type", "").startswith("application/json")):
             failures.append(f"- {method} {path} -> 403 but non-JSON response")
             continue
-
-        payload = res.json()
-        detail = payload.get("detail") if isinstance(payload, dict) else None
-        if not isinstance(detail, dict) or detail.get("code") != "consent_required":
-            failures.append(f"- {method} {path} -> 403 but detail.code != consent_required: {payload}")
-
+            payload = res.json()
+            detail = payload.get("detail") if isinstance(payload, dict) else None
+            if detail != "consent_required":
+                failures.append(f"- {method} {path} -> 403 but detail != consent_required: {payload}")
     if failures:
         raise AssertionError("Consent-Gate Contract verletzt:\n" + "\n".join(failures))

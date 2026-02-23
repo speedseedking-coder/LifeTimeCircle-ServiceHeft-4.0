@@ -80,7 +80,7 @@ def test_consent_required_not_swallowed(mem_db, monkeypatch):
     app, vehicles_mod = _wire_app(mem_db, actor, monkeypatch=monkeypatch, bypass_consent=False)
 
     def _raise_consent(*args, **kwargs):
-        raise HTTPException(status_code=403, detail={"code": "consent_required"})
+        raise HTTPException(status_code=403, detail="consent_required")
 
     monkeypatch.setattr(vehicles_mod, "require_consent", _raise_consent, raising=True)
 
@@ -88,9 +88,7 @@ def test_consent_required_not_swallowed(mem_db, monkeypatch):
     r = client.get("/vehicles")
     assert r.status_code == 403
     detail = r.json().get("detail")
-    assert isinstance(detail, dict)
-    assert detail.get("code") == "consent_required"
-
+    assert detail == "consent_required"
 
 def test_vin_masking(mem_db, monkeypatch):
     from app.models.vehicle import Vehicle  # type: ignore
