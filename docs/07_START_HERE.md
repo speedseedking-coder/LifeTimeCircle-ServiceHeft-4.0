@@ -37,7 +37,7 @@ URLs:
 - Web: http://127.0.0.1:5173
 
 ## 3) IST-Zustandsprüfung (bei jedem Kontextwechsel)
-Wenn vorhanden: 	ools/ist_check.ps1
+Wenn vorhanden: 	ttools/ist_check.ps1
 - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1
 
 ## 4) Quality Gate (immer vor PR)
@@ -49,7 +49,8 @@ Optional Web Build Smoke (Repo-Root):
 
 ## 5) „Definition of Done“ (Security)
 - deny-by-default eingehalten
-- Moderator überall 403 außer Blog/News/Public
+- Moderator überall 403 außer /auth/*, /blog/*, /news/*
 - object-level checks auf allen Vehicle/Dokument/Trust Ressourcen
 - keine PII/Secrets in Logs/Responses/Exports
 - Public-QR Pflichttext exakt und unverändert
+

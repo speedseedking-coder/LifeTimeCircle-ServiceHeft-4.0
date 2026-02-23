@@ -1,4 +1,4 @@
-﻿\# docs/07\_MVP\_DONE.md
+\# docs/07\_MVP\_DONE.md
 
 \# LifeTimeCircle – Service Heft 4.0
 
@@ -20,8 +20,7 @@ Wir sind „durch“ (= MVP releasefähig), wenn ALLE Punkte erfüllt sind:
 
 \- RBAC: deny-by-default + least privilege ist serverseitig enforced
 
-\- Moderator: außerhalb Allowlist immer 403 (`/auth/\*`, `/health`, `/public/\*`, `/blog/\*`, `/news/\*`)
-
+\- Moderator: außerhalb Allowlist immer 403 (`/auth/\*`, `/blog/\*`, `/news/\*`; auf `/health` und `/public/\*` ebenfalls 403)
 \- Documents: Quarantine-by-default; Approve nur nach Scan=CLEAN; Downloads für non-admin nur APPROVED+scope
 
 \- OpenAPI: keine Duplicate operationId / keine Duplicate routes
