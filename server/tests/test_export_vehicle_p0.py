@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import secrets
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterator
 
 import pytest
@@ -76,7 +76,7 @@ def _insert_vehicle_for_owner(client, owner_uid: str) -> str:
             values["vin_last4"] = "1234"
 
         # created_at/updated_at nur wenn zwingend (datetime-Objekte!)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if "created_at" in tbl.c:
             col = tbl.c.created_at
             if (not getattr(col, "nullable", True)) and col.default is None and col.server_default is None:
