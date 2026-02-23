@@ -44,7 +44,7 @@ Stand: **2026-02-06** (Europe/Berlin)
 ## 3) Enforcement (Tests)
 - Runtime-Scan (Moderator):
   - iteriert über alle registrierten Routes
-  - Allowlist (ohne 403): `/auth/*`, `/health`, `/blog/*`, `/news/*`
+  - Allowlist (ohne 403): `/auth/*`, `/blog/*`, `/news/*`
   - außerhalb der Allowlist muss `moderator` 403 bekommen
 
 ---

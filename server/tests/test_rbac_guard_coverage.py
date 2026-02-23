@@ -60,13 +60,9 @@ def _is_public_path(path: str) -> bool:
 def _is_moderator_allowed_path(path: str) -> bool:
     """
     MODERATOR-Allowlist (SoT):
-    /auth/*, /health, /public/*, /blog/*, /news/*
+    /auth/*, /blog/*, /news/*
     """
-    if path == "/health" or path.startswith("/health/"):
-        return True
     if path == "/auth" or path.startswith("/auth/"):
-        return True
-    if path == "/public" or path.startswith("/public/"):
         return True
     if path == "/blog" or path.startswith("/blog/"):
         return True
