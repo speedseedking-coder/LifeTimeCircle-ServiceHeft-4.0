@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import base64
 import hashlib
@@ -150,7 +150,7 @@ def _fetch_servicebook_rows(db: Session, servicebook_id: str) -> Tuple[List[Dict
 
 def _enforce_redacted_access(actor: Any, rows: List[Dict[str, Any]]) -> None:
     role = _role_of(actor)
-    if role == "superadmin":
+    if role in {"admin", "superadmin"}:
         return
 
     if role not in {"user", "vip", "dealer"}:
@@ -166,8 +166,8 @@ def _enforce_redacted_access(actor: Any, rows: List[Dict[str, Any]]) -> None:
             val = row.get(key)
             if val and str(val) == uid:
                 return
-    raise HTTPException(status_code=403, detail="forbidden")
 
+    raise HTTPException(status_code=403, detail="forbidden")
 
 def _read_expires_at(val: Any) -> Optional[datetime]:
     if val is None:
