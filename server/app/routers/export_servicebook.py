@@ -17,9 +17,8 @@ from sqlalchemy.orm import Session
 
 from app.routers.export_vehicle import get_actor, get_db
 
-router = APIRouter(prefix="/export/servicebook", tags=["export"])
-
-
+from app.guards import forbid_moderator
+router = APIRouter(prefix="/export/servicebook", tags=["export"], dependencies=[Depends(forbid_moderator)])
 def _role_of(actor: Any) -> str:
     if actor is None:
         return ""

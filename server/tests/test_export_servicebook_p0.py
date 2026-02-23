@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Iterator
 
-from sqlalchemy import MetaData, Table, insert, select, text, update
+from sqlalchemy import DateTime as SA_DateTime, MetaData, Table, insert, select, text, update
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -84,8 +84,9 @@ def _insert_servicebook_for_owner(client, owner_uid: str) -> str:
             "notes": "top-secret",
         }
         if "created_at" in tbl.c:
-            values["created_at"] = datetime.now(timezone.utc).isoformat()
-
+            col = tbl.c.created_at
+            now = datetime.now(timezone.utc)
+            values["created_at"] = now if isinstance(getattr(col, "type", None), SA_DateTime) else now.isoformat()
         cols = {c.name for c in tbl.columns}
         values = {k: v for k, v in values.items() if k in cols}
         db.execute(insert(tbl).values(**values))
