@@ -101,6 +101,8 @@ Hinweis:
 ## 7) Vehicles / Flotten / Sammlungen
 
 ### 7.1 Vehicles (Owner-Objekte, object-level)
+**Consent-Gate (Web-Contract):** Ohne Consent ⇒ `403` mit `detail="consent_required"` (Redirect auf `#/consent`).
+Gilt für `/vehicles/*` inkl. Unterrouten.
 | Route-Group | superadmin | admin | dealer | vip | user | moderator |
 |---|---:|---:|---:|---:|---:|---:|
 | `/vehicles/*` | ✅ | ✅ | ✅ (eigene Business/Flotte) | ✅ (eigene) | ✅ (eigene) | ❌ 403 |
