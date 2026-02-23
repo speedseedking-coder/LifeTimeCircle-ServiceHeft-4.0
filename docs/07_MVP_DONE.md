@@ -1,4 +1,4 @@
-\# docs/07\_MVP\_DONE.md
+﻿\# docs/07\_MVP\_DONE.md
 
 \# LifeTimeCircle – Service Heft 4.0
 
@@ -57,4 +57,6 @@ Sofort sichtbar, sobald `GET /public/site` existiert (statische Landingpage übe
 
 
 Kurz: Landingpage = jetzt über Backend möglich. App-UI = nächster großer Block (Frontend).
+
+
 
