@@ -166,32 +166,33 @@ def _link_col_for_servicebook_id(t: Table) -> Tuple[str, str]:
 
 def _ensure_id_if_needed(values: Dict[str, Any], t: Table) -> None:
     """
-    Integer PK: nicht anfassen.
-    String PK ohne Default und not-null: UUID setzen.
+    Cross-DB safe:
+      - Integer PK: nicht anfassen (AUTOINCREMENT/Sequence)
+      - Sonst: wenn kein DB-Default vorhanden und kein id-Wert geliefert wurde -> UUID setzen
+
+    Rationale:
+    SQLite Reflection kann nullable für TEXT/UUID-PKs inkonsistent liefern (Win/Linux),
+    Tests erwarten aber immer eine Case/Entry ID.
     """
-    if "id" not in t.c:
-        return
-    if "id" in values:
+    if "id" not in t.c or "id" in values:
         return
 
     col = t.c["id"]
 
-    # integer-ish => DB macht das
+    # integer-ish => DB generiert (AUTOINCREMENT)
     try:
         if isinstance(col.type, (SAInteger, SABigInteger, Integer, BigInteger)):
             return
     except Exception:
         pass
 
-    if getattr(col, "nullable", True) is True:
-        return
+    # Wenn DB selbst eine Default-Generierung hat: nichts tun
     if getattr(col, "server_default", None) is not None:
         return
     if getattr(col, "default", None) is not None:
         return
 
     values["id"] = str(uuid.uuid4())
-
 
 def _json_dump(v: Any) -> str:
     return json.dumps(v, ensure_ascii=False, separators=(",", ":"))
