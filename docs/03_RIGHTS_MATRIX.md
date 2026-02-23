@@ -283,3 +283,13 @@ Zusatzregel „Trust-Evidence“:
 
 PII-Sichtbarkeit:
 - pii_status != OK => nur Owner/Admin sichtbar.
+
+
+## Export / PDFs
+
+| Endpoint | guest | vip | dealer | moderator | admin | superadmin |
+|-----------|--------|-----|--------|------------|--------|-------------|
+| POST /export/vehicle/{vehicle_id}/grant | ❌ | Owner | Owner | ❌ | ✅ | ✅ |
+| GET /export/vehicle/{vehicle_id}/full | ❌ | Owner* | Owner* | ❌ | ✅ | ✅ |
+
+\* GET /export/vehicle/{vehicle_id}/full requires Header X-Export-Token; Token ist **one-time** (used=true) und **TTL**-gebunden (expires_at).

@@ -1,4 +1,4 @@
-﻿# LifeTimeCircle - Service Heft 4.0
+# LifeTimeCircle - Service Heft 4.0
 **Entscheidungen / SoT (Decisions Log)**  
 Stand: **2026-02-21**
 
@@ -300,3 +300,14 @@ Gleichzeitig darf Telemetrie niemals personenbezogene Daten (PII) enthalten.
 - Redaction ist verpflichtend (`server/app/security/redaction.py`).
 - Mapping von Status -> Event erfolgt zentral (`map_status_to_event`).
 - Telemetrie unterliegt **deny-by-default**: neue Felder sind nur erlaubt, wenn sie explizit als no-PII geprueft sind.
+---
+
+## D-034: Export Vehicle Full ist encrypted + one-time grant token (TTL, persistent)
+**Status:** beschlossen  
+**Warum:** Full-Exports enthalten sensitive Daten (z. B. VIN). Zugriff muss zeitlich begrenzt, teilbar-minimiert und widerrufbar/verbrauchbar sein.  
+**Konsequenz:**  
+- GET /export/vehicle/{id} liefert ausschließlich **redacted** Daten (kein VIN/owner_email), aber in_hmac als stabilen Proof.  
+- Full-Export nur via GET /export/vehicle/{id}/full mit Header X-Export-Token.  
+- Token wird serverseitig persistiert (export_grants_vehicle: id PK, export_token unique, ehicle_id, expires_at, used, created_at).  
+- **TTL enforced** (expires_at) + **one-time** (used=true atomar per id).  
+- Payload ist **encrypted at rest/transport** (AES/Fernet o. ä. mit LTC_SECRET_KEY), Logs/Telemetry bleiben strikt **no-PII**.

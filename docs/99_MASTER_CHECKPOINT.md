@@ -1,6 +1,6 @@
-﻿# LifeTimeCircle – Service Heft 4.0
+# LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-21** (Europe/Berlin)
+Stand: **2026-02-23** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -58,6 +58,19 @@ Projekt:
 ## Aktueller Stand (main)
 
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+
+✅ PR #189 gemerged: chore(tests): replace deprecated datetime.utcnow with timezone-aware now
+- Commit auf main: ee02b8e
+- Fix: entfernt DeprecationWarning (utcnow) im Export-P0 Test
+
+✅ PR #188 gemerged: ix(export): vehicle P0 export shape + persistent grants table (id PK) + one-time token
+- Commit auf main: db023ec
+- Server: server/app/routers/export_vehicle.py (RBAC + Redaction + Grants persistence + Encryption)
+- Tests: server/tests/test_export_vehicle_p0.py
+- Behavior:
+  - GET /export/vehicle/{id} → { "data": ... } inkl. data["_redacted"]=true, in_hmac, **kein** VIN/owner_email Leak
+  - POST /export/vehicle/{id}/grant → persistente DB-Tabelle export_grants_vehicle (id PK, export_token unique, expires_at, used, created_at)
+  - GET /export/vehicle/{id}/full → Header X-Export-Token (400 wenn fehlt), **one-time** + **TTL**, decrypted payload enthält payload["vehicle"]["vin"] (+ data.vehicle für P0-Kompat)
 
 ✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
 - Fix: `server/app/rbac.py` Kommentar-Encoding repariert (Beispiel-Codepoints: U+00C3 U+00BC, U+00C3 U+00A4)

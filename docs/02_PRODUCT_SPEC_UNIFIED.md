@@ -440,3 +440,18 @@ Admin-Schalter pro Add-on:
 - Neu-Aktivierung erlaubt: ja/nein
 - Neu-Aktivierung kostenpflichtig: ja/nein
 - optional: Neu-Aktivierung nur durch Admin
+---
+
+## Export – Vehicle P0 (redacted + grant + full encrypted)
+
+Ziel: Datenabfluss minimieren, aber Proof/Verifizierung ermöglichen.
+
+- GET /export/vehicle/{id} liefert **redacted**: data._redacted=true, in_hmac vorhanden, **kein** VIN/owner_email im Response.
+- POST /export/vehicle/{id}/grant erzeugt einen **zeitlich begrenzten** Export-Token (persistiert, unique).
+- GET /export/vehicle/{id}/full liefert nur mit Header X-Export-Token:
+  - 400 wenn Header fehlt
+  - TTL enforced (expires_at)
+  - One-time enforced (used=true)
+  - decrypted payload enthält payload.vehicle.vin (+ data.vehicle für P0-Kompat)
+
+Security: RBAC serverseitig + Object-Level Owner/Admin, Moderator überall 403, no-PII Logs/Telemetry.
