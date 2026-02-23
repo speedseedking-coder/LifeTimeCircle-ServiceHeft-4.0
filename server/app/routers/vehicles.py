@@ -68,7 +68,7 @@ def require_consent(db: Session, actor: Any) -> None:
     except Exception:
         pass
 
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={"code": "consent_required"})
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="consent_required")
 
 
 class VehicleCreateIn(BaseModel):

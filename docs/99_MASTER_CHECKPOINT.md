@@ -38,10 +38,10 @@ Projekt:
 - Ziel/Policy:
   - **deny-by-default + least privilege**
   - **Moderator strikt nur Blog/News** (sonst überall **403**)
-  - Vehicles endpoints sind **consent-gated** (403 `consent_required`)
+  - Vehicles endpoints sind **consent-gated** (403 detail="consent_required")
 - Scope (Backend):
   - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
-  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 `consent_required`)
+  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 detail="consent_required")
   - Behavior erhalten: Consent Required wird als 403 mit Code `consent_required` signalisiert
 - Docs (SoT-Konsistenz):
   - `docs/03_RIGHTS_MATRIX.md` angepasst:
