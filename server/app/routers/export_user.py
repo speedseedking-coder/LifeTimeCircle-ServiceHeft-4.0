@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import base64
 import hashlib
@@ -142,13 +142,14 @@ def _fetch_user_row(db: Session, user_id: str) -> Tuple[Dict[str, Any], Table]:
 
 def _enforce_redacted_access(actor: Any, target_user_id: str) -> None:
     role = _role_of(actor)
-    if role == "superadmin":
+    if role in {"admin", "superadmin"}:
         return
+
     if role not in {"user", "vip", "dealer"}:
         raise HTTPException(status_code=403, detail="forbidden")
+
     if _user_id_of(actor) != str(target_user_id):
         raise HTTPException(status_code=403, detail="forbidden")
-
 
 def _read_expires_at(val: Any) -> Optional[datetime]:
     if val is None:
