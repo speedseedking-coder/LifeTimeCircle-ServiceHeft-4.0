@@ -57,6 +57,8 @@ Projekt:
 
 ## Aktueller Stand (main)
 
+✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
+
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
 ✅ PR #189 gemerged: chore(tests): replace deprecated datetime.utcnow with timezone-aware now
