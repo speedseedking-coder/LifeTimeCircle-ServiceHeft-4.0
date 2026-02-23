@@ -446,7 +446,7 @@ Admin-Schalter pro Add-on:
 
 Ziel: Datenabfluss minimieren, aber Proof/Verifizierung ermöglichen.
 
-- GET /export/vehicle/{id} liefert **redacted**: data._redacted=true, in_hmac vorhanden, **kein** VIN/owner_email im Response.
+- GET /export/vehicle/{id} liefert **redacted**: data._redacted=true, vin_hmac vorhanden, **kein** VIN/owner_email im Response.
 - POST /export/vehicle/{id}/grant erzeugt einen **zeitlich begrenzten** Export-Token (persistiert, unique).
 - GET /export/vehicle/{id}/full liefert nur mit Header X-Export-Token:
   - 400 wenn Header fehlt

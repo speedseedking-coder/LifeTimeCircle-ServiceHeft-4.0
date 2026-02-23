@@ -306,8 +306,8 @@ Gleichzeitig darf Telemetrie niemals personenbezogene Daten (PII) enthalten.
 **Status:** beschlossen  
 **Warum:** Full-Exports enthalten sensitive Daten (z. B. VIN). Zugriff muss zeitlich begrenzt, teilbar-minimiert und widerrufbar/verbrauchbar sein.  
 **Konsequenz:**  
-- GET /export/vehicle/{id} liefert ausschließlich **redacted** Daten (kein VIN/owner_email), aber in_hmac als stabilen Proof.  
+- GET /export/vehicle/{id} liefert ausschließlich **redacted** Daten (kein VIN/owner_email), aber vin_hmac als stabilen Proof.  
 - Full-Export nur via GET /export/vehicle/{id}/full mit Header X-Export-Token.  
-- Token wird serverseitig persistiert (export_grants_vehicle: id PK, export_token unique, ehicle_id, expires_at, used, created_at).  
+- Token wird serverseitig persistiert (export_grants_vehicle: id PK, export_token unique, vehicle_id, expires_at, used, created_at).  
 - **TTL enforced** (expires_at) + **one-time** (used=true atomar per id).  
 - Payload ist **encrypted at rest/transport** (AES/Fernet o. ä. mit LTC_SECRET_KEY), Logs/Telemetry bleiben strikt **no-PII**.

@@ -8,7 +8,7 @@ import os
 import secrets
 import threading
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.routers.export_vehicle import get_actor, get_db
 
-router = APIRouter(prefix="/export/servicebook", tags=["export"])
+router = APIRouter(prefix="/export/user", tags=["export"])
 
 
 def _role_of(actor: Any) -> str:
@@ -101,18 +101,17 @@ def _grants_table(db: Session) -> Table:
 
         md = MetaData()
         insp = inspect(engine)
-
-        if insp.has_table("export_grants_servicebook"):
-            tbl = Table("export_grants_servicebook", md, autoload_with=engine)
+        if insp.has_table("export_grants_user"):
+            tbl = Table("export_grants_user", md, autoload_with=engine)
             _grant_cache[key] = tbl
             return tbl
 
         tbl = Table(
-            "export_grants_servicebook",
+            "export_grants_user",
             md,
             Column("id", Integer, primary_key=True, autoincrement=True),
             Column("export_token", String(255), nullable=False, unique=True, index=True),
-            Column("servicebook_id", String(255), nullable=False, index=True),
+            Column("user_id", String(255), nullable=False, index=True),
             Column("expires_at", DateTime(timezone=True), nullable=False, index=True),
             Column("used", Boolean, nullable=False, default=False),
             Column("created_at", DateTime(timezone=True), nullable=False),
@@ -122,52 +121,34 @@ def _grants_table(db: Session) -> Table:
         return tbl
 
 
-def _servicebook_table(db: Session) -> Table:
+def _users_table(db: Session) -> Table:
     engine = db.get_bind()
     md = MetaData()
     insp = inspect(engine)
-    for name in ("servicebook_entries", "servicebook_entry", "servicebooks", "servicebook", "service_entries", "service_entry"):
+    for name in ("auth_users", "users", "user"):
         if insp.has_table(name):
             return Table(name, md, autoload_with=engine)
     raise HTTPException(status_code=404, detail="not_found")
 
 
-def _fetch_servicebook_rows(db: Session, servicebook_id: str) -> Tuple[List[Dict[str, Any]], Table]:
-    tbl = _servicebook_table(db)
-    if "servicebook_id" in tbl.c:
-        where_col = tbl.c.servicebook_id
-    elif "vehicle_id" in tbl.c:
-        where_col = tbl.c.vehicle_id
-    elif "id" in tbl.c:
-        where_col = tbl.c.id
-    else:
-        raise HTTPException(status_code=500, detail="server_misconfigured")
-
-    rows = db.execute(select(tbl).where(where_col == servicebook_id)).mappings().all()
-    if not rows:
-        raise HTTPException(status_code=404, detail="not_found")
-    return [dict(r) for r in rows], tbl
+def _fetch_user_row(db: Session, user_id: str) -> Tuple[Dict[str, Any], Table]:
+    tbl = _users_table(db)
+    candidate_cols = [c for c in ("user_id", "id", "public_id", "uid", "sub") if c in tbl.c]
+    for col in candidate_cols:
+        row = db.execute(select(tbl).where(tbl.c[col] == user_id)).mappings().first()
+        if row is not None:
+            return dict(row), tbl
+    raise HTTPException(status_code=404, detail="not_found")
 
 
-def _enforce_redacted_access(actor: Any, rows: List[Dict[str, Any]]) -> None:
+def _enforce_redacted_access(actor: Any, target_user_id: str) -> None:
     role = _role_of(actor)
     if role == "superadmin":
         return
-
     if role not in {"user", "vip", "dealer"}:
         raise HTTPException(status_code=403, detail="forbidden")
-
-    uid = _user_id_of(actor)
-    if not uid:
+    if _user_id_of(actor) != str(target_user_id):
         raise HTTPException(status_code=403, detail="forbidden")
-
-    owner_fields = ("owner_id", "owner_user_id", "user_id", "created_by_user_id", "created_by", "actor_user_id")
-    for row in rows:
-        for key in owner_fields:
-            val = row.get(key)
-            if val and str(val) == uid:
-                return
-    raise HTTPException(status_code=403, detail="forbidden")
 
 
 def _read_expires_at(val: Any) -> Optional[datetime]:
@@ -183,7 +164,7 @@ def _read_expires_at(val: Any) -> Optional[datetime]:
     return None
 
 
-def _redact_row(row: Dict[str, Any]) -> Dict[str, Any]:
+def _redacted_user(row: Dict[str, Any], target_user_id: str) -> Dict[str, Any]:
     blocked_contains = (
         "email",
         "phone",
@@ -193,60 +174,57 @@ def _redact_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "street",
         "zip",
         "city",
-        "vin",
-        "token",
         "secret",
         "password",
-        "note",
-        "comment",
-        "text",
-        "details",
+        "token",
     )
-    out: Dict[str, Any] = {}
+    out: Dict[str, Any] = {"user_id": target_user_id, "_redacted": True}
+
     for key, value in row.items():
         k = key.lower()
         if any(x in k for x in blocked_contains):
             continue
-        out[key] = value
+        if k in {"created_at", "role", "status", "id", "user_id"}:
+            out[key] = value
 
-    vin_val = row.get("vin")
-    if vin_val:
-        out["vin_hmac"] = _hmac_value(str(vin_val))
+    email_hmac = row.get("email_hmac")
+    if email_hmac:
+        out["email_hmac"] = str(email_hmac)
+    elif row.get("email"):
+        out["email_hmac"] = _hmac_value(str(row.get("email")))
 
-    owner_email = row.get("owner_email")
-    if owner_email:
-        out["owner_email_hmac"] = _hmac_value(str(owner_email))
-
+    out["user_id_hmac"] = _hmac_value(target_user_id)
     return out
 
 
-@router.get("/{servicebook_id}")
-def export_servicebook_redacted(servicebook_id: str, request: Request, actor: Any = Depends(get_actor)):
+@router.get("/{user_id}")
+def export_user_redacted(user_id: str, request: Request, actor: Any = Depends(get_actor)):
     _deny_moderator(actor)
     db: Session = next(get_db(request))
     try:
-        rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
-        _enforce_redacted_access(actor, rows)
-
-        redacted_rows = [_redact_row(r) for r in rows]
+        row, _tbl = _fetch_user_row(db, user_id)
+        resolved_user_id = str(row.get("user_id") or row.get("id") or user_id)
+        _enforce_redacted_access(actor, resolved_user_id)
         data = {
-            "target": "servicebook",
-            "id": servicebook_id,
+            "target": "user",
+            "id": resolved_user_id,
             "_redacted": True,
-            "servicebook": {"id": servicebook_id, "entries": redacted_rows, "servicebook_id_hmac": _hmac_value(servicebook_id)},
+            "user": _redacted_user(row, resolved_user_id),
         }
-        return {"data": data, "target": "servicebook", "id": servicebook_id, "entries": redacted_rows}
+        return {"data": data}
     finally:
         db.close()
 
 
-@router.post("/{servicebook_id}/grant")
-def export_servicebook_grant(servicebook_id: str, request: Request, ttl_seconds: int = 300, actor: Any = Depends(get_actor)):
+@router.post("/{user_id}/grant")
+def export_user_grant(user_id: str, request: Request, ttl_seconds: int = 300, actor: Any = Depends(get_actor)):
     _deny_moderator(actor)
     _require_superadmin(actor)
     db: Session = next(get_db(request))
     try:
-        _rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
+        row, _tbl = _fetch_user_row(db, user_id)
+        resolved_user_id = str(row.get("user_id") or row.get("id") or user_id)
+
         ttl = max(30, min(int(ttl_seconds), 3600))
         tok = secrets.token_urlsafe(32)
         now = _utcnow_naive()
@@ -256,7 +234,7 @@ def export_servicebook_grant(servicebook_id: str, request: Request, ttl_seconds:
         db.execute(
             grants.insert().values(
                 export_token=tok,
-                servicebook_id=servicebook_id,
+                user_id=resolved_user_id,
                 expires_at=exp,
                 used=0,
                 created_at=now,
@@ -264,7 +242,7 @@ def export_servicebook_grant(servicebook_id: str, request: Request, ttl_seconds:
         )
         db.commit()
         return {
-            "servicebook_id": servicebook_id,
+            "user_id": resolved_user_id,
             "export_token": tok,
             "token": tok,
             "expires_at": exp.isoformat(),
@@ -276,9 +254,9 @@ def export_servicebook_grant(servicebook_id: str, request: Request, ttl_seconds:
         db.close()
 
 
-@router.get("/{servicebook_id}/full")
-def export_servicebook_full(
-    servicebook_id: str,
+@router.get("/{user_id}/full")
+def export_user_full(
+    user_id: str,
     request: Request,
     x_export_token: Optional[str] = Header(default=None, convert_underscores=False, alias="X-Export-Token"),
     actor: Any = Depends(get_actor),
@@ -291,12 +269,14 @@ def export_servicebook_full(
 
     db: Session = next(get_db(request))
     try:
-        rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
+        row, _tbl = _fetch_user_row(db, user_id)
+        resolved_user_id = str(row.get("user_id") or row.get("id") or user_id)
+
         grants = _grants_table(db)
         g = db.execute(select(grants).where(grants.c.export_token == x_export_token)).mappings().first()
         if g is None:
             raise HTTPException(status_code=403, detail="forbidden")
-        if str(g.get("servicebook_id") or "") != str(servicebook_id):
+        if str(g.get("user_id") or "") != resolved_user_id:
             raise HTTPException(status_code=403, detail="forbidden")
 
         exp = _read_expires_at(g.get("expires_at"))
@@ -307,10 +287,10 @@ def export_servicebook_full(
             raise HTTPException(status_code=403, detail="forbidden")
 
         payload = {
-            "target": "servicebook",
-            "id": servicebook_id,
-            "servicebook": {"id": servicebook_id, "entries": rows},
-            "data": {"servicebook": {"id": servicebook_id, "entries": rows}},
+            "target": "user",
+            "id": resolved_user_id,
+            "user": row,
+            "data": {"user": row},
             "exported_at": _utcnow().isoformat(),
         }
         f = Fernet(_derive_fernet_key(_get_secret()))
@@ -321,6 +301,6 @@ def export_servicebook_full(
         db.execute(update(grants).where(grants.c.id == g["id"]).values(used=1))
         db.commit()
 
-        return {"servicebook_id": servicebook_id, "ciphertext": ciphertext, "alg": "fernet", "one_time": True}
+        return {"user_id": resolved_user_id, "ciphertext": ciphertext, "alg": "fernet", "one_time": True}
     finally:
         db.close()
