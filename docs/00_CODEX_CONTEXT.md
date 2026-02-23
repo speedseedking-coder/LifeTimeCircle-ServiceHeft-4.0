@@ -1,4 +1,4 @@
-﻿\# docs/00\_CODEX\_CONTEXT.md
+\# docs/00\_CODEX\_CONTEXT.md
 
 \# LifeTimeCircle – Service Heft 4.0 (Codex-Context / Arbeitsbriefing)
 
@@ -114,7 +114,7 @@ Globalregeln (Kurzform):
 
 \- Moderator Allowlist (alles andere 403):
 
-&nbsp; /auth/\*, /health, /public/\*, /blog/\*, /news/\*
+&nbsp; /auth/\*, /blog/\*, /news/\*
 
 \- Objektbezogene Routen: immer object-level checks zusätzlich zum Role-Gate
 
@@ -483,5 +483,6 @@ Frontend:
 \- Tests grün: pytest
 
 \- Docs aktualisiert (Master Checkpoint + ggf. Rights/Decisions/Spec)
+
 
 
