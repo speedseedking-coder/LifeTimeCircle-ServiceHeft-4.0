@@ -19,6 +19,23 @@ Projekt:
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
+### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
+- Status: **TODO**
+- Scope (SoT):
+  - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
+  - Serverseitige Security bleibt führend: deny-by-default, RBAC + object-level checks, Moderator nur Blog/News
+  - UI zeigt nur zulässige Navigation; Enforcement bleibt ausschließlich Backend
+- DoD (minimal, deterministisch):
+  - Routing/Guards: 401 → Auth, `consent_required` → Consent, 403 sauber dargestellt
+  - Keine PII/Secrets in UI-Logs/Responses/Telemetry
+  - Pflichttext Public-QR bleibt exakt unverändert
+  - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
+- Evidence-Template:
+  - Branch: `feat/next-block-<kurzname>`
+  - PR: _TBD_
+  - Commits: _TBD_
+  - Tests lokal: _TBD_
+
 ---
 
 ## Aktueller Stand (main)
