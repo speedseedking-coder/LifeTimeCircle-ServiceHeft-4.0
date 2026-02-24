@@ -5,10 +5,8 @@ LifeTimeCircle – ServiceHeft 4.0
 
 BOM Gate: Fail if any UTF-8 BOM (EF BB BF) is present.
 
-Default behavior:
-- tracked-only (git ls-files) -> verhindert lokale False-Fails durch untracked/private Files.
-Optional:
-- --all-files -> repo-walk (unter Berücksichtigung von Skip-Dirs/Prefixes)
+Default: tracked-only (git ls-files) -> stabil, CI-konform, keine False-Fails durch untracked lokale Dateien.
+Optional: --all-files -> Vollscan per filesystem walk (skip dirs/prefixes).
 
 Exit codes:
   0 -> OK: no BOM found
@@ -45,7 +43,7 @@ DEFAULT_EXTS: Set[str] = {
     ".env",
 }
 
-# Directories to skip entirely (by name)
+# For --all-files only
 SKIP_DIR_NAMES: Set[str] = {
     ".git",
     "node_modules",
@@ -62,7 +60,6 @@ SKIP_DIR_NAMES: Set[str] = {
     "artifacts",
 }
 
-# Relative path prefixes (POSIX-style) to skip entirely (only for --all-files walk)
 SKIP_REL_PREFIXES: List[str] = [
     "server/data",
     "server/storage",
@@ -96,13 +93,13 @@ def _git_ls_files(root: Path) -> Optional[List[str]]:
     if r.returncode != 0:
         return None
 
-    raw = r.stdout.split(b"\0")
+    parts = r.stdout.split(b"\0")
     out: List[str] = []
-    for b in raw:
+    for b in parts:
         if not b:
             continue
-        # git paths are bytes; use surrogateescape for safety
         out.append(b.decode("utf-8", "surrogateescape"))
+    out.sort()
     return out
 
 
@@ -113,15 +110,22 @@ def iter_tracked_files(root: Path, exts: Set[str]) -> Iterable[Path]:
         raise RuntimeError("git ls-files failed (not a git repo or git not available).")
 
     for rel in files:
-        p = root / rel
-        if p.suffix.lower() in exts:
-            yield p
+        p = (root / rel).resolve()
+        if p.suffix.lower() not in exts:
+            continue
+        if not p.exists():
+            raise FileNotFoundError(f"tracked file missing on disk: {rel}")
+        yield p
 
 
 def iter_all_files(root: Path, exts: Set[str]) -> Iterable[Path]:
     root = root.resolve()
     for dirpath, dirnames, filenames in os.walk(root):
         dpath = Path(dirpath)
+
+        # Deterministic order
+        dirnames.sort()
+        filenames.sort()
 
         rel_dir = _posix_rel(root, dpath)
         if rel_dir == ".":
@@ -134,7 +138,7 @@ def iter_all_files(root: Path, exts: Set[str]) -> Iterable[Path]:
                 filenames[:] = []
                 break
 
-        # prune by dir name / prefixes
+        # prune children
         pruned: List[str] = []
         for d in list(dirnames):
             if d in SKIP_DIR_NAMES:
@@ -154,7 +158,7 @@ def iter_all_files(root: Path, exts: Set[str]) -> Iterable[Path]:
         for fn in filenames:
             p = dpath / fn
             if p.suffix.lower() in exts:
-                yield p
+                yield p.resolve()
 
 
 def scan_bom(root: Path, exts: Set[str], all_files: bool) -> List[BomHit]:
