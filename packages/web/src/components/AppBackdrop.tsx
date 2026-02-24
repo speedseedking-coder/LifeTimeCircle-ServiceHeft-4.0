@@ -1,4 +1,4 @@
-﻿import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import "./AppBackdrop.css";
 
 /**

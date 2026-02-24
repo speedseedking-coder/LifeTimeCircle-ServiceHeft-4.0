@@ -1,10 +1,10 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
 param(
   [Parameter(Mandatory=$true)]
   [string[]] $Files
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 $root = (git rev-parse --show-toplevel).Trim()
 Set-Location $root
@@ -13,6 +13,8 @@ Set-Location $root
 $bom = [byte[]](0xEF,0xBB,0xBF)
 
 foreach ($rel in $Files) {
+  if (-not $rel) { continue }
+
   $p = Join-Path $root $rel
   if (-not (Test-Path -LiteralPath $p)) { throw "Missing: $rel" }
 

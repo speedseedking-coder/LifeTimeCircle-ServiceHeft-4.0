@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [string]$Path = "packages/web/src/pages/PublicQrPage.tsx",
   [switch]$CheckOnly

@@ -1,4 +1,4 @@
-﻿./docs/04_MODULE_CATALOG.md
+./docs/04_MODULE_CATALOG.md
 # LifeTimeCircle – ServiceHeft 4.0
 ## Modul-Katalog (kanonisch)
 

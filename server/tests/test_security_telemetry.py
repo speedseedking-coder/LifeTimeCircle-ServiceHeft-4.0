@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 from unittest.mock import MagicMock
 

@@ -1,4 +1,4 @@
-﻿import { type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 type AppLayoutProps = {
   /** "plain" => ltc-app--plain, "hero" => ltc-app--hero (optional, falls später genutzt) */
   variant: "plain" | "hero";

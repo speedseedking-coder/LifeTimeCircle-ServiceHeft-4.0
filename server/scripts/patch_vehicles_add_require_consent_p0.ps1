@@ -1,4 +1,4 @@
-﻿# server/scripts/patch_vehicles_add_require_consent_p0.ps1
+# server/scripts/patch_vehicles_add_require_consent_p0.ps1
 # RUN (Repo-Root):
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\patch_vehicles_add_require_consent_p0.ps1
 Set-StrictMode -Version Latest
