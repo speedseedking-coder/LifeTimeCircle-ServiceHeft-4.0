@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/AGENT_BRIEF.md
+// File: ./docs/policies/AGENT_BRIEF.md
 
 # AGENT_BRIEF – LifeTimeCircle / Service Heft 4.0 (produktiver Standard)
 

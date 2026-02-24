@@ -7,11 +7,11 @@ $ErrorActionPreference = "Stop"
 
 function Run-BomScan {
   if (Get-Command python -ErrorAction SilentlyContinue) {
-    & python ".\tools\bom_scan.py" --root "."
+    & python ".\tools\bom_scan.py" --root "." | Out-Host
     return $LASTEXITCODE
   }
   if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 ".\tools\bom_scan.py" --root "."
+    & py -3 ".\tools\bom_scan.py" --root "." | Out-Host
     return $LASTEXITCODE
   }
   throw "Weder 'python' noch 'py' gefunden fuer BOM-Gate."
@@ -29,5 +29,8 @@ if ($rc -ne 0) {
 
 Write-Host "==> IST-Zustand Voll-Check"
 & (Join-Path $root "server\scripts\ltc_verify_ist_zustand.ps1")
+if ($LASTEXITCODE -ne 0) {
+  throw "ltc_verify_ist_zustand failed (exit=$LASTEXITCODE)"
+}
 
 Write-Host "OK: IST-Check inkl. BOM-Gate erfolgreich."

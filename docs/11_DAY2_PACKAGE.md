@@ -1,4 +1,4 @@
-﻿# Day-2 Paket — Monitoring · Backups · Incident-Basics · UX-Polish
+# Day-2 Paket — Monitoring · Backups · Incident-Basics · UX-Polish
 
 ## Scope & Prinzipien
 - Ziel: „Day-2 Operations“ minimal absichern: Beobachtbarkeit, Backup/Restore-Disziplin, Incident-Handling, UX-Polish.

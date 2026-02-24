@@ -1,4 +1,4 @@
-﻿# tools/test_all.ps1
+# tools/test_all.ps1
 # LifeTimeCircle – ServiceHeft 4.0
 # Ziel: deterministisch fail-fast (kein "False-Green")
 # - Repo-Root BOM Gate (UTF-8 no BOM)

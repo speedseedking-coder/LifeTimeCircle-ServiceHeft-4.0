@@ -1,4 +1,4 @@
-﻿// File: ./docs//policies//CRYPTO/_STANDARDS.md
+// File: ./docs//policies//CRYPTO/_STANDARDS.md
 
 
 

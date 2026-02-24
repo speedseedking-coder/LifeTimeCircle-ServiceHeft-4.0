@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/ROLES_AND_PERMISSIONS.md
+// File: ./docs/policies/ROLES_AND_PERMISSIONS.md
 
 # ROLES_AND_PERMISSIONS – RBAC & Scopes (serverseitig, verbindlich)
 

@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/T3_PARTNER_DATAFLOW.md
+// File: ./docs/policies/T3_PARTNER_DATAFLOW.md
 
 # T3_PARTNER_DATAFLOW – Akkreditierte Verifizierung (T3), Datenflüsse & Minimierung
 

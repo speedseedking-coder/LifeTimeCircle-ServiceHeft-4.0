@@ -1,4 +1,4 @@
-﻿\# docs/05\_MAINTENANCE\_RUNBOOK.md
+\# docs/05\_MAINTENANCE\_RUNBOOK.md
 
 \# LifeTimeCircle – Service Heft 4.0
 

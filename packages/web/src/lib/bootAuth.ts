@@ -1,4 +1,4 @@
-﻿import { httpFetch } from "./httpFetch";
+import { httpFetch } from "./httpFetch";
 
 /**
  * Minimal silent auth boot.

@@ -1,4 +1,4 @@
-﻿// File: ./docs//policies//ACCEPTANCE/_TESTS.md
+// File: ./docs//policies//ACCEPTANCE/_TESTS.md
 
 
 
