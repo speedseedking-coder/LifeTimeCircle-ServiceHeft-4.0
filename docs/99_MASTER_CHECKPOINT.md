@@ -60,7 +60,6 @@ Projekt:
 - Commit: 4cd0203
 - Neu: `server/tests/test_next10_moderator_public_and_vehicles.py`
 
-
 ✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
 - Commit: cb42be2
 - Neu: server/scripts/ltc_verify_p0_mojibake_next10.ps1
