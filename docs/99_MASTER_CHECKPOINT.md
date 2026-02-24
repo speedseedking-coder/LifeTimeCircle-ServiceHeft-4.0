@@ -34,7 +34,7 @@ Projekt:
 ✅ PR #202 gemerged: fix(encoding): make mojibake gate deterministic (JSONL scanner as SoT)
 - Commit: f68ba25
 - CI: Job pytest enthält Gate 
-ode tools/mojibake_scan.js --root . (deterministisch, Exit 0/1)
+  - `node tools/mojibake_scan.js --root .` (deterministisch, Exit 0/1)
 ✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
 
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
