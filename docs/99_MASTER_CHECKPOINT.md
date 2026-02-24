@@ -54,30 +54,11 @@ Projekt:
   - PR: #212
   - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
-### WIP: NEXT10 — Vehicles/Consent + Moderator-Gates (Runtime-Coverage)
-- Status: **IN REVIEW (local green)**
-- Scope:
-  - Moderator fail-closed Runtime-Coverage auf `GET /public/site`, `GET /public/qr/{token}` und `/vehicles/*`.
-  - Consent-Gate Contract: authenticated ohne Consent erhält auf `/vehicles/*` konsistent `403` mit `consent_required`-Signal.
-  - Happy-Path: Nicht-Moderator + Consent-Bypass (Test-Monkeypatch) erreicht `GET /vehicles` mit `200`.
-- Evidence:
-  - Branch: `fix/vehicles-consent-gates-final`
-  - Commit: _pending_
-  - Tests lokal:
-    - `cd server && poetry run pytest -q tests/test_next10_moderator_public_and_vehicles.py -q` ✅
-    - `cd server && poetry run pytest -q tests/test_rbac_fail_closed_regression_pack.py -q` ✅
-    - `cd server && poetry run pytest -q tests/test_public_qr.py -q` ✅
-    - `cd server && poetry run pytest -q tests/test_public_qr_disclaimer.py -q` ✅
-    - `cd server && poetry run pytest -q tests/test_vehicles_router_pr1.py -q` ✅
-    - `node .\tools\mojibake_scan.js --root . > artifacts\mojibake_report.jsonl` ✅
-    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1` ✅ (Windows)
-    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅ (Windows)
 ## Aktueller Stand (main)
 
 ✅ PR #211 gemerged: test(api): next10 moderator public + vehicles consent runtime coverage
 - Commit: 4cd0203
 - Neu: `server/tests/test_next10_moderator_public_and_vehicles.py`
-
 
 ✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
 - Commit: cb42be2
