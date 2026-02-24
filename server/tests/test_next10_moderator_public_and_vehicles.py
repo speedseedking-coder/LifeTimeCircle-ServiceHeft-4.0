@@ -10,6 +10,9 @@ from fastapi import HTTPException
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 # Sehr defensiv: wir überschreiben nur Actor/User/Principal-Provider, NICHT die RBAC-Guards selbst.
@@ -231,8 +234,27 @@ def test_happy_path_with_consent_reaches_vehicles_200(monkeypatch) -> None:
     _override_actor_deps_everywhere(app, actor)
 
     import app.routers.vehicles as vehicles_mod  # type: ignore
+    from app.db.base import Base  # type: ignore
+    from app.models.vehicle import Vehicle  # noqa: F401
+
+    engine = create_engine(
+        "sqlite+pysqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        future=True,
+    )
+    Base.metadata.create_all(bind=engine)
+    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+
+    def _get_db():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
     monkeypatch.setattr(vehicles_mod, "require_consent", lambda *_a, **_kw: None, raising=True)
+    app.dependency_overrides[vehicles_mod.get_db] = _get_db  # type: ignore
 
     client = TestClient(app)
     res = client.get("/vehicles")
