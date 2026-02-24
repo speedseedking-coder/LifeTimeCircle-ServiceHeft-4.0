@@ -1,6 +1,7 @@
 ﻿# tools/test_all.ps1
 # LifeTimeCircle – ServiceHeft 4.0
 # Ziel: deterministisch fail-fast (kein "False-Green")
+# - Repo-Root BOM Gate (UTF-8 no BOM)
 # - Repo-Root Encoding/Mojibake Gate (rg-basiert)
 # - Backend: pytest
 # - Web: npm ci + build
@@ -26,10 +27,27 @@ function Invoke-Step {
   Write-Host "OK: $Name"
 }
 
+function Invoke-BomScan {
+  if (Get-Command python -ErrorAction SilentlyContinue) {
+    & python ".\tools\bom_scan.py" --root "."
+    return
+  }
+  if (Get-Command py -ErrorAction SilentlyContinue) {
+    & py -3 ".\tools\bom_scan.py" --root "."
+    return
+  }
+  throw "Weder 'python' noch 'py' gefunden fuer BOM-Gate."
+}
+
 try {
   $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
   Set-Location $repoRoot
   [Environment]::CurrentDirectory = $repoRoot
+
+  Invoke-Step -Name "BOM gate (repo): python ./tools/bom_scan.py --root ." -Script {
+    Invoke-BomScan
+    if ($LASTEXITCODE -ne 0) { throw "BOM scan failed (exit=$LASTEXITCODE)" }
+  }
 
   Invoke-Step -Name "Encoding gate (repo): node ./tools/mojibake_scan.js --root ." -Script {
     & node ".\tools\mojibake_scan.js" --root "."
@@ -88,4 +106,3 @@ catch {
   Write-Error $_
   exit 1
 }
-
