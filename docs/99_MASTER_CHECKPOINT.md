@@ -41,29 +41,25 @@ Projekt:
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
 
-### WIP: NEXT-BLOCK nach P1 — Vehicles/Consent + Moderator-Gates (Runtime)
+### WIP: NEXT-BLOCK nach P1 — Web Consent-Drift Hardening (consent_required tolerant)
 - Status: **OPEN**
-- Scope (Runtime / Contract):
-  - Neue Runtime-Test-Suite: `server/tests/test_next10_moderator_public_and_vehicles.py`
-  - Moderator fail-closed: 403 auf `/public/site` und `/public/qr/*` (plus `/vehicles/*` Sample aus registrierten Routen)
-  - Consent-Gate Contract: authenticated ohne Consent → 403 mit `consent_required` Signal  
-    (toleriert `{"detail":"consent_required"}` oder `{"detail":{"code":"consent_required"}}`)
-  - Minimal Happy Path: Consent OK (via monkeypatch override) → `GET /vehicles` = 200
-- DoD (deterministisch):
-  - `tools/test_all.ps1` grün (inkl. Web Build)
-  - `tools/ist_check.ps1` grün
-  - Keine PII/Secrets in Logs/Responses/Exports
+- Scope:
+  - Web akzeptiert `consent_required` als String ODER als Objekt-Shape (z. B. `detail.code`)
+  - Keine Backend-Änderung; serverseitige Enforcement bleibt führend (deny-by-default)
+- DoD (lokal Windows):
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅ (ALL GREEN)
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
 - Evidence:
   - Branch: `fix/vehicles-consent-moderator-next10`
   - PR: #212
-  - Commit: 4afa1ae — `test(api): next10 moderator public + vehicles consent runtime coverage`
-- Tests lokal:
-  - `cd server; poetry run pytest -q tests/test_next10_moderator_public_and_vehicles.py` ✅
-  - DoD-Skripte: ✅ (laut PR-Body; lokal Windows)
-
----
+  - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
 ## Aktueller Stand (main)
+
+✅ PR #211 gemerged: test(api): next10 moderator public + vehicles consent runtime coverage
+- Commit: 4cd0203
+- Neu: `server/tests/test_next10_moderator_public_and_vehicles.py`
+
 
 ✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
 - Commit: cb42be2
