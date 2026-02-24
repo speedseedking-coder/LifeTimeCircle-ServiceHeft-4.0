@@ -134,7 +134,7 @@ function roleFromMe(body: unknown): Role | null {
 function isConsentRequiredBody(body: unknown): boolean {
   const err = extractApiError(body);
   if (typeof err === "string") return err === "consent_required";
-  if (isRecord(err) && typeof err.code === "string") return err.code === "consent_required";
+  if (isRecord(err) && typeof (err as any).code === "string") return (err as any).code === "consent_required";
   return false;
 }
 
