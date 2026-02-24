@@ -1,7 +1,6 @@
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-23** (Europe/Berlin)
-
+Stand: **2026-02-24** (Europe/Berlin)
 Projekt:
 - Brand: **LifeTimeCircle**
 - Modul: **Service Heft 4.0**
@@ -20,43 +19,22 @@ Projekt:
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
-### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
-- Status: **WIP** (Branch: `fix/encoding-gitattributes`)
-- Problem: Encoding-Gate war nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
-- Fix-Strategie (P0):
-  1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
-  2) Report: `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
-  3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
-- Evidence (lokal):
-  - Run: `node tools/mojibake_scan.js --root . > artifacts/mojibake_report.jsonl`
-  - Treffer: **14**
-  - Beispiele: `scripts/mojibake_scan.js` (Tooling mit Mojibake + Replacement-Char (U+FFFD)), `server/app/admin/routes.py` (Kommentar-Mojibake)
-- Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
-
-### WIP: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
-- Status: **WIP/PR in Arbeit** (Branch: `fix/vehicles-consent-gates`)
-- Ziel/Policy:
-  - **deny-by-default + least privilege**
-  - **Moderator strikt nur Blog/News** (sonst überall **403**)
-  - Vehicles endpoints sind **consent-gated** (403 detail="consent_required")
-- Scope (Backend):
-  - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
-  - Consent-Gate für `/vehicles/*` via Router-Dependency (`require_consent(...)` → 403 detail="consent_required")
-  - Behavior erhalten: Consent Required wird als 403 mit Code `consent_required` signalisiert
-- Docs (SoT-Konsistenz):
-  - `docs/03_RIGHTS_MATRIX.md` angepasst:
-    - Allowlist: `/public/*` entfernt
-    - Route `/public/* (Site/QR)`: Moderator **❌ (403)**
-- Evidence (lokal, Branch `fix/vehicles-consent-gates`):
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_verify_ist_zustand.ps1` → **DONE**
-  - Mojibake-Scan: **grün**
-  - `poetry run pytest -q` → **[100%]**
-  - `npm ci` + `npm run build` → **grün**
-
 ---
 
 ## Aktueller Stand (main)
 
+✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
+- Commit: cb42be2
+- Neu: server/scripts/ltc_verify_p0_mojibake_next10.ps1
+- Lokal verifiziert auf main:
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1 → **ALL GREEN ✅**
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1 → **grün**
+  - Web E2E (Playwright Mini): 4/4 (401→#/auth, Loop-Guard, 403 consent_required→#/consent, Public-QR Disclaimer dedupe+exakt)
+
+✅ PR #202 gemerged: fix(encoding): make mojibake gate deterministic (JSONL scanner as SoT)
+- Commit: f68ba25
+- CI: Job pytest enthält Gate 
+ode tools/mojibake_scan.js --root . (deterministisch, Exit 0/1)
 ✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
 
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
