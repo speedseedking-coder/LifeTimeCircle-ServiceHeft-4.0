@@ -1,4 +1,4 @@
-﻿./docs//05/_MODULE/_SPEC/_SCHEMA.md
+./docs//05/_MODULE/_SPEC/_SCHEMA.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 

@@ -1,4 +1,4 @@
-﻿./docs//00/_INDEX.md
+./docs//00/_INDEX.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 

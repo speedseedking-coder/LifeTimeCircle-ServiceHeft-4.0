@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Minimal, side-effect-only 401 handler.
  * Keeps redirect logic centralized and hash-router compatible.
  *

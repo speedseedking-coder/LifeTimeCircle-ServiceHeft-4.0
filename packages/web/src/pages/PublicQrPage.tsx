@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 import { httpFetch } from "../lib/httpFetch";
 

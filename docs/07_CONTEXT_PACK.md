@@ -1,4 +1,4 @@
-﻿./docs//07/_CONTEXT/_PACK.md
+./docs//07/_CONTEXT/_PACK.md
 
 \# LifeTimeCircle – ServiceHeft 4.0
 

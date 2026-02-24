@@ -1,4 +1,4 @@
-﻿# server/tests/test_export_vehicle_p0.py
+# server/tests/test_export_vehicle_p0.py
 from __future__ import annotations
 
 import os

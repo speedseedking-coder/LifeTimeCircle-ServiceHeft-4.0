@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 FORBIDDEN_KEYS = {
     "email", "e-mail", "mail",

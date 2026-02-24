@@ -1,4 +1,4 @@
-﻿# server/scripts/patch_master_checkpoint_2026_02_08_poetry_py311.ps1
+# server/scripts/patch_master_checkpoint_2026_02_08_poetry_py311.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
