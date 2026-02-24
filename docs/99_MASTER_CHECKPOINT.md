@@ -20,7 +20,7 @@ Projekt:
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
 ### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
-- Status: **TODO**
+- Status: **IN REVIEW (pending green)**
 - Scope (SoT):
   - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
   - Serverseitige Security bleibt führend: deny-by-default, RBAC + object-level checks, Moderator nur Blog/News
@@ -30,14 +30,13 @@ Projekt:
   - Keine PII/Secrets in UI-Logs/Responses/Telemetry
   - Pflichttext Public-QR bleibt exakt unverändert
   - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
-- Evidence-Template:
-  - Branch: `feat/next-block-<kurzname>`
-  - PR: _TBD_
-  - Commits: _TBD_
-  - Tests lokal: _TBD_
-
----
-
+- Evidence:
+  - Branch: `fix/web-app-shell-auth-header-gating-p1`
+  - PR: _TBD (nach Erstellung eintragen)_
+  - Commits: _TBD (nach Commit: `git log --oneline origin/main..HEAD`)_
+  - Tests lokal:
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
 ## Aktueller Stand (main)
 
 ✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
@@ -179,4 +178,3 @@ Projekt:
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-<!-- p1c: trigger PR delta -->
