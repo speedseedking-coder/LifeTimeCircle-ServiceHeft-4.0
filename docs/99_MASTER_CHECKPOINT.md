@@ -1,6 +1,7 @@
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
 Stand: **2026-02-24** (Europe/Berlin)
+
 Projekt:
 - Brand: **LifeTimeCircle**
 - Modul: **Service Heft 4.0**
@@ -39,6 +40,29 @@ Projekt:
   - Tests lokal:
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
+
+### WIP: NEXT-BLOCK nach P1 — Vehicles/Consent + Moderator-Gates (Runtime)
+- Status: **OPEN**
+- Scope (Runtime / Contract):
+  - Neue Runtime-Test-Suite: `server/tests/test_next10_moderator_public_and_vehicles.py`
+  - Moderator fail-closed: 403 auf `/public/site` und `/public/qr/*` (plus `/vehicles/*` Sample aus registrierten Routen)
+  - Consent-Gate Contract: authenticated ohne Consent → 403 mit `consent_required` Signal  
+    (toleriert `{"detail":"consent_required"}` oder `{"detail":{"code":"consent_required"}}`)
+  - Minimal Happy Path: Consent OK (via monkeypatch override) → `GET /vehicles` = 200
+- DoD (deterministisch):
+  - `tools/test_all.ps1` grün (inkl. Web Build)
+  - `tools/ist_check.ps1` grün
+  - Keine PII/Secrets in Logs/Responses/Exports
+- Evidence:
+  - Branch: `fix/vehicles-consent-moderator-next10`
+  - PR: #212
+  - Commit: 4afa1ae — `test(api): next10 moderator public + vehicles consent runtime coverage`
+- Tests lokal:
+  - `cd server; poetry run pytest -q tests/test_next10_moderator_public_and_vehicles.py` ✅
+  - DoD-Skripte: ✅ (laut PR-Body; lokal Windows)
+
+---
+
 ## Aktueller Stand (main)
 
 ✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
@@ -51,10 +75,10 @@ Projekt:
 
 ✅ PR #202 gemerged: fix(encoding): make mojibake gate deterministic (JSONL scanner as SoT)
 - Commit: f68ba25
-- CI: Job pytest enthält Gate 
+- CI: Job pytest enthält Gate
   - `node tools/mojibake_scan.js --root .` (deterministisch, Exit 0/1)
-✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
 
+✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
 ✅ PR #189 gemerged: chore(tests): replace deprecated datetime.utcnow with timezone-aware now
