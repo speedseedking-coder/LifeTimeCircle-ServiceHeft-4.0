@@ -42,9 +42,23 @@ export type AuthState = {
 };
 
 function isConsentRequired(err: unknown): boolean {
-  // backend contract: detail.code === "consent_required" (403)
+  // Contract-tolerant:
+  // - "consent_required"
+  // - { code: "consent_required" }
+  // - { detail: "consent_required" }
+  // - { detail: { code: "consent_required" } }
   if (typeof err === "string") return err === "consent_required";
-  if (isRecord(err) && typeof err.code === "string") return err.code === "consent_required";
+
+  if (!isRecord(err)) return false;
+
+  // { code: "consent_required" }
+  if (typeof err.code === "string" && err.code === "consent_required") return true;
+
+  // { detail: "consent_required" } or { detail: { code: "consent_required" } }
+  const detail = (err as Record<string, unknown>).detail;
+  if (typeof detail === "string") return detail === "consent_required";
+  if (isRecord(detail) && typeof detail.code === "string") return detail.code === "consent_required";
+
   return false;
 }
 
