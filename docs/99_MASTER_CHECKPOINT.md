@@ -32,8 +32,10 @@ Projekt:
   - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
 - Evidence:
   - Branch: `fix/web-app-shell-auth-header-gating-p1`
-  - PR: _TBD (nach Erstellung eintragen)_
-  - Commits: _TBD (nach Commit: `git log --oneline origin/main..HEAD`)_
+  - PR: #210
+  - Commits:
+    - a27d6b4 fix(web): ts guard for consent_required code
+    - a0bf2f2 fix(web): auth header gating + consent/RBAC hardening (P1)
   - Tests lokal:
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
