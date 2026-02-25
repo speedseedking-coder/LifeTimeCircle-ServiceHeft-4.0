@@ -17,10 +17,6 @@ _SessionLocal: sessionmaker[Session] | None = None
 
 
 def _ensure_sqlite_dir(database_url: str) -> None:
-    """
-    Ensures the directory exists for sqlite:///./relative/path.db URLs.
-    No-op for non-sqlite or sqlite in-memory.
-    """
     url = (database_url or "").strip()
     if "sqlite" not in url:
         return
@@ -34,7 +30,6 @@ def _ensure_sqlite_dir(database_url: str) -> None:
     rel = url.split(marker, 1)[1]
     db_file = Path(".") / rel
     db_dir = db_file.parent
-
     if str(db_dir) and str(db_dir) != ".":
         os.makedirs(db_dir, exist_ok=True)
 
@@ -77,24 +72,33 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """
     Import models so SQLAlchemy registers tables, then create_all().
+    Some model modules may be absent depending on repo state -> must not crash startup.
     """
     settings = get_settings()
     _ensure_sqlite_dir(settings.database_url)
 
     engine = get_engine()
 
-    # Import models so tables are registered
+    # required
     from app.models import audit as _audit  # noqa: F401
     from app.models import masterclipboard as _mc  # noqa: F401
-    from app.models import entitlements as _entitlements  # noqa: F401
-    from app.models import addons as _addons  # noqa: F401
+    from app.models import vehicle as _vehicle  # noqa: F401
 
-    # Consent model can be optional depending on runtime packaging
+    # optional
+    try:
+        from app.models import entitlements as _entitlements  # noqa: F401
+    except Exception:
+        # repo variants / optional module
+        pass
+
+    try:
+        from app.models import addons as _addons  # noqa: F401
+    except Exception:
+        pass
+
     try:
         from app.models import consent as _consent  # noqa: F401
     except Exception:
         pass
-
-    from app.models import vehicle as _vehicle  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
