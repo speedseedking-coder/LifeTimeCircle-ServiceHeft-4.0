@@ -206,3 +206,4 @@ Projekt:
 - Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
 - DoD: tools/test_all.ps1 ALL GREEN ✅
 - Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
+
