@@ -80,7 +80,7 @@ function Assert-AllowedBeforeParam {
     [Parameter(Mandatory=$true)][int]$ParamStartLineNumber
   )
 
-  $lines = [System.IO.File]::ReadAllLines($FullPath, [System.Text.Encoding]::UTF8)  # garantiert string[]
+  $lines = [System.IO.File]::ReadAllLines($FullPath, [System.Text.Encoding]::UTF8)
   $inBlockComment = $false
 
   for ($i = 1; $i -lt $ParamStartLineNumber; $i++) {
@@ -200,4 +200,3 @@ foreach ($f in $filesSorted) {
 if (-not $checkedAny) {
   Write-Host "OK: no script-level param blocks found in scanned roots/paths."
 }
-
