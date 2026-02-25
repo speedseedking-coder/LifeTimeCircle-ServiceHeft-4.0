@@ -13,6 +13,7 @@ from app.db.session import init_db
 from app.guards import forbid_moderator
 from app.public.routes import router as public_router
 from app.routers import blog, news, servicebook
+from app.routers.addons import router as addons_router
 from app.routers.consent import router as consent_router
 from app.routers.documents import router as documents_router
 from app.routers.export import router as export_router
@@ -23,14 +24,15 @@ from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.public_site import router as public_site_router
 from app.routers.sale_transfer import router as sale_transfer_router
 from app.routers.vehicles import router as vehicles_router
-from app.security import RequestIdMiddleware, emit_security_event, map_status_to_event
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(_app: FastAPI):
         init_db()
         yield
 
@@ -43,7 +45,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Router
+    # Core Routers
     app.include_router(auth_router)
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
@@ -53,26 +55,30 @@ def create_app() -> FastAPI:
         return {"ok": True}
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(_, exc: Exception):
+    async def unhandled_exception_handler(_request, exc: Exception):
         if settings.env == "dev":
             return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
         return JSONResponse(status_code=500, content={"error": "internal_error"})
 
+    # Feature Routers
     app.include_router(admin_router)
     app.include_router(public_router)
     app.include_router(export_vehicle_router)
     app.include_router(export_servicebook_router)
     app.include_router(export_user_router)
     app.include_router(consent_router)
+
+    # ✅ Addons (D-012/D-028)
+    app.include_router(addons_router)
+
     app.include_router(vehicles_router)
     app.include_router(sale_transfer_router)
 
     # ✅ documents nur EINMAL registrieren
     app.include_router(documents_router)
 
+    # Servicebook / Blog / News / Public site
     app.include_router(servicebook.router)
-
-    # Blog/News (public)
     app.include_router(blog.router)
     app.include_router(news.router)
     app.include_router(public_site_router)
@@ -83,7 +89,6 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-# LTC-AUTO: root-redirect begin
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/public/site")
@@ -92,8 +97,3 @@ def root():
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return Response(status_code=204)
-
-
-# LTC-AUTO: root-redirect end
-
-logger = logging.getLogger(__name__)
