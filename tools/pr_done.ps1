@@ -1,10 +1,11 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
 param(
   [switch]$SkipTests,
   [switch]$SkipIstCheck
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Invoke-Step {
   param([string]$Title, [scriptblock]$Block)
