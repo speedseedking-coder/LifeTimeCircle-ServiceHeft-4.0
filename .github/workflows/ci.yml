@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   workflow_dispatch:
@@ -9,12 +9,21 @@ on:
       - "server/**"
       - "docs/**"
       - "packages/web/**"
+      - "tools/**"
       - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   web_build:
     name: web_build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,12 +40,14 @@ jobs:
       - name: Web build (packages/web)
         working-directory: packages/web
         run: |
-          npm ci
+          set -euo pipefail
+          npm ci --no-audit --fund=false
           npm run build
 
   pytest:
     name: pytest
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: server
@@ -61,7 +72,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y wget apt-transport-https software-properties-common
 
-          # Microsoft repo for PowerShell
           UBUNTU_VERSION_ID="$(. /etc/os-release; echo "$VERSION_ID")"
           wget -q "https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION_ID}/packages-microsoft-prod.deb"
           sudo dpkg -i packages-microsoft-prod.deb
@@ -69,15 +79,6 @@ jobs:
           sudo apt-get install -y powershell
 
           pwsh -v
-
-      - name: Ensure LTC_SECRET_KEY is set (CI fallback)
-        shell: bash
-        working-directory: ${{ github.workspace }}
-        run: |
-          set -euo pipefail
-          if [ -z "${LTC_SECRET_KEY:-}" ]; then
-            echo "LTC_SECRET_KEY=ci_dummy_secret_key_32chars_min16" >> "$GITHUB_ENV"
-          fi
 
       - name: CI guard - required job 'pytest'
         shell: bash
@@ -88,6 +89,30 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Setup Node (for repo gates)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Ensure LTC_SECRET_KEY is set (CI fallback)
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LTC_SECRET_KEY:-}" ]; then
+            echo "LTC_SECRET_KEY=ci_dummy_secret_key_32chars_min16" >> "$GITHUB_ENV"
+          fi
+
+      - name: LTC BOM gate (UTF-8 no BOM)
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: python tools/bom_scan.py --root .
+
+      - name: LTC mojibake gate (repo)
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: node tools/mojibake_scan.js --root .
 
       - name: Install Poetry
         run: |

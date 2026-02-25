@@ -1,7 +1,6 @@
-﻿# docs/99_MASTER_CHECKPOINT.md
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-22** (Europe/Berlin)
+Stand: **2026-02-24** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -21,71 +20,77 @@ Projekt:
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
-### WIP: Encoding-Gate Determinismus (Mojibake Scan) (P0)
-- Status: **WIP – Evidence aktualisiert** (Branch: `fix/mojibake-determinism`, Commit: `ac07de1`)
-- Hinweis (Workspace): In diesem Checkout existiert kein lokaler Branch `main` (Basis war `work`); Evidence bezieht sich auf diesen Workspace-Stand.
-- Problemhistorie: Encoding-Gate war zeitweise nicht deterministisch (wechselnde Treffer/Sortierung/Dateiangaben) -> Blind-Fixes/Loopings
-- Fix-Strategie (P0):
-  1) Deterministischer JSONL-Scanner als SoT: `tools/mojibake_scan.js`
-  2) Report (SoT): `artifacts/mojibake_report.jsonl` (Records: `path,line,col,kind,match,snippet`)
-  3) Phase 2: Fix **nur** auf gemeldete Stellen (kein global replace)
-- Evidence (lokal, 3x Repro-Lauf; 0 Treffer):
-  - Runs:
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_1.txt`
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_2.txt`
-    - `node ./tools/mojibake_scan.js 2>&1 | tee ./artifacts/mojibake_scan_3.txt`
-  - Ergebnis: Exit Code **0**; Outputs **0 Bytes** (keine Treffer => keine JSONL-Records/keine Ausgabe)
-  - Hashes (SHA256):
-    - `artifacts/mojibake_scan_1.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-    - `artifacts/mojibake_scan_2.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-    - `artifacts/mojibake_scan_3.txt`: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-  - Compare: `diff -u` zwischen 1↔2 und 2↔3 leer
-  - Hinweis zur Beweiskraft: Bei **0 Treffern** ist die Ausgabe leer (Hash identisch). Determinismus bei **>0 Treffern** ist über Sortierung der File-Liste + Record-Sort im Scanner abgesichert; zusätzlich sollte Evidence im SoT-Format (`artifacts/mojibake_report.jsonl`) erzeugt werden, sobald Treffer >0 auftreten.
-- Umgebungslimitierung: `pwsh` ist hier nicht verfügbar → `tools/test_all.ps1` in diesem Workspace nicht ausführbar; Pflicht ist Lauf lokal/CI.
-- Runbook (bindend): `docs/98_MOJIBAKE_DETERMINISTIC_SCAN_RUNBOOK.md`
+### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
+- Status: **IN REVIEW (pending green)**
+- Scope (SoT):
+  - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
+  - Serverseitige Security bleibt führend: deny-by-default, RBAC + object-level checks, Moderator nur Blog/News
+  - UI zeigt nur zulässige Navigation; Enforcement bleibt ausschließlich Backend
+- DoD (minimal, deterministisch):
+  - Routing/Guards: 401 → Auth, `consent_required` → Consent, 403 sauber dargestellt
+  - Keine PII/Secrets in UI-Logs/Responses/Telemetry
+  - Pflichttext Public-QR bleibt exakt unverändert
+  - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
+- Evidence:
+  - Branch: `fix/web-app-shell-auth-header-gating-p1`
+  - PR: #210
+  - Commits:
+    - a27d6b4 fix(web): ts guard for consent_required code
+    - a0bf2f2 fix(web): auth header gating + consent/RBAC hardening (P1)
+  - Tests lokal:
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
 
-### ✅ GEMERGED: Vehicles/Consent + Moderator-Gates (public/public_site) (Next10 E2E)
-- Status: **gemerged in `main`** (PR #167, Commit: `28ec3a6`)
-- Ziel/Policy:
-  - **deny-by-default + least privilege**
-  - **Moderator strikt nur Blog/News** (sonst überall **403**)
-  - Vehicles endpoints sind **consent-gated** (403 `consent_required`)
-- Scope (Backend):
-  - Block moderator auf `/public/*` und `/public/site` via Router-Dependencies (`Depends(forbid_moderator)`)
-  - Consent-Gate zentral auf `/vehicles/*` via Router-Dependency (`Depends(_require_consent_dep)`)
-  - Fehlersemantik stabil: HTTP **403** + `detail.code == "consent_required"`
-- Docs (SoT-Konsistenz):
-  - `docs/03_RIGHTS_MATRIX.md` angepasst:
-    - Moderator-Allowlist ohne `/public/*`
-    - Route `/public/* (Site/QR)`: Moderator **❌ (403)**
-- Evidence (lokal, verifiziert auf `main`):
-  - `cd server && poetry run pytest -q tests/test_rbac_fail_closed_regression_pack.py` → **grün**
-  - `cd server && poetry run pytest -q tests/test_rbac_guard_coverage.py tests/test_rbac_moderator_blog_only.py tests/test_moderator_block_coverage_runtime.py` → **grün**
-  - `cd server && poetry run pytest -q` → **[100%]**
-
----
+### WIP: NEXT-BLOCK nach P1 — Web Consent-Drift Hardening (consent_required tolerant)
+- Status: **OPEN**
+- Scope:
+  - Web akzeptiert `consent_required` als String ODER als Objekt-Shape (z. B. `detail.code`)
+  - Keine Backend-Änderung; serverseitige Enforcement bleibt führend (deny-by-default)
+- DoD (lokal Windows):
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅ (ALL GREEN)
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
+- Evidence:
+  - Branch: `fix/vehicles-consent-moderator-next10`
+  - PR: #212
+  - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
 ## Aktueller Stand (main)
 
-- Neu (Phase 1 Ops/Security SoT): **Production Baseline + Threat Model v1 + SLO/Error Budget**
-  - docs/07_PRODUCTION_BASELINE.md
-  - docs/08_THREAT_MODEL_V1.md
-  - docs/09_SLO_ERROR_BUDGET.md
+✅ PR #211 gemerged: test(api): next10 moderator public + vehicles consent runtime coverage
+- Commit: 4cd0203
+- Neu: `server/tests/test_next10_moderator_public_and_vehicles.py`
+
+✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
+- Commit: cb42be2
+- Neu: server/scripts/ltc_verify_p0_mojibake_next10.ps1
+- Lokal verifiziert auf main:
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1 → **ALL GREEN ✅**
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1 → **grün**
+  - Web E2E (Playwright Mini): 4/4 (401→#/auth, Loop-Guard, 403 consent_required→#/consent, Public-QR Disclaimer dedupe+exakt)
+
+✅ PR #202 gemerged: fix(encoding): make mojibake gate deterministic (JSONL scanner as SoT)
+- Commit: f68ba25
+- CI: Job pytest enthält Gate
+  - `node tools/mojibake_scan.js --root .` (deterministisch, Exit 0/1)
+
+✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
 - Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
 
-✅ PR #173 **gemerged**: `test(security): lock RBAC semantics + CI pwsh + paste-guard SoT`
-- Commit auf `main`: `3614741`
-- CI: `pwsh` wird auf Ubuntu-Runnern sichergestellt; `tools/test_all.ps1` läuft deterministisch.
-- Neu: `docs/07_POWERSHELL_PASTE_GUARD.md` (SoT) + `server/scripts/install_paste_guard_profile.ps1` (idempotent).
-- Neu: `server/tests/test_rbac_fail_closed_regression_pack.py` (P0) sichert:
-  - Moderator fail-closed: `/public/site`, `/public/qr/{token}`, repräsentativ `/vehicles/*` -> **403**
-  - Unauthenticated: **401** auf geschützten Routen
-  - Consent-Gate auf `/vehicles/*`: **403** + `detail.code == "consent_required"`
-- Lokal verifiziert:
-  - `cd server && poetry run pytest -q` → **[100%]**
+✅ PR #189 gemerged: chore(tests): replace deprecated datetime.utcnow with timezone-aware now
+- Commit auf main: ee02b8e
+- Fix: entfernt DeprecationWarning (utcnow) im Export-P0 Test
+
+✅ PR #188 gemerged: fix(export): vehicle P0 export shape + persistent grants table (id PK) + one-time token
+- Commit auf main: db023ec
+- Server: server/app/routers/export_vehicle.py (RBAC + Redaction + Grants persistence + Encryption)
+- Tests: server/tests/test_export_vehicle_p0.py
+- Behavior:
+  - GET /export/vehicle/{id} → { "data": ... } inkl. data["_redacted"]=true, vin_hmac, **kein** VIN/owner_email Leak
+  - POST /export/vehicle/{id}/grant → persistente DB-Tabelle export_grants_vehicle (id PK, export_token unique, expires_at, used, created_at)
+  - GET /export/vehicle/{id}/full → Header X-Export-Token (400 wenn fehlt), **one-time** + **TTL**, decrypted payload enthält payload["vehicle"]["vin"] (+ data.vehicle für P0-Kompat)
 
 ✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
-- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (mojibake: `ü`, `ä`)
+- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (Beispiel-Codepoints: U+00C3 U+00BC, U+00C3 U+00A4)
 - Gate wieder grün: `tools/test_all.ps1` → **ALL GREEN**
 - CI Checks: **2 checks passed**
 
@@ -187,21 +192,10 @@ Projekt:
 ✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
 - `server/scripts/ltc_web_toolkit.ps1` enthält:
   - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
-- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent)
+- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent, UTF-8 no BOM)
 
 ✅ PR #59: `docs: master checkpoint add PR #58`
 - Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM)
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-
-## Tooling Guard: Mojibake + node_modules__old_ (P0)
-
-- Script: `server/scripts/ltc_guard_mojibake.ps1`
-- Zweck:
-  - blockt `node_modules__old_*` Snapshots (dürfen nicht ins Repo)
-  - erzwingt Mojibake-Scan: **0 Treffer** (SoT: `tools/mojibake_scan.js`)
-- Run:
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_guard_mojibake.ps1`
-- Eingeführt via: PR **#177** (Merge-Commit: `eb21f53`)
-

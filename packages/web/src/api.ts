@@ -1,4 +1,4 @@
-﻿import { httpFetch } from "./lib/httpFetch";
+import { httpFetch } from "./lib/httpFetch";
 export type ApiBody = unknown | string;
 
 export type ApiResult =

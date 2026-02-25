@@ -1,4 +1,4 @@
-﻿./docs/policies/PROJECT_MAP.md
+./docs/policies/PROJECT_MAP.md
 # LifeTimeCircle – ServiceHeft 4.0
 ## Project Map (Architektur- & Repo-Landkarte)
 

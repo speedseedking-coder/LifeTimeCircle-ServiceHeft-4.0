@@ -1,4 +1,4 @@
-﻿# server/scripts/patch_master_checkpoint_2026_02_08_poetry_py311.ps1
+# server/scripts/patch_master_checkpoint_2026_02_08_poetry_py311.ps1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -51,15 +51,15 @@ function Insert-PRBlockAfterAktuellerStand([string[]]$lines) {
   if ($idx -lt 0) { throw "docs/99_MASTER_CHECKPOINT.md: '## Aktueller Stand' nicht gefunden." }
 
   $block = @(
-    "",
-    "✅ PR #95 **gemerged**: `chore/ci-helper-script`",
-    "- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)",
-    "",
-    "✅ PR #94 **gemerged**: `chore/poetry-lock-py311`",
-    "- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün",
-    "",
-    "✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`",
-    ""
+    '',
+    '✅ PR #95 **gemerged**: `chore/ci-helper-script`',
+    '- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)',
+    '',
+    '✅ PR #94 **gemerged**: `chore/poetry-lock-py311`',
+    '- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün',
+    '',
+    '✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`',
+    ''
   )
 
   $out = New-Object System.Collections.Generic.List[string]

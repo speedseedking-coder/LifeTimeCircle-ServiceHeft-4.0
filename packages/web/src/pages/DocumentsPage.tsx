@@ -1,6 +1,7 @@
+// packages/web/src/pages/DocumentsPage.tsx
 export default function DocumentsPage(): JSX.Element {
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+    <main style={{ padding: 12 }}>
       <h1>Documents</h1>
       <p>Scaffold-Seite: Upload/Download/Status (Quarantäne-by-default; Review folgt serverseitig).</p>
 
@@ -12,10 +13,14 @@ export default function DocumentsPage(): JSX.Element {
       </section>
 
       <section style={{ marginTop: 16 }}>
-        <h2>Navigation</h2>
+        <h2>Navigation (Hash)</h2>
         <ul>
-          <li><a href="/vehicles">Zu Vehicles</a></li>
-          <li><a href="/auth">Zu Auth</a></li>
+          <li>
+            <a href="#/vehicles">Zu Vehicles</a>
+          </li>
+          <li>
+            <a href="#/auth">Zu Auth</a>
+          </li>
         </ul>
       </section>
     </main>

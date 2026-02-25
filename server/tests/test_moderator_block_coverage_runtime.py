@@ -11,16 +11,13 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 
-# MODERATOR darf nur Blog/News. Auth/Public müssen trotzdem funktionieren.
+# MODERATOR darf nur Blog/News. Nur Auth bleibt als technischer Login-Flow frei.
 EXEMPT_PREFIXES = (
-    "/health",
     "/openapi.json",
     "/docs",
     "/redoc",
-    "/public",  # z.B. /public/qr/*
     "/auth",    # login/otp/magic-link/me/logout/consent-flow
 )
-
 ALLOWED_PREFIXES = ("/blog", "/news")  # sobald vorhanden: Moderator darf hier rein
 
 
@@ -122,7 +119,7 @@ def _request_follow_redirects(client: TestClient, method: str, path: str):
     return res
 
 
-def test_moderator_blocked_everywhere_except_auth_public_and_blog_news() -> None:
+def test_moderator_blocked_everywhere_except_auth_and_blog_news() -> None:
     """
     SoT: MODERATOR strikt nur Blog/News; ansonsten geblockt.
     Runtime-Check: für jede Route außerhalb EXEMPT_PREFIXES und ALLOWED_PREFIXES muss 403 kommen.

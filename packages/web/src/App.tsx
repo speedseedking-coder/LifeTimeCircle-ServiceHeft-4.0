@@ -1,6 +1,7 @@
 ﻿// packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { apiGet, asString, isRecord, prettyBody } from "./api";
+import { apiGet, asString, extractApiError, isRecord, prettyBody } from "./api";
+import { authHeaders, getAuthToken } from "./lib.auth";
 
 import { PublicQrPage } from "./pages/PublicQrPage";
 
@@ -41,7 +42,8 @@ type Route =
 
 function parseHash(): Route {
   const raw = (window.location.hash || "").replace(/^#\/?/, "");
-  const parts = raw.split("/").filter(Boolean);
+  const pathOnly = raw.split("?")[0] ?? "";
+  const parts = pathOnly.split("/").filter(Boolean);
 
   if (parts.length === 0) return { kind: "home" };
 
@@ -83,6 +85,71 @@ function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/** ---------------------------
+ * P1: App-Gate (Auth/Consent/RBAC) – client-side UX only (Security bleibt serverseitig)
+ * --------------------------- */
+type AppGateState = "loading" | "unauth" | "consent_required" | "ready" | "forbidden";
+type Role = "superadmin" | "admin" | "dealer" | "vip" | "user" | "moderator";
+type NonModeratorRole = Exclude<Role, "moderator">;
+
+const PROTECTED_KINDS: ReadonlySet<Route["kind"]> = new Set(["vehicles", "vehicleDetail", "documents", "onboarding"]);
+
+const ROLE_NAV: Record<NonModeratorRole, Array<{ href: string; label: string }>> = {
+  superadmin: [
+    { href: "#/vehicles", label: "Vehicles" },
+    { href: "#/documents", label: "Documents" },
+    { href: "#/onboarding", label: "Onboarding" },
+  ],
+  admin: [
+    { href: "#/vehicles", label: "Vehicles" },
+    { href: "#/documents", label: "Documents" },
+    { href: "#/onboarding", label: "Onboarding" },
+  ],
+  dealer: [
+    { href: "#/vehicles", label: "Vehicles" },
+    { href: "#/documents", label: "Documents" },
+    { href: "#/onboarding", label: "Onboarding" },
+  ],
+  vip: [
+    { href: "#/vehicles", label: "Vehicles" },
+    { href: "#/documents", label: "Documents" },
+    { href: "#/onboarding", label: "Onboarding" },
+  ],
+  user: [
+    { href: "#/vehicles", label: "Vehicles" },
+    { href: "#/documents", label: "Documents" },
+    { href: "#/onboarding", label: "Onboarding" },
+  ],
+};
+
+function roleFromMe(body: unknown): Role | null {
+  if (!isRecord(body) || typeof body.role !== "string") return null;
+  const r = body.role.toLowerCase();
+  if (r === "superadmin" || r === "admin" || r === "dealer" || r === "vip" || r === "user" || r === "moderator") return r;
+  return null;
+}
+
+function isConsentRequiredBody(body: unknown): boolean {
+  const err = extractApiError(body);
+  if (typeof err === "string") return err === "consent_required";
+  if (isRecord(err) && typeof (err as any).code === "string") return (err as any).code === "consent_required";
+  return false;
+}
+
+function canAccessRouteByRole(route: Route, role: Role | null): boolean {
+  if (PROTECTED_KINDS.has(route.kind)) {
+    return role !== null && role !== "moderator";
+  }
+  return true;
+}
+
+// Open-Redirect Schutz für next=
+function safeNextHash(raw: string): string {
+  if (!raw.startsWith("#/")) return "#/";
+  if (raw.startsWith("#//")) return "#/";
+  return raw;
 }
 
 /** ---------------------------
@@ -455,7 +522,9 @@ function Footer() {
           </div>
         </div>
 
-        <div className="ltc-footer__bottom">{"" + "\u00A9"} {new Date().getFullYear()} LifeTimeCircle {"" + "\u00B7"} ServiceHeft 4.0</div>
+        <div className="ltc-footer__bottom">
+          {"" + "\u00A9"} {new Date().getFullYear()} LifeTimeCircle {"" + "\u00B7"} ServiceHeft 4.0
+        </div>
       </div>
     </footer>
   );
@@ -710,8 +779,7 @@ function FrontPage() {
       style={{
         ["--ltc-bg" as any]: `url("${bgUrl}")`,
         ["--ltc-bg-op" as any]: "1",
-
-        // Ô£à Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
+        // Proportionen/Look wie Beispiel: Hero wirkt wie Banner (cover), Fokus oben/rechts
         ["--ltc-bg-size" as any]: "cover",
         ["--ltc-bg-pos" as any]: "68% 12%",
       }}
@@ -982,6 +1050,7 @@ function FrontPage() {
     </div>
   );
 }
+
 /** ---------------------------
  * Static Pages
  * --------------------------- */
@@ -1096,12 +1165,124 @@ export default function App() {
   }
 
   const [route, setRoute] = useState<Route>(() => parseHash());
+  const [gateState, setGateState] = useState<AppGateState>(() => {
+    const r = parseHash();
+    return r.kind === "consent" || PROTECTED_KINDS.has(r.kind) ? "loading" : "ready";
+  });
+  const [actorRole, setActorRole] = useState<Role | null>(null);
 
   useEffect(() => {
     const onChange = () => setRoute(parseHash());
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const guardedRoute = route.kind === "consent" || PROTECTED_KINDS.has(route.kind);
+
+    if (!guardedRoute) {
+      setGateState("ready");
+      return () => {
+        active = false;
+      };
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      setActorRole(null);
+      setGateState("unauth");
+      return () => {
+        active = false;
+      };
+    }
+
+    const headers = authHeaders(token);
+
+    setGateState("loading");
+    apiGet("/auth/me", { headers }).then((res) => {
+      if (!active) return;
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setActorRole(null);
+          setGateState("unauth");
+          return;
+        }
+        if (res.status === 403 && isConsentRequiredBody(res.body)) {
+          setActorRole(null);
+          setGateState("consent_required");
+          return;
+        }
+        setActorRole(null);
+        setGateState("forbidden");
+        return;
+      }
+
+      const role = roleFromMe(res.body);
+      setActorRole(role);
+
+      if (role === null) {
+        setGateState("forbidden");
+        return;
+      }
+
+      if (route.kind === "consent") {
+        setGateState("ready");
+        return;
+      }
+
+      if (!canAccessRouteByRole(route, role)) {
+        setGateState("forbidden");
+        return;
+      }
+
+      apiGet("/consent/status", { headers }).then((consentRes) => {
+        if (!active) return;
+
+        if (!consentRes.ok) {
+          if (consentRes.status === 401) {
+            setGateState("unauth");
+            return;
+          }
+          if (consentRes.status === 403 && isConsentRequiredBody(consentRes.body)) {
+            setGateState("consent_required");
+            return;
+          }
+          setGateState("forbidden");
+          return;
+        }
+
+        if (!isRecord(consentRes.body) || consentRes.body.is_complete !== true) {
+          setGateState("consent_required");
+          return;
+        }
+
+        setGateState("ready");
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [route]);
+
+  useEffect(() => {
+    const guardedRoute = route.kind === "consent" || PROTECTED_KINDS.has(route.kind);
+    if (!guardedRoute) return;
+
+    if (gateState === "unauth") {
+      // Loop guard: if already on auth route (also with ?next), do nothing
+      if ((window.location.hash || "").startsWith("#/auth")) return;
+      const next = encodeURIComponent(safeNextHash(window.location.hash || "#/"));
+      window.location.hash = `#/auth?next=${next}`;
+      return;
+    }
+
+    if (gateState === "consent_required" && route.kind !== "consent") {
+      window.location.hash = "#/consent";
+    }
+  }, [gateState, route]);
 
   useEffect(() => {
     const raw = (window.location.hash || "").replace(/^#\/?/, "");
@@ -1196,7 +1377,33 @@ export default function App() {
                     </>
                   )}
                 </div>
+
+                {actorRole && actorRole !== "moderator" && (
+                  <div style={{ marginTop: 12 }}>
+                    <strong>App-Navigation</strong>
+                    <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {ROLE_NAV[actorRole as NonModeratorRole].map((item) => (
+                        <a key={item.href} className="ltc-link" href={item.href}>
+                          {item.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {(route.kind === "consent" || PROTECTED_KINDS.has(route.kind)) && gateState === "loading" && (
+                <div className="ltc-card">
+                  <div className="ltc-muted">Prüfe Zugriff …</div>
+                </div>
+              )}
+
+              {(route.kind === "consent" || PROTECTED_KINDS.has(route.kind)) && gateState === "forbidden" && (
+                <div className="ltc-card" role="alert" data-testid="forbidden-ui">
+                  <div className="ltc-card__title">Forbidden</div>
+                  <div className="ltc-muted">Kein Zugriff auf diesen Bereich.</div>
+                </div>
+              )}
 
               {route.kind === "debugPublicSite" && <ApiBox path="/public/site" title="API: /public/site" />}
 
@@ -1228,11 +1435,11 @@ export default function App() {
               )}
 
               {route.kind === "auth" && <AuthPage />}
-              {route.kind === "consent" && <ConsentPage />}
-              {route.kind === "vehicles" && <VehiclesPage />}
-              {route.kind === "vehicleDetail" && <VehicleDetailPage />}
-              {route.kind === "documents" && <DocumentsPage />}
-              {route.kind === "onboarding" && <OnboardingWizardPage />}
+              {route.kind === "consent" && gateState !== "forbidden" && <ConsentPage />}
+              {route.kind === "vehicles" && gateState === "ready" && <VehiclesPage />}
+              {route.kind === "vehicleDetail" && gateState === "ready" && <VehicleDetailPage />}
+              {route.kind === "documents" && gateState === "ready" && <DocumentsPage />}
+              {route.kind === "onboarding" && gateState === "ready" && <OnboardingWizardPage />}
 
               <Footer />
             </div>
@@ -1241,6 +1448,7 @@ export default function App() {
     </>
   );
 }
+
 /** ---------------------------
  * CSS – Frame + Container identisch breit (Proportionen-Fix) + neue Frontpage Styles
  * --------------------------- */
@@ -1271,7 +1479,7 @@ body{
 a{color:inherit}
 code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
-/* Ô£à Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
+/* Fix: Container hat EXAKT dieselbe Breitenlogik wie der Background-Frame */
 .ltc-container{
   width: min(var(--ltc-frame-max, 1500px), calc(100vw - (2 * var(--ltc-frame-gutter, 24px))));
   margin: 0 auto;
@@ -1549,7 +1757,7 @@ code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Libera
   flex-wrap:wrap;
 }
 
-/* Ô£à 3 Punkte wie Beispiel: Desktop nebeneinander */
+/* 3 Punkte wie Beispiel: Desktop nebeneinander */
 .ltc-hero__iconRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

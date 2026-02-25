@@ -1,4 +1,4 @@
-﻿./docs/00_START_HERE.md
+./docs/00_START_HERE.md
 
 \# 00\_START\_HERE — LifeTimeCircle / Service Heft 4.0
 

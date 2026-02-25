@@ -1,8 +1,3 @@
-
----
-
-PFAD: `server/scripts/install_paste_guard_profile.ps1`
-```powershell
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -77,3 +72,4 @@ Write-Host "Sofort-Test (Clipboard):"
 Write-Host "PS C:\...> git status -sb"
 Write-Host "PS C:\...> git log --oneline -5"
 Write-Host "Einfügen per Ctrl+Shift+V -> Erwartung: nur Commands ohne Prompt"
+

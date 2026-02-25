@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/DATA_CLASSIFICATION.md
+// File: ./docs/policies/DATA_CLASSIFICATION.md
 
 # DATA_CLASSIFICATION – Datenklassen & Handhabung
 

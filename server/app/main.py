@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
@@ -17,6 +17,7 @@ from app.routers.consent import router as consent_router
 from app.routers.documents import router as documents_router
 from app.routers.export import router as export_router
 from app.routers.export_servicebook import router as export_servicebook_router
+from app.routers.export_user import router as export_user_router
 from app.routers.export_vehicle import router as export_vehicle_router
 from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.public_site import router as public_site_router
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(public_router)
     app.include_router(export_vehicle_router)
     app.include_router(export_servicebook_router)
+    app.include_router(export_user_router)
     app.include_router(consent_router)
     app.include_router(vehicles_router)
     app.include_router(sale_transfer_router)

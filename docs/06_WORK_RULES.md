@@ -1,60 +1,91 @@
-# docs/06_WORK_RULES.md
 # LifeTimeCircle – Service Heft 4.0
-**Arbeitsregeln (Chat/Umsetzung) – SoT**  
-Stand: **2026-02-06** (Europe/Berlin)
+**Arbeitsregeln / Engineering-Disziplin**
 
-Ziel: maximal konkret, produktionsreif, keine Demos, keine Lücken.
+Stand: 2026-02-21
 
-## Sprache / Output
-- Deutsch
-- maximal konkret
-- keine Floskeln
-- nicht nachfragen außer zwingend (sonst Defaultannahme)
+---
 
-## Code-Regeln
-- Keine ZIPs.
-- Wenn Code/Dateien: immer **vollständiger Dateipfad + kompletter Dateiinhalt**.
-- Keine Platzhalter.
-- Keine halben Snippets.
-- Wenn zu lang: **Block 1/n … n/n**.
+## 1. Source of Truth
 
-## Source of Truth (SoT)
-- **./docs** ist SoT (keine Altpfade, keine Parallel-Spezifikationen).
-- Immer zuerst lesen/prüfen: `docs/99_MASTER_CHECKPOINT.md`
-- Produkt-Spezifikation (bindend): `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- ./docs ist SoT
+- Keine Parallel-Spezifikationen
+- Produkt-Spec bindend: docs/02_PRODUCT_SPEC_UNIFIED.md
+- Entscheidungen: docs/01_DECISIONS.md
+- Rechte: docs/03_RIGHTS_MATRIX.md
+- Checkpoint: docs/99_MASTER_CHECKPOINT.md
 
-## Konflikt-Priorität (wenn etwas widerspricht)
-1) `docs/99_MASTER_CHECKPOINT.md`
-2) `docs/02_PRODUCT_SPEC_UNIFIED.md`
-3) `docs/03_RIGHTS_MATRIX.md`
-4) `docs/01_DECISIONS.md`
-5) `server/` (Implementierung)
-6) Backlog/sonstiges
+---
 
-## Security / Policy (nicht verhandelbar)
-- Default: **deny-by-default + least privilege**
-- RBAC **serverseitig enforced** + **object-level checks**
-- **Moderator strikt nur Blog/News** (sonst überall 403)
-- **Keine PII/Secrets** in Logs/Responses/Exports
+## 2. Security Default
 
-## Doku-Disziplin (damit nichts vergessen geht)
-Jede Feature-/Policy-/Flow-Änderung erfordert Update in `./docs`:
-- `docs/99_MASTER_CHECKPOINT.md` (Status + Referenzen/PRs/Scripts)
-- `docs/01_DECISIONS.md` (wenn neue Entscheidung/Regel)
-- `docs/03_RIGHTS_MATRIX.md` (wenn Rollen/Rechte/Flows betroffen)
-- `docs/02_PRODUCT_SPEC_UNIFIED.md` (wenn Userflow/Produktlogik betroffen)
+- deny-by-default
+- least privilege
+- RBAC serverseitig enforced
+- Object-Level Checks verpflichtend
+- Moderator strikt nur Blog/News
+- Keine PII in Logs, Exports oder Telemetry
 
-## Env-Hinweis
-- Export/Redaction/HMAC braucht `LTC_SECRET_KEY` (>=16).
-- Tests/DEV setzen ihn explizit.
+---
 
-## Arbeitsmodus
-- Default: **Repo-Root**
-- Nicht nachfragen außer zwingend; sonst Defaultannahmen treffen und direkt liefern:
-  - Commands (rg/Select-String/PowerShell) so, dass sie im Repo-Root laufen
+## 3. PR-Disziplin
 
-## Public-QR Pflichttext (exakt, unverändert)
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+PR gilt als fertig nur wenn:
+
+1. Required Check `pytest` ist grün
+2. tools/test_all.ps1 ist lokal grün
+3. Encoding-Gate ist grün
+4. Docs wurden angepasst, falls:
+   - neue Policy
+   - neue Route
+   - neues Security-Verhalten
+   - neue Rolle/Rechte
+
+---
+
+## 4. Encoding-Regeln
+
+- UTF-8 only
+- Kein BOM
+- Mojibake-Fixes nur auf gemeldete Stellen
+- Scanner SoT: tools/mojibake_scan.js
+- Default-Scan (CI/Gate): **tracked-only** (git ls-files) – untracked lokale Dateien (artifacts/, fixtures) brechen das Gate nicht mehr.
+- Vollscan lokal (inkl. untracked): `node tools/mojibake_scan.js --root . --all-files`
+- Deterministischer JSONL-Output
+
+---
+
+## 5. Telemetry-Regeln
+
+- Strict no-PII
+- Redaction vor Event-Emission
+- Request-ID erlaubt
+- Neue Felder nur nach explizierter SoT-Entscheidung
+
+---
+
+## 6. Protected Branch
+
+- main ist geschützt
+- Änderungen nur via PR
+- Required Check: pytest
+- CI Guard verhindert Job-Rename
+
+---
+
+## 7. Fix-Policy
+
+- Kein global replace
+- Keine Blind-Fixes
+- Nur exakt gemeldete Stellen korrigieren
+- Bei Gate-Fail: STOP → Analyse → gezielter Fix
+
+---
+
+## 8. Lokal-Standard-Run
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
+```
 
 ---
 

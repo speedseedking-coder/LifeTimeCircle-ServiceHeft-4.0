@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/MODERATOR_POLICY.md
+// File: ./docs/policies/MODERATOR_POLICY.md
 
 # MODERATOR_POLICY – Blog/News-only, Null-PII, Null-Export, Null-Audit
 

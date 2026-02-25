@@ -1,7 +1,9 @@
-﻿# tools/test_all.ps1
+# tools/test_all.ps1
 # LifeTimeCircle – ServiceHeft 4.0
 # Ziel: deterministisch fail-fast (kein "False-Green")
-# - Repo-Root Encoding/Mojibake Gate (rg-basiert)
+# - Repo-Root BOM Gate (UTF-8 no BOM)
+# - PowerShell Param-at-Top Gate (AST)
+# - Repo-Root Encoding/Mojibake Gate
 # - Backend: pytest
 # - Web: npm ci + build
 # - Web: mini-e2e (Playwright) standardmäßig AN, opt-out via LTC_SKIP_E2E=1
@@ -26,10 +28,32 @@ function Invoke-Step {
   Write-Host "OK: $Name"
 }
 
+function Invoke-BomScan {
+  if (Get-Command python -ErrorAction SilentlyContinue) {
+    & python ".\tools\bom_scan.py" --root "."
+    return
+  }
+  if (Get-Command py -ErrorAction SilentlyContinue) {
+    & py -3 ".\tools\bom_scan.py" --root "."
+    return
+  }
+  throw "Weder 'python' noch 'py' gefunden fuer BOM-Gate."
+}
+
 try {
   $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
   Set-Location $repoRoot
   [Environment]::CurrentDirectory = $repoRoot
+
+  Invoke-Step -Name "BOM gate (repo): python ./tools/bom_scan.py --root ." -Script {
+    Invoke-BomScan
+    if ($LASTEXITCODE -ne 0) { throw "BOM scan failed (exit=$LASTEXITCODE)" }
+  }
+
+  Invoke-Step -Name "PowerShell param gate (repo): ./tools/ps_param_gate.ps1" -Script {
+    & (Join-Path $repoRoot "tools\ps_param_gate.ps1")
+    if ($LASTEXITCODE -ne 0) { throw "PowerShell param gate failed (exit=$LASTEXITCODE)" }
+  }
 
   Invoke-Step -Name "Encoding gate (repo): node ./tools/mojibake_scan.js --root ." -Script {
     & node ".\tools\mojibake_scan.js" --root "."
@@ -57,7 +81,6 @@ try {
       & npm ci --no-audit --fund=false
       if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit=$LASTEXITCODE)" }
 
-      # sanity: tsc muss nach npm ci existieren (Windows/Linux)
       if ((Test-Path ".\node_modules\.bin\tsc.cmd") -or (Test-Path "./node_modules/.bin/tsc")) {
         & npx --no-install tsc -v | Out-Host
       } else {
@@ -67,7 +90,6 @@ try {
       & npm run build
       if ($LASTEXITCODE -ne 0) { throw "npm run build failed (exit=$LASTEXITCODE)" }
 
-      # Mini-E2E (Playwright): standardmäßig AN, opt-out via LTC_SKIP_E2E=1
       if ($env:LTC_SKIP_E2E -eq "1") {
         Write-Host ""
         Write-Host "==> Web e2e (packages/web): SKIP (set LTC_SKIP_E2E=1)"
@@ -88,4 +110,3 @@ catch {
   Write-Error $_
   exit 1
 }
-
