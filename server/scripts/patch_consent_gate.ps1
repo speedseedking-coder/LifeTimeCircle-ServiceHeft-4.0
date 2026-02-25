@@ -121,51 +121,10 @@ function Patch-GetCurrentUser {
     if ($sigEnd -eq $defIdx) {
       # one-line def
       $lines[$defIdx] = $lines[$defIdx] -replace '\)\s*(->\s*.*)?\s*:\s*$', ', request: Optional[Request] = None)$1:'
-$ErrorActionPreference = "Stop"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-function prompt { "PS $((Get-Location).Path)> " }
-
-# LTC_PASTE_GUARD_BEGIN
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-function prompt { "PS $((Get-Location).Path)> " }
-
-try {
-  if (-not (Get-Module -Name PSReadLine)) {
-    Import-Module PSReadLine -ErrorAction SilentlyContinue | Out-Null
-  }
-} catch { }
-
-try { Set-PSReadLineOption -EditMode Windows } catch { }
-
-try {
-  Set-PSReadLineKeyHandler -Chord Ctrl+Shift+V -ScriptBlock {
-    $raw = Get-Clipboard -Raw
-    if ([string]::IsNullOrWhiteSpace($raw)) { return }
-
-    $out = New-Object System.Collections.Generic.List[string]
-    foreach ($line in ($raw -split "`r?`n")) {
-      $l = $line
-      # Entfernt "PS C:\...>" am Zeilenanfang (typische Prompt-Zeile)
-      if ($l -match '^\s*PS\s+.+?>\s*') {
-        $l = ($l -replace '^\s*PS\s+.+?>\s*','')
-      }
-      $out.Add($l)
-    }
-
-    $sanitized = ($out.ToArray() -join "`r`n")
-    [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sanitized)
-  }
-} catch { }
-# LTC_PASTE_GUARD_END
-
     } else {
       # multi-line def: param vor schließender Klammer einfügen
       $indent = ($lines[$defIdx] -replace "^(\s*).*$", '$1') + "    "
-      $lines[$defIdx] = $lines[$defIdx] -replace '\)\s*(->\s*.*)?\s*:\s*$', ', request: Optional[Request] = None)$1:'
+      $paramLine = "${indent}request: Optional[Request] = None,"
       $before = @()
       if ($sigEnd -gt 0) { $before = $lines[0..($sigEnd-1)] }
       $after = $lines[$sigEnd..($lines.Count-1)]

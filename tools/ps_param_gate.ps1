@@ -200,3 +200,4 @@ foreach ($f in $filesSorted) {
 if (-not $checkedAny) {
   Write-Host "OK: no script-level param blocks found in scanned roots/paths."
 }
+
