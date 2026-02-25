@@ -1,3 +1,4 @@
+import { isConsentRequired } from "../lib.auth";
 import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 import { httpFetch } from "../lib/httpFetch";
@@ -63,8 +64,8 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
         if (r.status === 403) {
           try {
             const data403 = await r.clone().json();
-            const code = (data403 as any)?.detail?.code;
-            if (code === "consent_required") {
+            const detail = (data403 as any)?.detail ?? data403;
+            if (isConsentRequired(detail)) {
               window.location.hash = "#/consent";
               return; // do not set error, we are redirecting
             }
