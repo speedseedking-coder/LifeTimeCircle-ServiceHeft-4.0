@@ -1,6 +1,6 @@
 // packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { apiGet, asString, extractApiError, isRecord, prettyBody } from "./api";
+import { apiGet, asString, isRecord, prettyBody } from "./api";
 import { authHeaders, getAuthToken, isConsentRequired } from "./lib.auth";
 import { PublicQrPage } from "./pages/PublicQrPage";
 
