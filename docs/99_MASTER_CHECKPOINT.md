@@ -199,3 +199,10 @@ Projekt:
 
 ✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
+
+---
+
+### WIP: NEXT-BLOCK — gestartet (Branch: feat/next-block-pr79-followup)
+- Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
+- DoD: tools/test_all.ps1 ALL GREEN ✅
+- Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
