@@ -1,3 +1,4 @@
+// packages/web/src/pages/VehiclesPage.tsx
 export default function VehiclesPage(): JSX.Element {
   const demoVehicles = [
     { id: "demo-1", title: "Demo Fahrzeug 1" },
@@ -5,7 +6,7 @@ export default function VehiclesPage(): JSX.Element {
   ];
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+    <main style={{ padding: 12 }}>
       <h1>Vehicles</h1>
       <p>Scaffold-Seite: Liste der Fahrzeuge (Owner-scoped, object-level checks serverseitig).</p>
 
@@ -14,18 +15,24 @@ export default function VehiclesPage(): JSX.Element {
         <ul>
           {demoVehicles.map((v) => (
             <li key={v.id}>
-              <a href={`/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</a>
+              <a href={`#/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</a>
             </li>
           ))}
         </ul>
       </section>
 
       <section style={{ marginTop: 16 }}>
-        <h2>Navigation</h2>
+        <h2>Navigation (Hash)</h2>
         <ul>
-          <li><a href="/documents">Zu Documents</a></li>
-          <li><a href="/auth">Zu Auth</a></li>
-          <li><a href="/consent">Zu Consent</a></li>
+          <li>
+            <a href="#/documents">Zu Documents</a>
+          </li>
+          <li>
+            <a href="#/auth">Zu Auth</a>
+          </li>
+          <li>
+            <a href="#/consent">Zu Consent</a>
+          </li>
         </ul>
       </section>
     </main>

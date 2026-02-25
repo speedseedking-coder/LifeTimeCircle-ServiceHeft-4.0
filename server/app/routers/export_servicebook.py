@@ -1,377 +1,325 @@
-# server/app/routers/export_servicebook.py
 from __future__ import annotations
 
-from app.guards import forbid_moderator
-import datetime as dt
+import base64
+import hashlib
+import hmac
 import json
-from typing import Any, Dict, List, Optional, Set
+import os
+import secrets
+import threading
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import MetaData, Table, select, inspect as sa_inspect
+from cryptography.fernet import Fernet
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from sqlalchemy import Boolean, Column, DateTime, Integer, MetaData, String, Table, inspect, select, update
 from sqlalchemy.orm import Session
 
-from app.services.export_store import issue_one_time_token, consume_one_time_token
-from app.services.export_crypto import encrypt_json
-from app.services.export_audit import write_export_audit
-from app.services.export_servicebook_redaction import redact_servicebook_entry_row
+from app.routers.export_vehicle import get_actor, get_db
 
-# Wichtig: exakt die gleichen Dependencies wie im funktionierenden Export-Vehicle Router
-from app.routers.export_vehicle import get_db, get_actor  # type: ignore
-
-
+from app.guards import forbid_moderator
 router = APIRouter(prefix="/export/servicebook", tags=["export"], dependencies=[Depends(forbid_moderator)])
-
-
-# ---------------------------
-# actor helpers
-# ---------------------------
-def _actor_role(actor: Any) -> str:
+def _role_of(actor: Any) -> str:
     if actor is None:
-        return "public"
-    r = getattr(actor, "role", None)
-    if isinstance(r, str) and r:
-        return r
+        return ""
+    if hasattr(actor, "role"):
+        return str(getattr(actor, "role") or "")
     if isinstance(actor, dict):
-        rr = actor.get("role")
-        if isinstance(rr, str) and rr:
-            return rr
-    return "public"
+        return str(actor.get("role") or "")
+    return ""
 
 
-def _actor_user_id(actor: Any) -> Optional[str]:
+def _user_id_of(actor: Any) -> str:
     if actor is None:
-        return None
-    u = getattr(actor, "user_id", None)
-    if isinstance(u, str) and u:
-        return u
+        return ""
+    for attr in ("user_id", "uid", "id", "sub"):
+        if hasattr(actor, attr):
+            v = getattr(actor, attr)
+            if v:
+                return str(v)
     if isinstance(actor, dict):
-        uu = actor.get("user_id")
-        if isinstance(uu, str) and uu:
-            return uu
-    return None
+        for key in ("user_id", "uid", "id", "sub"):
+            v = actor.get(key)
+            if v:
+                return str(v)
+    return ""
 
 
-def _require_roles(actor: Any, allowed: set[str]) -> None:
-    role = _actor_role(actor)
-    if role not in allowed:
+def _require_superadmin(actor: Any) -> None:
+    if _role_of(actor) != "superadmin":
         raise HTTPException(status_code=403, detail="forbidden")
 
 
-# ---------------------------
-# DB helpers (autodetect)
-# ---------------------------
-def _servicebook_entries_table(db: Session) -> Table:
-    """
-    Servicebook ist im Core noch nicht als SQLAlchemy-Model vorhanden.
-    Daher: Table autodetect (wie export_vehicle).
-    """
-    conn = db.connection()
-    insp = sa_inspect(conn)
+def _deny_moderator(actor: Any) -> None:
+    if _role_of(actor) == "moderator":
+        raise HTTPException(status_code=403, detail="forbidden")
 
-    candidates = (
-        "servicebook_entries",
-        "servicebook_entry",
-        "service_entries",
-        "service_entry",
-        "servicebook",
-        "servicebooks",
-    )
 
-    for name in candidates:
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _utcnow_naive() -> datetime:
+    return _utcnow().replace(tzinfo=None)
+
+
+def _derive_fernet_key(secret: str) -> bytes:
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest)
+
+
+def _get_secret() -> str:
+    secret = os.environ.get("LTC_SECRET_KEY", "")
+    if len(secret) < 16:
+        raise HTTPException(status_code=500, detail="server_misconfigured")
+    return secret
+
+
+def _hmac_value(value: str) -> str:
+    return hmac.new(_get_secret().encode("utf-8"), value.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _json_default(o: Any) -> Any:
+    if isinstance(o, (datetime, date)):
+        return o.isoformat()
+    return str(o)
+
+
+_grant_lock = threading.Lock()
+_grant_cache: Dict[int, Table] = {}
+
+
+def _grants_table(db: Session) -> Table:
+    engine = db.get_bind()
+    key = id(engine)
+
+    with _grant_lock:
+        cached = _grant_cache.get(key)
+        if cached is not None:
+            return cached
+
+        md = MetaData()
+        insp = inspect(engine)
+
+        if insp.has_table("export_grants_servicebook"):
+            tbl = Table("export_grants_servicebook", md, autoload_with=engine)
+            _grant_cache[key] = tbl
+            return tbl
+
+        tbl = Table(
+            "export_grants_servicebook",
+            md,
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("export_token", String(255), nullable=False, unique=True, index=True),
+            Column("servicebook_id", String(255), nullable=False, index=True),
+            Column("expires_at", DateTime(timezone=True), nullable=False, index=True),
+            Column("used", Boolean, nullable=False, default=False),
+            Column("created_at", DateTime(timezone=True), nullable=False),
+        )
+        md.create_all(engine, tables=[tbl])
+        _grant_cache[key] = tbl
+        return tbl
+
+
+def _servicebook_table(db: Session) -> Table:
+    engine = db.get_bind()
+    md = MetaData()
+    insp = inspect(engine)
+    for name in ("servicebook_entries", "servicebook_entry", "servicebooks", "servicebook", "service_entries", "service_entry"):
         if insp.has_table(name):
-            return Table(name, MetaData(), autoload_with=conn)
-
-    raise HTTPException(status_code=404, detail="servicebook_table_missing")
-
-
-def _documents_table(db: Session) -> Optional[Table]:
-    conn = db.connection()
-    insp = sa_inspect(conn)
-
-    candidates = (
-        "documents",
-        "document",
-        "uploads",
-        "upload",
-        "document_uploads",
-        "upload_documents",
-    )
-    for name in candidates:
-        if insp.has_table(name):
-            return Table(name, MetaData(), autoload_with=conn)
-    return None
+            return Table(name, md, autoload_with=engine)
+    raise HTTPException(status_code=404, detail="not_found")
 
 
-def _pick_col(t: Table, names: tuple[str, ...]) -> Optional[str]:
-    for n in names:
-        if n in t.c:
-            return n
-    return None
-
-
-def _normalize_doc_ids(raw: Any) -> List[str]:
-    if raw is None:
-        return []
-    if isinstance(raw, list):
-        return [str(x) for x in raw if x]
-    if isinstance(raw, str):
-        s = raw.strip()
-        if not s:
-            return []
-        # JSON list?
-        if s.startswith("[") and s.endswith("]"):
-            try:
-                parsed = json.loads(s)
-                if isinstance(parsed, list):
-                    return [str(x) for x in parsed if x]
-            except Exception:
-                pass
-        return [s]
-    return [str(raw)]
-
-
-def _extract_doc_fields(row: Dict[str, Any]) -> List[tuple[str, Any]]:
-    keys = (
-        "document_ids",
-        "doc_ids",
-        "documents",
-        "attachments",
-        "attachment_ids",
-        "upload_ids",
-        "document_refs",
-        "document_id",
-        "doc_id",
-        "upload_id",
-    )
-    out = []
-    for k in keys:
-        if k in row and row[k] is not None:
-            out.append((k, row[k]))
-    return out
-
-
-def _approved_doc_ids(db: Session, ids: List[str]) -> Set[str]:
-    if not ids:
-        return set()
-
-    t = _documents_table(db)
-    if t is None:
-        return set()
-
-    id_col = _pick_col(t, ("id", "document_id", "upload_id"))
-    status_col = _pick_col(t, ("status", "state", "review_status", "quarantine_status"))
-    if id_col is None or status_col is None:
-        return set()
-
-    ok_values = {"approved", "APPROVED", "ok", "OK"}
-    rows = db.execute(select(t.c[id_col], t.c[status_col]).where(t.c[id_col].in_(ids))).mappings().all()
-
-    approved: Set[str] = set()
-    for r in rows:
-        st = r.get(status_col)
-        if st is None:
-            continue
-        if str(st) in ok_values:
-            approved.add(str(r[id_col]))
-    return approved
-
-
-def _filter_row_docs_to_approved(db: Session, row: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Konservativ: wenn wir doc-status nicht auflösen können, liefern wir KEINE docs aus.
-    Das entspricht Quarantine-by-default.
-    """
-    doc_fields = _extract_doc_fields(row)
-    if not doc_fields:
-        return row
-
-    all_ids: List[str] = []
-    for _, v in doc_fields:
-        all_ids.extend(_normalize_doc_ids(v))
-
-    approved = _approved_doc_ids(db, list(set(all_ids)))
-
-    out = dict(row)
-    for k, v in doc_fields:
-        ids = _normalize_doc_ids(v)
-        keep = [x for x in ids if x in approved]
-
-        if k in {"document_id", "doc_id", "upload_id"}:
-            out[k] = keep[0] if keep else None
-        else:
-            out[k] = json.dumps(keep, ensure_ascii=False, separators=(",", ":"))
-    return out
-
-
-def _fetch_servicebook_entries(db: Session, servicebook_id: str) -> List[Dict[str, Any]]:
-    t = _servicebook_entries_table(db)
-
-    if "servicebook_id" in t.c:
-        where_col = t.c.servicebook_id
-    elif "vehicle_id" in t.c:
-        where_col = t.c.vehicle_id
-    elif "id" in t.c:
-        where_col = t.c.id
+def _fetch_servicebook_rows(db: Session, servicebook_id: str) -> Tuple[List[Dict[str, Any]], Table]:
+    tbl = _servicebook_table(db)
+    if "servicebook_id" in tbl.c:
+        where_col = tbl.c.servicebook_id
+    elif "vehicle_id" in tbl.c:
+        where_col = tbl.c.vehicle_id
+    elif "id" in tbl.c:
+        where_col = tbl.c.id
     else:
-        raise HTTPException(status_code=500, detail="servicebook_id_column_missing")
+        raise HTTPException(status_code=500, detail="server_misconfigured")
 
-    rows = db.execute(select(t).where(where_col == servicebook_id)).mappings().all()
-
+    rows = db.execute(select(tbl).where(where_col == servicebook_id)).mappings().all()
     if not rows:
         raise HTTPException(status_code=404, detail="not_found")
+    return [dict(r) for r in rows], tbl
 
-    return [dict(r) for r in rows]
 
-
-def _enforce_scope_or_admin(actor: Any, rows: List[Dict[str, Any]]) -> None:
-    role = _actor_role(actor)
-
+def _enforce_redacted_access(actor: Any, rows: List[Dict[str, Any]]) -> None:
+    role = _role_of(actor)
     if role in {"admin", "superadmin"}:
         return
 
     if role not in {"user", "vip", "dealer"}:
         raise HTTPException(status_code=403, detail="forbidden")
 
-    actor_uid = _actor_user_id(actor)
-    if not actor_uid:
+    uid = _user_id_of(actor)
+    if not uid:
         raise HTTPException(status_code=403, detail="forbidden")
 
-    owner_keys = (
-        "owner_id",
-        "user_id",
-        "created_by_user_id",
-        "created_by",
-        "actor_user_id",
-    )
-
+    owner_fields = ("owner_id", "owner_user_id", "user_id", "created_by_user_id", "created_by", "actor_user_id")
     for row in rows:
-        for k in owner_keys:
-            if k in row and row[k]:
-                if str(row[k]) == str(actor_uid):
-                    return
+        for key in owner_fields:
+            val = row.get(key)
+            if val and str(val) == uid:
+                return
 
     raise HTTPException(status_code=403, detail="forbidden")
 
+def _read_expires_at(val: Any) -> Optional[datetime]:
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return val.replace(tzinfo=None)
+    if isinstance(val, str):
+        try:
+            return datetime.fromisoformat(val).replace(tzinfo=None)
+        except Exception:
+            return None
+    return None
 
-# ---------------------------
-# Endpoints
-# ---------------------------
-@router.get("/{servicebook_id}")
-def export_servicebook_redacted(
-    servicebook_id: str,
-    db: Session = Depends(get_db),
-    actor: Any = Depends(get_actor),
-):
-    rows = _fetch_servicebook_entries(db, servicebook_id)
-    _enforce_scope_or_admin(actor, rows)
 
-    # Quarantine-by-default: only approved doc refs in redacted export
-    rows = [_filter_row_docs_to_approved(db, r) for r in rows]
-
-    redacted = [redact_servicebook_entry_row(r) for r in rows]
-
-    write_export_audit(
-        db,
-        event_type="EXPORT_SERVICEBOOK_REDACTED",
-        actor_role=_actor_role(actor),
-        actor_user_id=_actor_user_id(actor),
-        target_type="servicebook",
-        target_id=servicebook_id,
-        success=True,
-        reason=None,
+def _redact_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    blocked_contains = (
+        "email",
+        "phone",
+        "tel",
+        "name",
+        "address",
+        "street",
+        "zip",
+        "city",
+        "vin",
+        "token",
+        "secret",
+        "password",
+        "note",
+        "comment",
+        "text",
+        "details",
     )
+    out: Dict[str, Any] = {}
+    for key, value in row.items():
+        k = key.lower()
+        if any(x in k for x in blocked_contains):
+            continue
+        out[key] = value
 
-    return {"target": "servicebook", "id": servicebook_id, "entries": redacted}
+    vin_val = row.get("vin")
+    if vin_val:
+        out["vin_hmac"] = _hmac_value(str(vin_val))
+
+    owner_email = row.get("owner_email")
+    if owner_email:
+        out["owner_email_hmac"] = _hmac_value(str(owner_email))
+
+    return out
+
+
+@router.get("/{servicebook_id}")
+def export_servicebook_redacted(servicebook_id: str, request: Request, actor: Any = Depends(get_actor)):
+    _deny_moderator(actor)
+    db: Session = next(get_db(request))
+    try:
+        rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
+        _enforce_redacted_access(actor, rows)
+
+        redacted_rows = [_redact_row(r) for r in rows]
+        data = {
+            "target": "servicebook",
+            "id": servicebook_id,
+            "_redacted": True,
+            "servicebook": {"id": servicebook_id, "entries": redacted_rows, "servicebook_id_hmac": _hmac_value(servicebook_id)},
+        }
+        return {"data": data, "target": "servicebook", "id": servicebook_id, "entries": redacted_rows}
+    finally:
+        db.close()
 
 
 @router.post("/{servicebook_id}/grant")
-def export_servicebook_full_grant(
-    servicebook_id: str,
-    db: Session = Depends(get_db),
-    actor: Any = Depends(get_actor),
-):
-    _require_roles(actor, {"superadmin"})
+def export_servicebook_grant(servicebook_id: str, request: Request, ttl_seconds: int = 300, actor: Any = Depends(get_actor)):
+    _deny_moderator(actor)
+    _require_superadmin(actor)
+    db: Session = next(get_db(request))
+    try:
+        _rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
+        ttl = max(30, min(int(ttl_seconds), 3600))
+        tok = secrets.token_urlsafe(32)
+        now = _utcnow_naive()
+        exp = now + timedelta(seconds=ttl)
 
-    _ = _fetch_servicebook_entries(db, servicebook_id)
-
-    token, expires_at = issue_one_time_token(
-        db,
-        resource_type="servicebook",
-        resource_id=servicebook_id,
-        issued_by_role=_actor_role(actor),
-        issued_by_user_id=_actor_user_id(actor),
-    )
-
-    write_export_audit(
-        db,
-        event_type="EXPORT_SERVICEBOOK_GRANT",
-        actor_role=_actor_role(actor),
-        actor_user_id=_actor_user_id(actor),
-        target_type="servicebook",
-        target_id=servicebook_id,
-        success=True,
-        reason=None,
-    )
-
-    return {"export_token": token, "expires_at": expires_at.isoformat()}
+        grants = _grants_table(db)
+        db.execute(
+            grants.insert().values(
+                export_token=tok,
+                servicebook_id=servicebook_id,
+                expires_at=exp,
+                used=0,
+                created_at=now,
+            )
+        )
+        db.commit()
+        return {
+            "servicebook_id": servicebook_id,
+            "export_token": tok,
+            "token": tok,
+            "expires_at": exp.isoformat(),
+            "ttl_seconds": ttl,
+            "one_time": True,
+            "header": "X-Export-Token",
+        }
+    finally:
+        db.close()
 
 
 @router.get("/{servicebook_id}/full")
-def export_servicebook_full_encrypted(
+def export_servicebook_full(
     servicebook_id: str,
-    x_export_token: Optional[str] = Header(default=None, alias="X-Export-Token"),
-    db: Session = Depends(get_db),
+    request: Request,
+    x_export_token: Optional[str] = Header(default=None, convert_underscores=False, alias="X-Export-Token"),
     actor: Any = Depends(get_actor),
 ):
-    _require_roles(actor, {"superadmin"})
+    _deny_moderator(actor)
+    _require_superadmin(actor)
 
     if not x_export_token:
-        write_export_audit(
-            db,
-            event_type="EXPORT_SERVICEBOOK_FULL",
-            actor_role=_actor_role(actor),
-            actor_user_id=_actor_user_id(actor),
-            target_type="servicebook",
-            target_id=servicebook_id,
-            success=False,
-            reason="missing_x_export_token",
-        )
-        raise HTTPException(status_code=400, detail="missing_x_export_token")
+        raise HTTPException(status_code=400, detail="missing_export_token")
 
+    db: Session = next(get_db(request))
     try:
-        _ = consume_one_time_token(db, "servicebook", servicebook_id, x_export_token)
-    except PermissionError as e:
-        write_export_audit(
-            db,
-            event_type="EXPORT_SERVICEBOOK_FULL",
-            actor_role=_actor_role(actor),
-            actor_user_id=_actor_user_id(actor),
-            target_type="servicebook",
-            target_id=servicebook_id,
-            success=False,
-            reason=str(e),
-        )
-        raise HTTPException(status_code=403, detail="export_token_invalid")
+        rows, _tbl = _fetch_servicebook_rows(db, servicebook_id)
+        grants = _grants_table(db)
+        g = db.execute(select(grants).where(grants.c.export_token == x_export_token)).mappings().first()
+        if g is None:
+            raise HTTPException(status_code=403, detail="forbidden")
+        if str(g.get("servicebook_id") or "") != str(servicebook_id):
+            raise HTTPException(status_code=403, detail="forbidden")
 
-    rows = _fetch_servicebook_entries(db, servicebook_id)
+        exp = _read_expires_at(g.get("expires_at"))
+        if exp is None or _utcnow_naive() > exp:
+            raise HTTPException(status_code=403, detail="forbidden")
 
-    payload = {
-        "target": "servicebook",
-        "id": servicebook_id,
-        "exported_at": dt.datetime.now(dt.timezone.utc),
-        "entries": rows,
-    }
-    ciphertext = encrypt_json(payload)
+        if int(g.get("used") or 0) != 0:
+            raise HTTPException(status_code=403, detail="forbidden")
 
-    write_export_audit(
-        db,
-        event_type="EXPORT_SERVICEBOOK_FULL",
-        actor_role=_actor_role(actor),
-        actor_user_id=_actor_user_id(actor),
-        target_type="servicebook",
-        target_id=servicebook_id,
-        success=True,
-        reason=None,
-    )
+        payload = {
+            "target": "servicebook",
+            "id": servicebook_id,
+            "servicebook": {"id": servicebook_id, "entries": rows},
+            "data": {"servicebook": {"id": servicebook_id, "entries": rows}},
+            "exported_at": _utcnow().isoformat(),
+        }
+        f = Fernet(_derive_fernet_key(_get_secret()))
+        ciphertext = f.encrypt(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True, default=_json_default).encode("utf-8")
+        ).decode("utf-8")
 
-    return {"target": "servicebook", "id": servicebook_id, "ciphertext": ciphertext}
+        db.execute(update(grants).where(grants.c.id == g["id"]).values(used=1))
+        db.commit()
+
+        return {"servicebook_id": servicebook_id, "ciphertext": ciphertext, "alg": "fernet", "one_time": True}
+    finally:
+        db.close()

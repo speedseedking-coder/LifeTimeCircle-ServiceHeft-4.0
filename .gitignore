@@ -55,3 +55,19 @@ _local/
 # local backups
 packages/web/src/*.bak_*
 
+data/
+
+# local dev logs (do not commit)
+packages/web/LTC_REAL_last_run.log
+
+# Playwright artifacts
+packages/web/test-results/
+
+
+# build/test artifacts
+artifacts/
+
+
+# Safety: never commit "old node_modules" snapshots/backups
+**/node_modules__old_*/
+**/node_modules__old_*

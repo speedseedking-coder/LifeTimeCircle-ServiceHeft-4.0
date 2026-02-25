@@ -1,4 +1,4 @@
-﻿# docs/04_REPO_STRUCTURE.md
+# docs/04_REPO_STRUCTURE.md
 # LifeTimeCircle – Service Heft 4.0
 **Repo-Struktur / Source of Truth (SoT)**  
 Stand: **2026-02-08**
@@ -75,7 +75,7 @@ LifeTimeCircle-ServiceHeft-4.0/
 
 ## 6) Quick Commands (Windows / Repo-Root)
 ```powershell
-cd "<REPO-ROOT>"
+cd (git rev-parse --show-toplevel)
 
 # Sync + Status
 git switch main

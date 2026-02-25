@@ -44,7 +44,7 @@ Stand: **2026-02-06** (Europe/Berlin)
 ## 3) Enforcement (Tests)
 - Runtime-Scan (Moderator):
   - iteriert über alle registrierten Routes
-  - Allowlist (ohne 403): `/auth/*`, `/health`, `/public/*`, `/blog/*`, `/news/*`
+  - Allowlist (ohne 403): `/auth/*`, `/blog/*`, `/news/*`
   - außerhalb der Allowlist muss `moderator` 403 bekommen
 
 ---
@@ -54,8 +54,7 @@ Stand: **2026-02-06** (Europe/Berlin)
 ### 4.1 Public Site / Public QR Mini-Check
 | Route-Group | superadmin | admin | dealer | vip | user | moderator | public |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `/public/*` (Site/QR) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-
+| `/public/*` (Site/QR) | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (403) | ✅ |
 Public Daten-Regeln (bindend):
 - datenarm: Klasse, Marke/Modell, Baujahr, Motor/Antrieb grob
 - VIN maskiert: erste 3 + letzte 4
@@ -102,6 +101,8 @@ Hinweis:
 ## 7) Vehicles / Flotten / Sammlungen
 
 ### 7.1 Vehicles (Owner-Objekte, object-level)
+**Consent-Gate (Web-Contract):** Ohne Consent ⇒ `403` mit `detail="consent_required"` (Redirect auf `#/consent`).
+Gilt für `/vehicles/*` inkl. Unterrouten.
 | Route-Group | superadmin | admin | dealer | vip | user | moderator |
 |---|---:|---:|---:|---:|---:|---:|
 | `/vehicles/*` | ✅ | ✅ | ✅ (eigene Business/Flotte) | ✅ (eigene) | ✅ (eigene) | ❌ 403 |
@@ -284,3 +285,13 @@ Zusatzregel „Trust-Evidence“:
 
 PII-Sichtbarkeit:
 - pii_status != OK => nur Owner/Admin sichtbar.
+
+
+## Export / PDFs
+
+| Endpoint | guest | vip | dealer | moderator | admin | superadmin |
+|-----------|--------|-----|--------|------------|--------|-------------|
+| POST /export/vehicle/{vehicle_id}/grant | ❌ | Owner | Owner | ❌ | ✅ | ✅ |
+| GET /export/vehicle/{vehicle_id}/full | ❌ | Owner* | Owner* | ❌ | ✅ | ✅ |
+
+\* GET /export/vehicle/{vehicle_id}/full requires Header X-Export-Token; Token ist **one-time** (used=true) und **TTL**-gebunden (expires_at).

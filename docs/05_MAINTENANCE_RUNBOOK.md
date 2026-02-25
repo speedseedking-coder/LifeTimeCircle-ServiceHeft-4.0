@@ -1,4 +1,4 @@
-﻿\# docs/05\_MAINTENANCE\_RUNBOOK.md
+\# docs/05\_MAINTENANCE\_RUNBOOK.md
 
 \# LifeTimeCircle – Service Heft 4.0
 
@@ -56,11 +56,12 @@ Immer zuerst:
 
 ```powershell
 
-cd "<REPO-ROOT>"
+cd (git rev-parse --show-toplevel)
 
 git switch main
 
 git pull --ff-only origin main
 
 git status -sb
+
 

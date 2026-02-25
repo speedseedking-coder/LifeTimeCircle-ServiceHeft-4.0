@@ -1,4 +1,22 @@
 import os
+
+# LTC_TEST_SECRET_KEY_IMPORTTIME
+
+# Minimal deterministic test secret (>=16 chars) – test-only
+os.environ["LTC_SECRET_KEY"] = os.environ.get("LTC_SECRET_KEY") or "test-secret-key-1234567890"
+
+# Ensure settings read the env (cache clear if present)
+try:
+    from app.settings import get_settings  # type: ignore
+    if hasattr(get_settings, "cache_clear"):
+        get_settings.cache_clear()
+except Exception:
+    try:
+        from app.core.settings import get_settings  # type: ignore
+        if hasattr(get_settings, "cache_clear"):
+            get_settings.cache_clear()
+    except Exception:
+        pass
 import sys
 from pathlib import Path
 
@@ -10,10 +28,7 @@ SERVER_ROOT = Path(__file__).resolve().parents[1]
 if str(SERVER_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVER_ROOT))
 
-# Env vor App-Import setzen (Settings laden SECRET_KEY Pflicht)
-os.environ.setdefault("LTC_SECRET_KEY", "test-secret")
-os.environ.setdefault("LTC_ENV", "test")
-os.environ.setdefault("LTC_DATABASE_URL", "sqlite+pysqlite:///:memory:")
+
 
 from app.main import create_app  # noqa: E402
 
@@ -151,3 +166,16 @@ def make_user_headers():
 
 
 
+
+import pytest
+
+# LTC_TEST_SECRET_KEY_AUTOUSE
+# Tests erwarten einen gültigen Secret-Key (>= 16 chars) für One-Time-Token Exporte.
+# In Prod MUSS das aus Env/Secrets kommen – hier nur für Tests.
+@pytest.fixture(autouse=True, scope="session")
+def _ltc_test_secret_key() -> None:
+    key = "test_secret_key__0123456789abcdef"
+    os.environ.setdefault("LTC_SECRET_KEY", key)
+    # optional Fallbacks, falls Settings andere Env-Namen akzeptieren:
+    os.environ.setdefault("SECRET_KEY", key)
+    os.environ.setdefault("APP_SECRET_KEY", key)

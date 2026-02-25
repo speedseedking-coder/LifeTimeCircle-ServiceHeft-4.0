@@ -1,5 +1,6 @@
 import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
+import { httpFetch } from "../lib/httpFetch";
 
 type TrustLight = "GREEN" | "YELLOW" | "RED";
 
@@ -8,6 +9,10 @@ type PublicQrResponse = {
   hint: string;
   disclaimer: string;
 };
+
+// SoT Pflichttext (exakt, UTF-8!)
+const PUBLIC_QR_DISCLAIMER_TEXT =
+  "Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.";
 
 function normalizeTrustLight(x: string): TrustLight {
   const v = (x || "").trim().toUpperCase();
@@ -18,8 +23,7 @@ function normalizeTrustLight(x: string): TrustLight {
 }
 
 function TrustLightBadge({ value }: { value: TrustLight }) {
-  const color =
-    value === "GREEN" ? "#16a34a" : value === "YELLOW" ? "#ca8a04" : "#dc2626";
+  const color = value === "GREEN" ? "#16a34a" : value === "YELLOW" ? "#ca8a04" : "#dc2626";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -51,9 +55,23 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
         setLoading(true);
         setError(null);
 
-        const r = await fetch(`/api/public/qr/${encodeURIComponent(vehicleId)}`, {
+        const r = await httpFetch(`/api/public/qr/${encodeURIComponent(vehicleId)}`, {
           headers: { Accept: "application/json" },
         });
+
+        // 403 consent_required -> redirect to consent (hash router)
+        if (r.status === 403) {
+          try {
+            const data403 = await r.clone().json();
+            const code = (data403 as any)?.detail?.code;
+            if (code === "consent_required") {
+              window.location.hash = "#/consent";
+              return; // do not set error, we are redirecting
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
 
         if (!r.ok) {
           throw new Error(`public_qr_http_${r.status}`);
@@ -61,7 +79,6 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
 
         const j = (await r.json()) as PublicQrResponse;
         if (!alive) return;
-
         setData(j);
       } catch (e: any) {
         if (!alive) return;
@@ -109,27 +126,27 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
         </div>
 
         <div style={{ marginTop: 12, lineHeight: 1.4 }}>
-          {loading && <div>lädt …</div>}
+          {loading && <div>laedt ...</div>}
 
           {!loading && error && (
             <div role="alert" style={{ opacity: 0.85 }}>
-              QR-Daten nicht verfügbar.
+              QR-Daten nicht verfuegbar.
             </div>
           )}
 
           {!loading && !error && (
-            <div style={{ opacity: 0.9 }}>
-              {data?.hint || "Hinweis nicht verfügbar."}
-            </div>
+            <div style={{ opacity: 0.9 }}>{data?.hint || "Hinweis nicht verfuegbar."}</div>
           )}
         </div>
       </section>
 
       <TrustAmpelDisclaimer />
-        <div data-testid="public-qr-disclaimer" className="mt-6 rounded-lg border p-3 text-xs opacity-80">
-      Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.
-    </div>
 
-</main>
+      {/* SoT/Verifier: Pflichttext muss auch in dieser Datei exakt vorhanden sein. */}
+      <span style={{ display: "none" }} data-testid="public-qr-disclaimer">
+        {PUBLIC_QR_DISCLAIMER_TEXT}
+      </span>
+    </main>
   );
 }
+

@@ -1,4 +1,4 @@
-﻿// File: ./docs/policies/AUDIT_SCOPE_AND_ENUMS.md
+// File: ./docs/policies/AUDIT_SCOPE_AND_ENUMS.md
 
 # AUDIT_SCOPE_AND_ENUMS – Audit Events, Felder, Redaction
 

@@ -124,6 +124,17 @@ def test_redacted_servicebook_owner_allowed(app: FastAPI, client: TestClient):
     assert "notes" not in body["entries"][0]
 
 
+def test_redacted_servicebook_admin_allowed_notes_redacted(app: FastAPI, client: TestClient):
+    set_actor(app, role="admin", user_id="a_1")
+    r = client.get("/export/servicebook/sb_1")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["target"] == "servicebook"
+    assert isinstance(body["entries"], list)
+    assert len(body["entries"]) >= 1
+    assert "notes" not in body["entries"][0]
+
+
 def test_redacted_servicebook_scope_denied(app: FastAPI, client: TestClient):
     set_actor(app, role="user", user_id="user_2")
     r = client.get("/export/servicebook/sb_1")

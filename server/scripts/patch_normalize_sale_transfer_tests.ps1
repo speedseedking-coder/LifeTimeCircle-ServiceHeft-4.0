@@ -1,4 +1,4 @@
-﻿# server/scripts/patch_normalize_sale_transfer_tests.ps1
+# server/scripts/patch_normalize_sale_transfer_tests.ps1
 param()
 
 Set-StrictMode -Version Latest

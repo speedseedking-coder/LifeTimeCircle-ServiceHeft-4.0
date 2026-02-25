@@ -1,24 +1,6 @@
-﻿## Release Approval Record (Ticket/Jira, post-release doc-only)
-
-Release Manager Approval: GO — RC1 Freeze Verified (v0.1.0-rc1), No-Change Evidence attached.  
-Change Type: None | Risk: Low | Rollback: N/A  
-Post-release documentation only — RC1 tag unchanged.  
-RC1 Proof: tag object 3d02a806691cbf5efddcf9f2ee1125125fed23ca + peeled f60680ffe53557f96147db8c765d39e2a63286f5 verified.  
-No code changes.
-
-✅ PR #95 **gemerged**: `chore/ci-helper-script`
-- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
-
-✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
-- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
-
-✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
-
----
-
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-12** (Europe/Berlin)
+Stand: **2026-02-24** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -32,44 +14,131 @@ Projekt:
 ## Produkt-Spezifikation (Unified) — SoT
 - **Ab jetzt nur noch „LifeTimeCircle · Service Heft (Unified)“** (kein Parallelzweig „2.0“)
 - Vollständige Spezifikation: `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- Spezifikation ist erweitert/finalisiert (E2E-Flow, Trust/Unfalltrust, PII, Module, Transfer/Dealer, PDFs/TTL, Notifications, Import, Packaging) – siehe `docs/02_PRODUCT_SPEC_UNIFIED.md`
 
 ---
 
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
-### WIP: Vehicles MVP + Consent Gate (Next10 E2E)
-- Status: **PR offen** (Branch: `$marker`)
+### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
+- Status: **IN REVIEW (pending green)**
+- Scope (SoT):
+  - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
+  - Serverseitige Security bleibt führend: deny-by-default, RBAC + object-level checks, Moderator nur Blog/News
+  - UI zeigt nur zulässige Navigation; Enforcement bleibt ausschließlich Backend
+- DoD (minimal, deterministisch):
+  - Routing/Guards: 401 → Auth, `consent_required` → Consent, 403 sauber dargestellt
+  - Keine PII/Secrets in UI-Logs/Responses/Telemetry
+  - Pflichttext Public-QR bleibt exakt unverändert
+  - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
+- Evidence:
+  - Branch: `fix/web-app-shell-auth-header-gating-p1`
+  - PR: #210
+  - Commits:
+    - a27d6b4 fix(web): ts guard for consent_required code
+    - a0bf2f2 fix(web): auth header gating + consent/RBAC hardening (P1)
+  - Tests lokal:
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅
+    - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
+
+### WIP: NEXT-BLOCK nach P1 — Web Consent-Drift Hardening (consent_required tolerant)
+- Status: **OPEN**
 - Scope:
-  - `/vehicles` Router (Create/List/Get), object-level, Moderator 403, VIN nur masked
-  - `require_consent(db, actor)` Gate (deny-by-default, 403 `consent_required`)
-  - Docs: Rights-Matrix korrigiert (Moderator nur Blog/News; Consent/Profile/Support = 403)
-
-### WIP: 80%-Alpha Track (Codex Masterplan)
-- Branch: `codex/80pct-masterplan`
-- Commit: `512b59e` — Phase A+B fertig:
-  - Repo-Sanity erledigt, echter Merge-Conflict in SoT/Decisions bereinigt
-  - **Tests/CI gehärtet**: `LTC_SECRET_KEY` stabil für pytest/CI (harmloser DEV-Testkey), lokal reproduzierbar grün
-  - `server/tests/conftest.py`: autouse-Fixture + Marker-Ausnahme `allow_missing_secret`
-  - `.github/workflows/ci.yml` setzt stabilen DEV-Wert für `LTC_SECRET_KEY` im pytest-Job
-  - Docs: `docs/01_DECISIONS.md` Conflict-Marker entfernt, `docs/99_MASTER_CHECKPOINT.md` WIP-Block ergänzt
-- PR (make_pr): „fix: stabilize LTC_SECRET_KEY for pytest and resolve decisions merge markers“
-
-### WIP: Projektstandsanalyse (Doc-only)
-- Commit: `216e4b9`
-- Neue Datei: `docs/12_PROJECT_STATUS_ANALYSE_2026-02-12.md`
-- PR (make_pr): „docs: add project status analysis (folder/file-wide assessment)“
-
----
+  - Web akzeptiert `consent_required` als String ODER als Objekt-Shape (z. B. `detail.code`)
+  - Keine Backend-Änderung; serverseitige Enforcement bleibt führend (deny-by-default)
+- DoD (lokal Windows):
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1` ✅ (ALL GREEN)
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
+- Evidence:
+  - Branch: `fix/vehicles-consent-moderator-next10`
+  - PR: #212
+  - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
 ## Aktueller Stand (main)
 
-- Neu: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+✅ PR #211 gemerged: test(api): next10 moderator public + vehicles consent runtime coverage
+- Commit: 4cd0203
+- Neu: `server/tests/test_next10_moderator_public_and_vehicles.py`
+
+✅ PR #203 gemerged: tools(verify): add P0 mojibake/Next10 verify runner
+- Commit: cb42be2
+- Neu: server/scripts/ltc_verify_p0_mojibake_next10.ps1
+- Lokal verifiziert auf main:
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1 → **ALL GREEN ✅**
+  - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1 → **grün**
+  - Web E2E (Playwright Mini): 4/4 (401→#/auth, Loop-Guard, 403 consent_required→#/consent, Public-QR Disclaimer dedupe+exakt)
+
+✅ PR #202 gemerged: fix(encoding): make mojibake gate deterministic (JSONL scanner as SoT)
+- Commit: f68ba25
+- CI: Job pytest enthält Gate
+  - `node tools/mojibake_scan.js --root .` (deterministisch, Exit 0/1)
+
+✅ fix(docs/tests): Moderator-Allowlist konsistent zu Policy (nur /auth + /blog + /news; Moderator bekommt 403 auf /public und /health)
+- Neu/aktualisiert: `docs/00_CODEX_CONTEXT.md` (Codex/Agent Briefing / SoT Helper)
+
+✅ PR #189 gemerged: chore(tests): replace deprecated datetime.utcnow with timezone-aware now
+- Commit auf main: ee02b8e
+- Fix: entfernt DeprecationWarning (utcnow) im Export-P0 Test
+
+✅ PR #188 gemerged: fix(export): vehicle P0 export shape + persistent grants table (id PK) + one-time token
+- Commit auf main: db023ec
+- Server: server/app/routers/export_vehicle.py (RBAC + Redaction + Grants persistence + Encryption)
+- Tests: server/tests/test_export_vehicle_p0.py
+- Behavior:
+  - GET /export/vehicle/{id} → { "data": ... } inkl. data["_redacted"]=true, vin_hmac, **kein** VIN/owner_email Leak
+  - POST /export/vehicle/{id}/grant → persistente DB-Tabelle export_grants_vehicle (id PK, export_token unique, expires_at, used, created_at)
+  - GET /export/vehicle/{id}/full → Header X-Export-Token (400 wenn fehlt), **one-time** + **TTL**, decrypted payload enthält payload["vehicle"]["vin"] (+ data.vehicle für P0-Kompat)
+
+✅ PR #171 **gemerged**: `fix(encoding): repair mojibake in rbac.py comments`
+- Fix: `server/app/rbac.py` Kommentar-Encoding repariert (Beispiel-Codepoints: U+00C3 U+00BC, U+00C3 U+00A4)
+- Gate wieder grün: `tools/test_all.ps1` → **ALL GREEN**
+- CI Checks: **2 checks passed**
+
+✅ PR #170 **gemerged**: `feat(security): add no-PII security telemetry (audit events + redaction + request id)`
+- Commit auf `main`: `e9f0fdb`
+- Neue Module:
+  - `server/app/security/telemetry.py`
+  - `server/app/security/redaction.py`
+  - `server/app/security/request_id.py`
+  - `server/app/security/__init__.py`
+- Integration:
+  - Middleware: `RequestIdMiddleware`
+  - Status -> Event Mapping (`map_status_to_event`)
+  - zentrale Event-Emission (`emit_security_event`)
+- Policy:
+  - strikt **no-PII**
+  - Redaction verpflichtend
+  - Request-ID erlaubt zur technischen Korrelation
+- Tests:
+  - `server/tests/test_security_telemetry.py`
+  - `pytest` grün
+- Lokal verifiziert:
+  - `tools/test_all.ps1` → **ALL GREEN**
+
+✅ PR #122 **gemerged**: `fix(import): report hardening`
+- Commit auf `main`: `f24a52e`
+- Repo-Pfad-Cleanup (Windows): Repo-Root wieder korrekt und clean
+- Docs aktualisiert: `docs/00_CODEX_CONTEXT.md`, `docs/04_REPO_STRUCTURE.md`, `docs/05_MAINTENANCE_RUNBOOK.md`
+
+✅ PR #121 **gemerged**: `chore: add one-command test runner (backend+web)`
+- Commit auf `main`: `8efc913`
+- Neu: `tools/test_all.ps1` (One-Command Runner: backend+web)
+- Updates: `.gitignore`, `README.md`, `docs/01_DECISIONS.md`
+
+✅ PR #95 **gemerged**: `chore/ci-helper-script`
+- `server/scripts/patch_ci_add_web_build_job.ps1` hinzugefügt (helper patch script, kein Workflow-Change)
+
+✅ PR #94 **gemerged**: `chore/poetry-lock-py311`
+- `server/poetry.lock` unter **Python 3.11** + `poetry 1.8.3` regeneriert; Tests grün
+
+✅ PR #93 **gemerged**: `chore/add-master-checkpoint-patch-script`
 
 ✅ PR #89 gemerged: `chore(web): declare node engine >=20.19.0 (vite 7)`
-- `packages/web/package.json`: `engines.node` auf **>=20.19.0** gesetzt (Vite 7 Requirement)
+- `packages/web/package.json`: `engines.node` auf **>=20.19.0** gesetzt (Vite 7 Requirement / verhindert lokale Mismatch-Setups)
 
 ✅ PR #87 gemerged: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
 - Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
+- Hinweis: Vite 7 benötigt Node.js >= 20.19
 
 ✅ PR #85 **gemerged** (Auto-Merge squash): `test(api): bypass vehicles consent dependency in vehicles/entries suite`
 - Ziel: Vehicles/Entries Tests sollen **nicht** vom Consent-Accept-Flow abhängen (Consent wird separat getestet)
@@ -91,11 +160,15 @@ Projekt:
   - `docs/01_DECISIONS.md`
 - Script:
   - `server/scripts/fix_docs_encoding_utf8.ps1` (byte-level repair, UTF-8 safe)
-- Branch Protection nachhaltig gefixt (Required status check = **Job-Name `pytest`**)
+- Branch Protection nachhaltig gefixt:
+  - Required status check = **Job-Name `pytest`**
+  - Verifikation via Check-Runs:
+    - `gh api "repos/$repo/commits/$sha/check-runs" --jq ".check_runs[].name"`
 
 ✅ PR #65 gemerged: `ci: actually run docs unified validator (root workdir)`
-- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root
-- Script hinzugefügt: `server/scripts/patch_ci_fix_docs_validator_step.ps1`
+- CI Workflow (`.github/workflows/ci.yml`): Step **LTC docs unified validator** läuft aus Repo-Root und ruft `server/scripts/patch_docs_unified_final_refresh.ps1` auf
+- Script: `server/scripts/patch_ci_fix_docs_validator_step.ps1`
+- CI grün: **pytest** + Docs Unified Validator + Web Build (`packages/web`)
 
 ✅ PR #60 gemerged: `docs: unify final spec (userflow/trust/pii/modules/transfer/pdfs/notifications/import)`
 - Neue SoT Datei: `docs/02_PRODUCT_SPEC_UNIFIED.md`
@@ -113,138 +186,16 @@ Projekt:
   - optional `-Clean`
   - `npm ci` + `npm run build`
 
-✅ PR #27: `Fix: sale-transfer status endpoint participant-only (prevent ID leak)`
-- `GET /sale/transfer/status/{transfer_id}`: object-level Zugriff nur **Initiator ODER Redeemer** (sonst **403**)
+✅ PR #57: `docs: master checkpoint 2026-02-06 (PR #53/#54)`
+- Script: `server/scripts/patch_master_checkpoint_pr53_pr54.ps1` (idempotent)
 
-✅ PR #24: `Test: moderator blocked on all non-public routes (runtime scan)`
-- Runtime-Scan über alle registrierten Routes, Moderator außerhalb Allowlist → **403**
+✅ PR #58: `chore(web): silence npm cache clean --force warning (stderr redirect)`
+- `server/scripts/ltc_web_toolkit.ps1` enthält:
+  - `try { & cmd /c "npm cache clean --force" 2>$null | Out-Null } catch { }`
+- Script: `server/scripts/patch_ltc_web_toolkit_silence_npm_cache_warn.ps1` (idempotent, UTF-8 no BOM)
 
-✅ PR #33: **Public: blog/news endpoints**
-- Public Router: `GET /blog(/)`, `GET /blog/{slug}`, `GET /news(/)`, `GET /news/{slug}`
-- Router wired in `server/app/main.py`
+✅ PR #59: `docs: master checkpoint add PR #58`
+- Script: `server/scripts/patch_master_checkpoint_pr58.ps1` (idempotent, UTF-8 no BOM)
 
-✅ PR #36: `Fix: OpenAPI duplicate operation ids (documents router double include)`
-- `server/app/main.py`: Documents-Router nur **einmal** registriert
-
-✅ PR #40: `Add web skeleton + root redirect + docs updates`
-- Web-Frontend Skeleton unter `packages/web` (Vite + React + TS)
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
-- API Root Redirect: `GET /` → 307 → `/public/site`
-- `GET /favicon.ico` → 204
-
-✅ PR #46: **P0 Actor Source of Truth** (serverseitig, DEV-Headers gated)
-- Ohne Actor → **401**
-- DEV/Test Header-Override nur hinter Gate (nicht in Produktion)
-
-✅ PR #47: **P0 VIP Business Staff-Limit + SUPERADMIN Gate**
-- VIP-Gewerbe: **max. 2 Staff-Accounts**
-- Erhöhung/Freigabe: **nur superadmin**
-
-✅ P0 Uploads-Quarantäne:
-- Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
+✅ P0 Uploads-Quarantäne: Uploads werden **quarantined by default**, Approve nur nach Scan=**CLEAN**
 ✅ Fix Windows-SQLite-Locks: Connections sauber schließen (Tempdir/cleanup stabil)
-✅ Tests grün: `poetry run pytest -q`
-
----
-
-## Web Frontend (Vite + React + TS) — DONE (main)
-Paths / URLs:
-- API: `http://127.0.0.1:8000`  (/, /public/site, /docs, /redoc)
-- Web: `http://127.0.0.1:5173`
-- Vite Proxy: `/api/*` → `http://127.0.0.1:8000/*`
-
-Gotchas:
-- API braucht `LTC_SECRET_KEY` (>=16), sonst RuntimeError.
-- In Vite-Terminal keine Shell-Commands (Input wird von Vite genutzt). Für Commands extra Tab.
-
-Start (2 Tabs/Fenster A=API, B=WEB):
-- A (API):
-  - `cd .\server`
-  - `$env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"`
-  - `poetry run uvicorn app.main:app --reload`
-- B (WEB):
-  - `cd .\packages\web`
-  - `npm install` (einmalig)
-  - `npm run dev`
-  - Browser: `http://127.0.0.1:5173/`
-
-Web Smoke (Build):
-- Root:
-  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_web_toolkit.ps1 -Smoke -Clean`
-
----
-
-## OpenAPI / Router Wiring — DONE (main)
-Thema:
-- FastAPI OpenAPI-Warnungen: **"Duplicate Operation ID ... documents.py"**
-
-Fix (PR #36):
-- `server/app/main.py`: Documents-Router **nur 1x** via `include_router(...)`
-
----
-
-## Public: Blog/News — DONE (main)
-Public Router:
-- `GET /blog` + `GET /blog/` + `GET /blog/{slug}`
-- `GET /news` + `GET /news/` + `GET /news/{slug}`
-
----
-
-## P0: Actor Source of Truth — DONE (main)
-Regeln:
-- Actor wird serverseitig zentral bestimmt.
-- Ohne Actor → **401**.
-- DEV/Test: Header-Override ist **gated** (nicht in Produktion).
-
----
-
-## P0: Uploads Quarantäne (Documents) — DONE (main)
-Workflow:
-- Upload → `approval_status=QUARANTINED`, `scan_status=PENDING`
-- Admin setzt `scan_status`: `CLEAN` oder `INFECTED`
-- `INFECTED` erzwingt `approval_status=REJECTED`
-- Admin `approve` nur wenn `scan_status=CLEAN` (sonst **409**)
-
-Download-Regeln:
-- **User/VIP/Dealer**: nur wenn `APPROVED` **und** Scope/Owner passt (object-level)
-- **Admin/Superadmin**: darf auch QUARANTINED/PENDING downloaden (Review)
-
----
-
-## Sale/Transfer Status (ID-Leak Fix) — DONE (main)
-Endpoint:
-- `GET /sale/transfer/status/{transfer_id}`
-
-Regeln:
-- Role-Gate: nur `vip|dealer` (alle anderen **403**)
-- Zusätzlich object-level: nur **Initiator ODER Redeemer** darf lesen (sonst **403**)
-
----
-
-## RBAC (SoT)
-- Default: **deny-by-default**
-- **Actor required**: ohne Actor → **401**
-- **Moderator**: strikt nur **Blog/News**; sonst überall **403**
-
-Allowlist Moderator (ohne 403):
-- `/auth/*`
-- `/health`
-- `/public/*`
-- `/blog/*`
-- `/news/*`
-
----
-
-## Public-QR Trust-Ampel (Pflichttext)
-„Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
-
----
-
-## Tests / Lokal ausführen
-> Env-Hinweis: Export/Redaction/HMAC benötigt `LTC_SECRET_KEY` (>=16). Für DEV/Tests explizit setzen.
-
-```powershell
-cd ".\server"
-$env:LTC_SECRET_KEY = "dev_test_secret_key_32_chars_minimum__OK"
-poetry run pytest -q
-py -3.11 -m poetry run pytest -q

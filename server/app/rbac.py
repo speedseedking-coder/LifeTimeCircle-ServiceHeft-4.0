@@ -108,3 +108,8 @@ def require_roles(*roles: str) -> Callable[..., Actor]:
         return user
 
     return _dep
+
+# Telemetry helper: set role without identity
+# NOTE: ensure to call this where request is available
+
+

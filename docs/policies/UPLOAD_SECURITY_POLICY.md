@@ -1,4 +1,4 @@
-﻿// File: ./docs//policies//UPLOAD/_SECURITY/_POLICY.md
+// File: ./docs//policies//UPLOAD/_SECURITY/_POLICY.md
 
 
 
