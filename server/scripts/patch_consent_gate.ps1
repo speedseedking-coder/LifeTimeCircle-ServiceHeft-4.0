@@ -120,7 +120,7 @@ function Patch-GetCurrentUser {
   if ($sigBlock -notmatch "\brequest\b") {
     if ($sigEnd -eq $defIdx) {
       # one-line def
-      $lines[$defIdx] = $lines[$defIdx] -replace "\)\s*(->\s*.*)?\s*:\s*$", ", request: Optional[Request] = None)$1:"
+      $lines[$defIdx] = $lines[$defIdx] -replace '\)\s*(->\s*.*)?\s*:\s*$', ', request: Optional[Request] = None)$1:'
     } else {
       # multi-line def: param vor schließender Klammer einfügen
       $indent = ($lines[$defIdx] -replace "^(\s*).*$", '$1') + "    "
@@ -289,3 +289,4 @@ Write-Host "FERTIG ✅"
 Write-Host "Hinweis: Setze optional ENV:"
 Write-Host "  `$env:LTC_CONSENT_VERSION='2026-01-27'"
 Write-Host "  `$env:LTC_DB_PATH='.\\data\\app.db'"
+
