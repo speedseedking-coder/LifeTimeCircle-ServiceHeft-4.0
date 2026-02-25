@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.config import get_settings
 from app.db.base import Base
 
 _ENGINE: Engine | None = None
-_SessionLocal: sessionmaker | None = None
+_SessionLocal: sessionmaker[Session] | None = None
 
 
 def _ensure_sqlite_dir(database_url: str) -> None:
@@ -42,20 +43,23 @@ def get_engine() -> Engine:
     url = settings.database_url
 
     connect_args: dict = {}
-    poolclass = None
+    engine_kwargs: dict = {"future": True}
 
     # SQLite in-memory: gleiche Connection halten (wichtig für Tests)
     if url.endswith(":memory:") or url in ("sqlite:///:memory:", "sqlite+pysqlite:///:memory:"):
         connect_args = {"check_same_thread": False}
-        poolclass = StaticPool
+        engine_kwargs["poolclass"] = StaticPool
 
-    _ENGINE = create_engine(url, connect_args=connect_args, poolclass=poolclass, future=True)
+    if connect_args:
+        engine_kwargs["connect_args"] = connect_args
+
+    _ENGINE = create_engine(url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE, future=True)
 
     return _ENGINE
 
 
-def get_db():
+def get_db() -> Generator[Session, None, None]:
     global _SessionLocal
     if _SessionLocal is None:
         get_engine()
@@ -77,6 +81,16 @@ def init_db() -> None:
     # Modelle importieren, damit Tabellen registriert sind
     from app.models import audit as _audit  # noqa: F401
     from app.models import masterclipboard as _mc  # noqa: F401
+
+    try:
+        from app.models import entitlements as _entitlements  # noqa: F401
+    except Exception:
+        pass
+
+    try:
+        from app.models import addons as _addons  # noqa: F401
+    except Exception:
+        pass
 
     try:
         from app.models import consent as _consent  # noqa: F401
