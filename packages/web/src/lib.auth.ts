@@ -41,7 +41,7 @@ export type AuthState = {
   logout: () => void;
 };
 
-function isConsentRequired(err: unknown): boolean {
+export function isConsentRequired(err: unknown): boolean {
   // Contract-tolerant:
   // - "consent_required"
   // - { code: "consent_required" }
