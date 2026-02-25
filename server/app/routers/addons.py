@@ -18,7 +18,7 @@ except Exception:  # pragma: no cover
     from app.db.session import get_db  # type: ignore
 
 
-# ✅ WICHTIG: Export muss "router" heißen (main.py importiert das so)
+# Export MUST be named "router" (main.py imports it like that)
 router = APIRouter(prefix="/addons", tags=["addons"], dependencies=[Depends(forbid_moderator)])
 
 
@@ -43,6 +43,7 @@ def _is_admin(role: str) -> bool:
 
 
 def _deny_code(code: str) -> None:
+    # Stable machine-readable contract: detail.code
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={"code": code})
 
 
@@ -86,6 +87,7 @@ def _to_out(state: VehicleAddonState) -> AddonOut:
     ts = None
     if state.addon_first_enabled_at is not None:
         ts = state.addon_first_enabled_at.astimezone(timezone.utc).isoformat()
+
     return AddonOut(
         vehicle_id=str(state.vehicle_id),
         addon_key=str(state.addon_key),
@@ -151,21 +153,22 @@ def enable_addon(
     actor: Any = Depends(require_actor),
 ) -> AddonOut:
     uid, role, _v = _assert_vehicle_scope(db, actor, vehicle_id)
+    addon_key = payload.addon_key
 
     state = (
         db.query(VehicleAddonState)
-        .filter(VehicleAddonState.vehicle_id == str(vehicle_id), VehicleAddonState.addon_key == payload.addon_key)
+        .filter(VehicleAddonState.vehicle_id == str(vehicle_id), VehicleAddonState.addon_key == addon_key)
         .first()
     )
 
-    # ✅ Grandfathering: addon_first_enabled_at gesetzt => Re-Enable immer erlaubt
+    # ✅ Grandfathering: once addon_first_enabled_at is set => always allow re-enable
     if state is not None and state.addon_first_enabled_at is not None:
         state.active = True
         db.commit()
         db.refresh(state)
         return _to_out(state)
 
-    config = db.query(AddonConfig).filter(AddonConfig.addon_key == payload.addon_key).first()
+    config = db.query(AddonConfig).filter(AddonConfig.addon_key == addon_key).first()
     if config is None:
         _deny_code("addon_not_available")
 
@@ -180,7 +183,7 @@ def enable_addon(
             db.query(AccountAddonEntitlement)
             .filter(
                 AccountAddonEntitlement.user_id == uid,
-                AccountAddonEntitlement.addon_key == payload.addon_key,
+                AccountAddonEntitlement.addon_key == addon_key,
                 AccountAddonEntitlement.enabled.is_(True),
             )
             .first()
@@ -189,10 +192,11 @@ def enable_addon(
             _deny_code("paywall_required")
 
     now = datetime.now(timezone.utc)
+
     if state is None:
         state = VehicleAddonState(
             vehicle_id=str(vehicle_id),
-            addon_key=payload.addon_key,
+            addon_key=addon_key,
             active=True,
             addon_first_enabled_at=now,
         )
@@ -215,10 +219,11 @@ def disable_addon(
     actor: Any = Depends(require_actor),
 ) -> AddonOut:
     _uid, _role, _v = _assert_vehicle_scope(db, actor, vehicle_id)
+    addon_key = payload.addon_key
 
     state = (
         db.query(VehicleAddonState)
-        .filter(VehicleAddonState.vehicle_id == str(vehicle_id), VehicleAddonState.addon_key == payload.addon_key)
+        .filter(VehicleAddonState.vehicle_id == str(vehicle_id), VehicleAddonState.addon_key == addon_key)
         .first()
     )
     if state is None:

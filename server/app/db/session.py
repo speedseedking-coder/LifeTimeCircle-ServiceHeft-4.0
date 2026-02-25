@@ -17,18 +17,24 @@ _SessionLocal: sessionmaker[Session] | None = None
 
 
 def _ensure_sqlite_dir(database_url: str) -> None:
-    if "sqlite" not in database_url:
+    """
+    Ensures the directory exists for sqlite:///./relative/path.db URLs.
+    No-op for non-sqlite or sqlite in-memory.
+    """
+    url = (database_url or "").strip()
+    if "sqlite" not in url:
         return
-    if ":memory:" in database_url:
+    if ":memory:" in url:
         return
 
     marker = ":///./"
-    if marker not in database_url:
+    if marker not in url:
         return
 
-    rel = database_url.split(marker, 1)[1]
+    rel = url.split(marker, 1)[1]
     db_file = Path(".") / rel
     db_dir = db_file.parent
+
     if str(db_dir) and str(db_dir) != ".":
         os.makedirs(db_dir, exist_ok=True)
 
@@ -42,25 +48,21 @@ def get_engine() -> Engine:
     settings = get_settings()
     url = settings.database_url
 
-    connect_args: dict = {}
     engine_kwargs: dict = {"future": True}
 
-    # SQLite in-memory: gleiche Connection halten (wichtig für Tests)
+    # SQLite in-memory: keep same connection across sessions/tests
     if url.endswith(":memory:") or url in ("sqlite:///:memory:", "sqlite+pysqlite:///:memory:"):
-        connect_args = {"check_same_thread": False}
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
         engine_kwargs["poolclass"] = StaticPool
-
-    if connect_args:
-        engine_kwargs["connect_args"] = connect_args
 
     _ENGINE = create_engine(url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_ENGINE, future=True)
-
     return _ENGINE
 
 
 def get_db() -> Generator[Session, None, None]:
     global _SessionLocal
+
     if _SessionLocal is None:
         get_engine()
     assert _SessionLocal is not None
@@ -73,25 +75,21 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
+    """
+    Import models so SQLAlchemy registers tables, then create_all().
+    """
     settings = get_settings()
     _ensure_sqlite_dir(settings.database_url)
 
     engine = get_engine()
 
-    # Modelle importieren, damit Tabellen registriert sind
+    # Import models so tables are registered
     from app.models import audit as _audit  # noqa: F401
     from app.models import masterclipboard as _mc  # noqa: F401
+    from app.models import entitlements as _entitlements  # noqa: F401
+    from app.models import addons as _addons  # noqa: F401
 
-    try:
-        from app.models import entitlements as _entitlements  # noqa: F401
-    except Exception:
-        pass
-
-    try:
-        from app.models import addons as _addons  # noqa: F401
-    except Exception:
-        pass
-
+    # Consent model can be optional depending on runtime packaging
     try:
         from app.models import consent as _consent  # noqa: F401
     except Exception:

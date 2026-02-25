@@ -45,7 +45,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Core Routers
+    # Optional security middleware (only if present in repo)
+    try:
+        from app.security import RequestIdMiddleware  # type: ignore
+
+        app.add_middleware(RequestIdMiddleware)
+    except Exception:
+        pass
+
+    # Core routers
     app.include_router(auth_router)
     app.include_router(masterclipboard_router)
     app.include_router(export_router)
@@ -60,15 +68,17 @@ def create_app() -> FastAPI:
             return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
         return JSONResponse(status_code=500, content={"error": "internal_error"})
 
-    # Feature Routers
+    # Feature routers
     app.include_router(admin_router)
     app.include_router(public_router)
+
     app.include_router(export_vehicle_router)
     app.include_router(export_servicebook_router)
     app.include_router(export_user_router)
+
     app.include_router(consent_router)
 
-    # ✅ Addons (D-012/D-028)
+    # ✅ Add-ons (D-012/D-028)
     app.include_router(addons_router)
 
     app.include_router(vehicles_router)
