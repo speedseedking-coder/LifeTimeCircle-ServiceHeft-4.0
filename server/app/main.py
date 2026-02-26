@@ -23,6 +23,7 @@ from app.routers.export_vehicle import router as export_vehicle_router
 from app.routers.masterclipboard import router as masterclipboard_router
 from app.routers.public_site import router as public_site_router
 from app.routers.sale_transfer import router as sale_transfer_router
+from app.routers.trust_folders import router as trust_folders_router
 from app.routers.vehicles import router as vehicles_router
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,10 @@ def create_app() -> FastAPI:
     app.include_router(addons_router)
 
     app.include_router(vehicles_router)
+
+    # ✅ Trust-Folders (D-012/D-028 + RBAC + Consent + Moderator-Block)
+    app.include_router(trust_folders_router)
+
     app.include_router(sale_transfer_router)
 
     # ✅ documents nur EINMAL registrieren
