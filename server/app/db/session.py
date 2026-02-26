@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import os
 from pathlib import Path
 from typing import Generator
@@ -23,6 +24,7 @@ def _ensure_sqlite_dir(database_url: str) -> None:
     if ":memory:" in url:
         return
 
+    # erwartet URLs wie: sqlite:///./data/app.db
     marker = ":///./"
     if marker not in url:
         return
@@ -32,6 +34,20 @@ def _ensure_sqlite_dir(database_url: str) -> None:
     db_dir = db_file.parent
     if str(db_dir) and str(db_dir) != ".":
         os.makedirs(db_dir, exist_ok=True)
+
+
+def _try_import(module: str) -> None:
+    """
+    Import module if it exists.
+    - If the module itself is missing -> ignore.
+    - If the module exists but its import fails due to other errors -> raise (so we don't hide real bugs).
+    """
+    try:
+        importlib.import_module(module)
+    except ModuleNotFoundError as e:
+        if e.name == module:
+            return
+        raise
 
 
 def get_engine() -> Engine:
@@ -72,33 +88,24 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """
     Import models so SQLAlchemy registers tables, then create_all().
-    Some model modules may be absent depending on repo state -> must not crash startup.
+
+    IMPORTANT:
+    Some modules may be optional depending on repo state.
+    Missing optional modules must NOT crash app startup / tests.
     """
     settings = get_settings()
     _ensure_sqlite_dir(settings.database_url)
 
     engine = get_engine()
 
-    # required
-    from app.models import audit as _audit  # noqa: F401
-    from app.models import masterclipboard as _mc  # noqa: F401
-    from app.models import vehicle as _vehicle  # noqa: F401
+    # Required model modules (should exist; if they don't, that's a real error)
+    _try_import("app.models.audit")
+    _try_import("app.models.masterclipboard")
+    _try_import("app.models.vehicle")
 
-    # optional
-    try:
-        from app.models import entitlements as _entitlements  # noqa: F401
-    except Exception:
-        # repo variants / optional module
-        pass
-
-    try:
-        from app.models import addons as _addons  # noqa: F401
-    except Exception:
-        pass
-
-    try:
-        from app.models import consent as _consent  # noqa: F401
-    except Exception:
-        pass
+    # Optional model modules (may or may not exist in a given repo state)
+    _try_import("app.models.entitlements")
+    _try_import("app.models.addons")
+    _try_import("app.models.consent")
 
     Base.metadata.create_all(bind=engine)
