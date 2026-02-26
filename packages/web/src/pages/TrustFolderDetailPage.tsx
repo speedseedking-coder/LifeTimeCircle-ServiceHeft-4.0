@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
-import { deleteTrustFolder, listTrustFolders, renameTrustFolder, TrustFolder } from "../api";
+import { deleteTrustFolder, listTrustFolders, renameTrustFolder, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
 import AddonRequiredPanel from "../components/AddonRequiredPanel";
 import InlineErrorBanner from "../components/InlineErrorBanner";
