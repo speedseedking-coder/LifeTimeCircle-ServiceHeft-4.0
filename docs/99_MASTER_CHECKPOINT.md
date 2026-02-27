@@ -22,7 +22,7 @@ Projekt:
 
 ### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
   - Note [PR-210-MERGED]: App-Shell (PR #210) ist via sync/pr-210-main in main gemerged (HEAD ce0ef1f).
-- Status: **IN REVIEW (pending green)**
+- Status: ✅ MERGED (PR #241) — in main
 - Scope (SoT):
   - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
   - Serverseitige Security bleibt führend: deny-by-default, RBAC + object-level checks, Moderator nur Blog/News
@@ -43,7 +43,7 @@ Projekt:
     - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
 
 ### WIP: NEXT-BLOCK nach P1 — Web Consent-Drift Hardening (consent_required tolerant)
-- Status: **OPEN**
+- Status: ⛔ CLOSED (NO-OP) — PR #212 schließen/ignorieren (siehe Note [PR-212-NOOP])
 - Scope:
   - Web akzeptiert `consent_required` als String ODER als Objekt-Shape (z. B. `detail.code`)
   - Keine Backend-Änderung; serverseitige Enforcement bleibt führend (deny-by-default)
