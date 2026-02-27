@@ -85,3 +85,14 @@ PR gilt als fertig nur wenn:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
+```
+
+---
+
+## 9. PowerShell Param-Gate
+
+- In jeder `*.ps1` muss `param(...)` am Script-Anfang stehen.
+- Erlaubt vor `param(...)`: Kommentare, `#requires`, `using`, Script-Attribute.
+- Nicht erlaubt vor `param(...)`: Executable Code (führt zu Gate-Fail).
+- Repo-weite Prüfung läuft über `tools/ps_param_gate.ps1` und ist in `tools/test_all.ps1` enthalten.
+- Lokal schneller Check: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ps_param_gate.ps1`

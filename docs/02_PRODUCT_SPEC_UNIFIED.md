@@ -207,6 +207,9 @@ Leitlinien:
 - Baujahr
 - Motor/Antrieb (grob)
 - VIN maskiert: erste 3 + letzte 4
+- Public-QR v1 nutzt deterministische Reason-Codes (ohne Metriken/Zahlen/Zeitraeume im Hint).
+- Mapping v1: `block -> Rot`, `cap -> Orange`, `warn -> Gelb`, keine Reasons -> Gruen.
+- Public-Hint wird deterministisch aus Top-Reason (kleinste Prioritaet) abgeleitet; Gruen nutzt Fallback-Hint ohne Ziffern.
 - Trust-Ampel + 1 Satz je Stufe
 - Unfallstatus-Badge:
   - Unfallfrei

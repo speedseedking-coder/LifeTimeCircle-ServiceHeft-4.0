@@ -7,6 +7,12 @@ from app.guards import forbid_moderator
 from pydantic import BaseModel, Field
 
 
+
+from app.services.trust_light_v1 import (
+    compute_public_hint_from_reason_codes,
+    compute_trust_light_from_reason_codes,
+    green_fallback_hint,
+)
 router = APIRouter(dependencies=[Depends(forbid_moderator)], prefix="/public", tags=["public"])
 
 
@@ -27,7 +33,8 @@ def get_public_qr(vehicle_id: str) -> PublicQrResponse:
 
     # Minimaler, policy-konformer Start (später: echte Ableitung aus Einträgen/Belegen/T-Level).
     # Hinweistext absichtlich ohne Zahlen/Zeiträume.
-    trust_light = "gelb"
-    hint = "Dokumentation vorhanden, aber Nachweise sind teilweise unvollständig."
+    codes = ["public_evidence_incomplete"]
 
+    trust_light = compute_trust_light_from_reason_codes(codes)
+    hint = compute_public_hint_from_reason_codes(codes) or green_fallback_hint()
     return PublicQrResponse(trust_light=trust_light, hint=hint, disclaimer=DISCLAIMER_TEXT)

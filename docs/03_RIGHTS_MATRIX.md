@@ -61,6 +61,8 @@ Public Daten-Regeln (bindend):
 - Trust-Ampel + Unfallstatus-Badge
 - Pflicht-Disclaimer (exakt):
   - „Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.“
+- Trust-Ampel-Ableitung v1 ist deterministisch ueber Reason-Codes (`block|cap|warn`) ohne Metriken im Hint.
+- Public-Hint ist Top-Reason nach Prioritaet; Gruen nutzt Fallback-Hint ohne Ziffern.
 
 ### 4.2 Public Content Read (Blog/News)
 | Route-Group | superadmin | admin | dealer | vip | user | moderator | public |

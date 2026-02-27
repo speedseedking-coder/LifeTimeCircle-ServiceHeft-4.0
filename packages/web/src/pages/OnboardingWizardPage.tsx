@@ -1,4 +1,5 @@
 
+import { isConsentRequired } from "../lib.auth";
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost, asString, extractApiError, isRecord } from "../api";
 
@@ -103,7 +104,7 @@ export default function OnboardingWizardPage(): JSX.Element {
           window.location.hash = "/auth";
           return;
         }
-        if (res.status === 403 && code === "consent_required") {
+        if (res.status === 403 && isConsentRequired(code)) {
           window.location.hash = "/consent";
           return;
         }
@@ -173,7 +174,7 @@ export default function OnboardingWizardPage(): JSX.Element {
         window.location.hash = "/auth";
         return;
       }
-      if (res.status === 403 && code === "consent_required") {
+      if (res.status === 403 && isConsentRequired(code)) {
         window.location.hash = "/consent";
         return;
       }
@@ -219,7 +220,7 @@ export default function OnboardingWizardPage(): JSX.Element {
         window.location.hash = "/auth";
         return;
       }
-      if (res.status === 403 && code === "consent_required") {
+      if (res.status === 403 && isConsentRequired(code)) {
         window.location.hash = "/consent";
         return;
       }
