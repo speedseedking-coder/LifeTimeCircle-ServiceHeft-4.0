@@ -54,6 +54,13 @@ Projekt:
   - PR: #212
   - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
+✅ PR (pending): `feat(trust): add deterministic trust codes + public qr mapping (safe v1)`
+- Neu: `server/app/services/trust_codes_v1.py` (Reason-Codes, Prioritaeten, Catalog-Validation, VIP Top-N)
+- Neu: `server/app/services/trust_light_v1.py` (Severity->Ampel, deterministischer Public-Hint, Gruen-Fallback)
+- Public-QR nutzt jetzt deterministische Codes statt Inline-Hardcode; Verhalten bleibt fuer v1 stabil (`gelb` + gleicher Hint).
+- Tests: `server/tests/test_trust_codes_v1_catalog.py`, `server/tests/test_trust_light_v1.py`
+- Security/Policy: no-PII Hints, keine Ziffern in Public-Hints, Moderator auf `/public/*` weiterhin `403` via Guard.
+
 ## Aktueller Stand (main)
 
 ✅ PR #232 **gemerged**: eat(trust): trust folders CRUD + addon gate (grandfathering)
