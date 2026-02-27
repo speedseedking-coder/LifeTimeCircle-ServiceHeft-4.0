@@ -1,13 +1,7 @@
 // packages/web/src/App.tsx
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-<<<<<<< HEAD
-import { apiGet, asString, extractApiError, isRecord, prettyBody } from "./api";
-import { authHeaders, getAuthToken } from "./lib.auth";
-
-=======
 import { apiGet, asString, isRecord, prettyBody } from "./api";
 import { authHeaders, getAuthToken, isConsentRequired } from "./lib.auth";
->>>>>>> origin/main
 import { PublicQrPage } from "./pages/PublicQrPage";
 
 import AuthPage from "./pages/AuthPage";
@@ -137,14 +131,8 @@ function roleFromMe(body: unknown): Role | null {
 }
 
 function isConsentRequiredBody(body: unknown): boolean {
-<<<<<<< HEAD
-  const err = extractApiError(body);
-  if (typeof err === "string") return err === "consent_required";
-  if (isRecord(err) && typeof (err as any).code === "string") return (err as any).code === "consent_required";
-=======
   if (isConsentRequired(body)) return true;
   if (isRecord(body)) return isConsentRequired((body as any).detail);
->>>>>>> origin/main
   return false;
 }
 
