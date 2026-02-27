@@ -311,3 +311,17 @@ Gleichzeitig darf Telemetrie niemals personenbezogene Daten (PII) enthalten.
 - Token wird serverseitig persistiert (export_grants_vehicle: id PK, export_token unique, vehicle_id, expires_at, used, created_at).  
 - **TTL enforced** (expires_at) + **one-time** (used=true atomar per id).  
 - Payload ist **encrypted at rest/transport** (AES/Fernet o. ä. mit LTC_SECRET_KEY), Logs/Telemetry bleiben strikt **no-PII**.
+
+## D-035: Public-QR Trust v1 ist deterministisch ueber Reason-Codes (ohne Metriken im Hint)
+**Status:** beschlossen  
+**Datum:** 2026-02-26  
+
+**Warum:**  
+Der Public-QR muss reproduzierbar, policy-konform und testbar sein. Freitext-/ad-hoc-Ableitungen sind fehleranfaellig und schwer auditierbar.
+
+**Konsequenz:**  
+- Public-QR verwendet einen zentralen Reason-Code-Katalog mit Prioritaeten und Severity (`block|cap|warn`).  
+- Ampel-Mapping ist normiert: `block -> rot`, `cap -> orange`, `warn -> gelb`, ohne Reasons `gruen`.  
+- Public-Hints sind deterministisch (Top-Reason nach Prioritaet) und enthalten keine Ziffern/Metriken/Zeitraeume.  
+- Pflicht-Disclaimer bleibt exakt unveraendert.  
+- Umsetzung ist additiv (safe v1), initial ohne harte DB-Kopplung; spaetere Evidence-Integration bleibt kompatibel.
