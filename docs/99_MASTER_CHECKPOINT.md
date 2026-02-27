@@ -32,7 +32,7 @@ Projekt:
   - Pflichttext Public-QR bleibt exakt unverändert
   - `tools/test_all.ps1` und `tools/ist_check.ps1` grün
 - Evidence:
-  - Branch: `fix/web-app-shell-auth-header-gating-p1`
+  - Branch: `fix/web-app-shell-auth-header-gating-p1b`
   - PR: #210
   - Commits:
     - a27d6b4 fix(web): ts guard for consent_required code
@@ -453,6 +453,7 @@ Projekt:
 - Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
 - DoD: tools/test_all.ps1 ALL GREEN ✅
 - Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
+
 
 
 
