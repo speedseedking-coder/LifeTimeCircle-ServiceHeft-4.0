@@ -21,6 +21,7 @@ Projekt:
 ## WIP / Offene PRs / Branch-Stand (nicht main)
 
 ### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
+  - Note [PR-210-MERGED]: App-Shell (PR #210) ist via sync/pr-210-main in main gemerged (HEAD ce0ef1f).
 - Status: **IN REVIEW (pending green)**
 - Scope (SoT):
   - Web-App Shell für produktiven Einstiegspfad (Login → Consent → geschützte Bereiche) gemäß `docs/02_PRODUCT_SPEC_UNIFIED.md`
