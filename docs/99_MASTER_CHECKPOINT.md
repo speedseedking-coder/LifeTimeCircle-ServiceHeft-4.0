@@ -452,6 +452,8 @@ Projekt:
 ---
 
 ### WIP: NEXT-BLOCK — gestartet (Branch: feat/next-block-pr79-followup)
+- Status: ⛔ CLOSED (STALE) — Branch feat/next-block-pr79-followup existiert remote nicht; Kandidat war PR #195 (Commit 85d7651), bereits in main.
+  - Note [NEXT-BLOCK-STALE]: Referenz-Branch im SoT fehlt remote; kein weiterer Next-Block gefunden (nur origin/fix/moderator-allowlist-drift*).
 - Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
 - DoD: tools/test_all.ps1 ALL GREEN ✅
 - Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
