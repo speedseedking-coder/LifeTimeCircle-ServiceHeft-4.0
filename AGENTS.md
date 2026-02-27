@@ -33,3 +33,22 @@ Repo-Root:
 - Keine ZIPs
 - Wenn Dateien geändert/neu: voller Dateipfad + kompletter Dateiinhalt
 - Nicht nachfragen außer zwingend; sonst Defaultannahmen treffen
+
+## Command Delivery Standards (Copy/Paste Safe)
+
+### Für den Nutzer (Windows / PowerShell)
+- Bei Änderungen liefere ich **einen vollständigen PowerShell-Command-Block**, der end-to-end läuft:
+  - `cd (git rev-parse --show-toplevel)`
+  - Branch erstellen/switch
+  - Änderungen durchführen (Datei-Patches klar beschrieben)
+  - `git add/commit/push`
+  - relevante Checks (`pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1`) wenn passend
+- Commands bleiben **prompt-frei** (kein `PS C:\...>`), Output getrennt.
+
+### Für Codex / Agent Execution
+- Commands werden **standardmäßig als Bash** geliefert (Codex-friendly).
+- Wenn ein Schritt **OS-spezifisch** ist, liefere ich:
+  - Primär: Bash (wenn möglich)
+  - Zusätzlich: PowerShell-Block, klar als Windows-only markiert
+- Keine Vermischung von Commands und Logs in einem Block.
+- Wenn unklar: lieber Bash+PowerShell beide liefern, statt zu raten.
