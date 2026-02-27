@@ -52,6 +52,7 @@ Projekt:
 - Evidence:
   - Branch: `fix/vehicles-consent-moderator-next10`
   - PR: #212
+  - Note [PR-212-NOOP]: PR #212 ist stale/no-op: verbleibender Diff entfernt export isConsentRequired und bricht den Web-Build; PR schließen/ignorieren.
   - Commit: 5b68eb5 — `fix(web): accept consent_required shapes (string or detail.code)`
 
 ✅ PR (pending): `feat(trust): add deterministic trust codes + public qr mapping (safe v1)`
@@ -453,7 +454,4 @@ Projekt:
 - Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
 - DoD: tools/test_all.ps1 ALL GREEN ✅
 - Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
-
-
-
 
