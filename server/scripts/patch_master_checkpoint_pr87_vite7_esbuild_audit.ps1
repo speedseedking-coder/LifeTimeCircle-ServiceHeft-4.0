@@ -18,15 +18,6 @@ if (-not (Test-Path $checkpoint)) {
 $raw = [System.IO.File]::ReadAllText($checkpoint, [System.Text.UTF8Encoding]::new($false))
 $raw = $raw -replace "`r`n", "`n"
 
-# Stand-Datum auf "heute" setzen (nur erstes Vorkommen)
-$today = (Get-Date).ToString("yyyy-MM-dd")
-$raw = [regex]::Replace(
-  $raw,
-  "(?m)^Stand:\s*\*\*\d{4}-\d{2}-\d{2}\*\*",
-  ("Stand: **{0}**" -f $today),
-  1
-)
-
 # Idempotenz: wenn PR #87 schon drin ist -> OK
 if ($raw -match "PR\s*#87") {
   Write-Host "OK: Master Checkpoint enthält PR #87 bereits."
@@ -34,35 +25,36 @@ if ($raw -match "PR\s*#87") {
 }
 
 $entry = @"
-✅ PR #87 gemerged: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
+✅ PR #87: `chore(web): bump vite to 7.3.1 (esbuild GHSA-67mh-4wv8-2f99)`
 - Fix dev-only Audit: esbuild Advisory GHSA-67mh-4wv8-2f99 (via Vite 7)
 - Hinweis: Vite 7 benötigt Node.js >= 20.19
 
 "@ -replace "`r`n", "`n"
 
-# 1) In "Aktueller Stand (main)" direkt nach der Heading-Zeile einfügen
+# 1) In "Aktueller Stand (main)" ganz oben einfügen
 $marker = "## Aktueller Stand (main)"
 $idx = $raw.IndexOf($marker)
 if ($idx -lt 0) {
   throw "ERROR: Marker nicht gefunden: '$marker' in docs/99_MASTER_CHECKPOINT.md"
 }
 
+# Einfügeposition: direkt nach der Heading-Zeile + folgendem Newline-Block
 $after = $idx + $marker.Length
+# bis Ende der Zeile springen
 $lineEnd = $raw.IndexOf("`n", $after)
 if ($lineEnd -lt 0) { $lineEnd = $raw.Length }
 $insertPos = $lineEnd + 1
 
-# sicherstellen, dass ein Leerzeilenblock nach dem Heading existiert
-if ($insertPos -lt $raw.Length) {
-  if ($raw.Substring($insertPos, [Math]::Min(2, $raw.Length - $insertPos)) -ne "`n`n") {
-    $raw = $raw.Insert($insertPos, "`n")
-  }
+# Wenn direkt danach keine Leerzeile ist, fügen wir genau eine ein
+if ($insertPos -lt $raw.Length -and $raw.Substring($insertPos, [Math]::Min(2, $raw.Length - $insertPos)) -ne "`n`n") {
+  $raw = $raw.Insert($insertPos, "`n")
 }
 
 $raw = $raw.Insert($insertPos, $entry)
 
-# 2) Optional: Node-Hinweis auch bei "Gotchas:" ergänzen (falls vorhanden)
+# 2) Optional: Web-Gotchas um Node-Hinweis ergänzen (idempotent)
 if ($raw -notmatch "Node\.js\s*>=\s*20\.19") {
+  # Suche "Gotchas:" im Web-Frontend Abschnitt
   $gotchas = "Gotchas:"
   $gidx = $raw.IndexOf($gotchas)
   if ($gidx -ge 0) {
@@ -75,6 +67,8 @@ if ($raw -notmatch "Node\.js\s*>=\s*20\.19") {
   }
 }
 
+# Trailing newline sicherstellen
 $raw = $raw.TrimEnd("`n") + "`n"
+
 Write-Utf8NoBom -Path $checkpoint -Content $raw
 Write-Host "OK: Master Checkpoint gepatcht (PR #87 + Node-Hinweis)."
