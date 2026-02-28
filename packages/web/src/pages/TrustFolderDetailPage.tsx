@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
-import { deleteTrustFolder, listTrustFolders, renameTrustFolder, TrustFolder } from "../trustFoldersApi";
+import { deleteTrustFolder, getTrustFolder, renameTrustFolder, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
 import AddonRequiredPanel from "../components/AddonRequiredPanel";
 import InlineErrorBanner from "../components/InlineErrorBanner";
@@ -24,17 +24,12 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
     const n = Number(props.folderId);
     return Number.isFinite(n) ? n : NaN;
   }, [props.folderId]);
+  const resolvedVehicleId = folder?.vehicle_id ?? context.vehicleId;
+  const resolvedAddonKey = folder?.addon_key ?? context.addonKey;
 
   useEffect(() => {
     let alive = true;
 
-    if (!context.vehicleId) {
-      setViewState("error");
-      setError("Vehicle-Kontext fehlt.");
-      return () => {
-        alive = false;
-      };
-    }
     if (!Number.isFinite(folderIdNum)) {
       setViewState("error");
       setError("Ungültige Trust-Folder-ID.");
@@ -50,7 +45,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
       const token = getAuthToken();
       const headers = authHeaders(token);
 
-      const res = await listTrustFolders(context.vehicleId, context.addonKey, { headers });
+      const res = await getTrustFolder(folderIdNum, { headers });
       if (!alive) return;
 
       if (!res.ok) {
@@ -58,15 +53,8 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
         return;
       }
 
-      const target = res.body.find((x) => x.id === folderIdNum) ?? null;
-      if (!target) {
-        setViewState("error");
-        setError("Trust-Folder wurde nicht gefunden.");
-        return;
-      }
-
-      setFolder(target);
-      setTitle(target.title);
+      setFolder(res.body);
+      setTitle(res.body.title);
       setViewState("ready");
     };
 
@@ -74,7 +62,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
     return () => {
       alive = false;
     };
-  }, [context.vehicleId, context.addonKey, folderIdNum]);
+  }, [folderIdNum]);
 
   async function onRename(e: FormEvent) {
     e.preventDefault();
@@ -115,12 +103,12 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
       return;
     }
 
-    window.location.hash = `#/trust-folders?vehicle_id=${encodeURIComponent(context.vehicleId)}&addon_key=${encodeURIComponent(
-      context.addonKey,
+    window.location.hash = `#/trust-folders?vehicle_id=${encodeURIComponent(resolvedVehicleId)}&addon_key=${encodeURIComponent(
+      resolvedAddonKey,
     )}`;
   }
 
-  if (!context.vehicleId) {
+  if (!resolvedVehicleId && viewState !== "loading") {
     return (
       <main style={{ padding: 12 }}>
         <div className="ltc-card" role="status">
@@ -138,14 +126,16 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
 
   return (
     <main style={{ padding: 12 }}>
-      <a
-        className="ltc-link"
-        href={`#/trust-folders?vehicle_id=${encodeURIComponent(context.vehicleId)}&addon_key=${encodeURIComponent(
-          context.addonKey,
-        )}`}
-      >
-        ← Zurück zur Liste
-      </a>
+      {resolvedVehicleId ? (
+        <a
+          className="ltc-link"
+          href={`#/trust-folders?vehicle_id=${encodeURIComponent(resolvedVehicleId)}&addon_key=${encodeURIComponent(
+            resolvedAddonKey,
+          )}`}
+        >
+          ← Zurück zur Liste
+        </a>
+      ) : null}
 
       {error && <InlineErrorBanner message={error} />}
       {viewState === "loading" && <div className="ltc-card">Lädt…</div>}

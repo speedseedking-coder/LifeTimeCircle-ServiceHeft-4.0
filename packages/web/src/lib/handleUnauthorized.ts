@@ -11,9 +11,11 @@
 export function handleUnauthorized(): void {
   try {
     // Clear common auth storage keys (adjust if your app uses different ones)
+    localStorage.removeItem("ltc_auth_token_v1");
     localStorage.removeItem("ltc_token");
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("ltc_auth_token_v1");
     sessionStorage.removeItem("ltc_token");
     sessionStorage.removeItem("access_token");
     sessionStorage.removeItem("refresh_token");

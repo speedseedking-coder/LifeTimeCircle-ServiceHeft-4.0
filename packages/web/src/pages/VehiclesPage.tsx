@@ -5,6 +5,10 @@ export default function VehiclesPage(): JSX.Element {
     { id: "demo-2", title: "Demo Fahrzeug 2" },
   ];
 
+  function trustFoldersHref(vehicleId: string): string {
+    return `#/trust-folders?vehicle_id=${encodeURIComponent(vehicleId)}&addon_key=restauration`;
+  }
+
   return (
     <main style={{ padding: 12 }}>
       <h1>Vehicles</h1>
@@ -15,7 +19,8 @@ export default function VehiclesPage(): JSX.Element {
         <ul>
           {demoVehicles.map((v) => (
             <li key={v.id}>
-              <a href={`#/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</a>
+              <a href={`#/vehicles/${encodeURIComponent(v.id)}`}>{v.title}</a>{" "}
+              · <a href={trustFoldersHref(v.id)}>Trust Folders</a>
             </li>
           ))}
         </ul>

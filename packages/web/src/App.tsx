@@ -10,6 +10,8 @@ import VehiclesPage from "./pages/VehiclesPage";
 import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import OnboardingWizardPage from "./pages/OnboardingWizardPage";
+import TrustFoldersPage from "./pages/TrustFoldersPage";
+import TrustFolderDetailPage from "./pages/TrustFolderDetailPage";
 
 /**
  * LifeTimeCircle – ServiceHeft 4.0:
@@ -37,7 +39,9 @@ type Route =
   | { kind: "vehicles" }
   | { kind: "vehicleDetail"; vehicleId: string }
   | { kind: "documents" }
-  | { kind: "onboarding" };
+  | { kind: "onboarding" }
+  | { kind: "trustFolders" }
+  | { kind: "trustFolderDetail"; folderId: string };
 
 function parseHash(): Route {
   const raw = (window.location.hash || "").replace(/^#\/?/, "");
@@ -76,6 +80,8 @@ function parseHash(): Route {
   if (parts[0] === "vehicles" && parts[1]) return { kind: "vehicleDetail", vehicleId: parts[1] };
   if (parts[0] === "documents") return { kind: "documents" };
   if (parts[0] === "onboarding") return { kind: "onboarding" };
+  if (parts[0] === "trust-folders" && parts.length === 1) return { kind: "trustFolders" };
+  if (parts[0] === "trust-folders" && parts[1]) return { kind: "trustFolderDetail", folderId: parts[1] };
 
   return { kind: "home" };
 }
@@ -92,28 +98,41 @@ function scrollToId(id: string) {
 type AppGateState = "loading" | "unauth" | "consent_required" | "ready" | "forbidden";
 type Role = "superadmin" | "admin" | "dealer" | "vip" | "user" | "moderator";
 type NonModeratorRole = Exclude<Role, "moderator">;
+type TrustFolderRole = Extract<Role, "superadmin" | "admin" | "dealer" | "vip">;
 
-const PROTECTED_KINDS: ReadonlySet<Route["kind"]> = new Set(["vehicles", "vehicleDetail", "documents", "onboarding"]);
+const PROTECTED_KINDS: ReadonlySet<Route["kind"]> = new Set([
+  "vehicles",
+  "vehicleDetail",
+  "documents",
+  "onboarding",
+  "trustFolders",
+  "trustFolderDetail",
+]);
+const TRUST_FOLDER_ROLES: ReadonlySet<TrustFolderRole> = new Set(["superadmin", "admin", "dealer", "vip"]);
 
 const ROLE_NAV: Record<NonModeratorRole, Array<{ href: string; label: string }>> = {
   superadmin: [
     { href: "#/vehicles", label: "Vehicles" },
     { href: "#/documents", label: "Documents" },
+    { href: "#/trust-folders", label: "Trust Folders" },
     { href: "#/onboarding", label: "Onboarding" },
   ],
   admin: [
     { href: "#/vehicles", label: "Vehicles" },
     { href: "#/documents", label: "Documents" },
+    { href: "#/trust-folders", label: "Trust Folders" },
     { href: "#/onboarding", label: "Onboarding" },
   ],
   dealer: [
     { href: "#/vehicles", label: "Vehicles" },
     { href: "#/documents", label: "Documents" },
+    { href: "#/trust-folders", label: "Trust Folders" },
     { href: "#/onboarding", label: "Onboarding" },
   ],
   vip: [
     { href: "#/vehicles", label: "Vehicles" },
     { href: "#/documents", label: "Documents" },
+    { href: "#/trust-folders", label: "Trust Folders" },
     { href: "#/onboarding", label: "Onboarding" },
   ],
   user: [
@@ -138,7 +157,11 @@ function isConsentRequiredBody(body: unknown): boolean {
 
 function canAccessRouteByRole(route: Route, role: Role | null): boolean {
   if (PROTECTED_KINDS.has(route.kind)) {
-    return role !== null && role !== "moderator";
+    if (role === null || role === "moderator") return false;
+    if (route.kind === "trustFolders" || route.kind === "trustFolderDetail") {
+      return TRUST_FOLDER_ROLES.has(role as TrustFolderRole);
+    }
+    return true;
   }
   return true;
 }
@@ -219,6 +242,10 @@ function getBgForRoute(route: Route): BgCfg | null {
 
     case "onboarding":
       return { url: BG.service2, opacity: 0.2, size: "cover", position: "center" };
+
+    case "trustFolders":
+    case "trustFolderDetail":
+      return { url: BG.serviceheft, opacity: 0.2, size: "cover", position: "center" };
 
     case "debugPublicSite":
       return { url: BG.frontpage2, opacity: 0.14, size: "cover", position: "center" };
@@ -1325,6 +1352,10 @@ export default function App() {
         return "Documents";
       case "onboarding":
         return "Onboarding";
+      case "trustFolders":
+        return "Trust Folders";
+      case "trustFolderDetail":
+        return `Trust Folder: ${route.folderId}`;
     }
   }, [route]);
 
@@ -1435,9 +1466,15 @@ export default function App() {
               {route.kind === "auth" && <AuthPage />}
               {route.kind === "consent" && gateState !== "forbidden" && <ConsentPage />}
               {route.kind === "vehicles" && gateState === "ready" && <VehiclesPage />}
-              {route.kind === "vehicleDetail" && gateState === "ready" && <VehicleDetailPage />}
+              {route.kind === "vehicleDetail" && gateState === "ready" && (
+                <VehicleDetailPage vehicleId={decodeURIComponent(route.vehicleId)} />
+              )}
               {route.kind === "documents" && gateState === "ready" && <DocumentsPage />}
               {route.kind === "onboarding" && gateState === "ready" && <OnboardingWizardPage />}
+              {route.kind === "trustFolders" && gateState === "ready" && <TrustFoldersPage />}
+              {route.kind === "trustFolderDetail" && gateState === "ready" && (
+                <TrustFolderDetailPage folderId={decodeURIComponent(route.folderId)} />
+              )}
 
               <Footer />
             </div>

@@ -100,6 +100,14 @@ export async function createTrustFolder(vehicleId: string, title: string, addonK
   return { ok: true, status: res.status, body: mapped };
 }
 
+export async function getTrustFolder(id: number, init?: RequestInit): Promise<TrustApiResult<TrustFolder>> {
+  const res = await request<unknown>("GET", `/trust/folders/${id}`, init);
+  if (!res.ok) return res;
+  const mapped = mapTrustFolderBody(res.body);
+  if (!mapped) return { ok: false, status: 500, error: "invalid_body", body: res.body };
+  return { ok: true, status: res.status, body: mapped };
+}
+
 export async function renameTrustFolder(id: number, title: string, init?: RequestInit): Promise<TrustApiResult<TrustFolder>> {
   const res = await request<unknown>("PATCH", `/trust/folders/${id}`, init, { title });
   if (!res.ok) return res;

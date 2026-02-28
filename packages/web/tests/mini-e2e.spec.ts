@@ -126,6 +126,71 @@ test("/auth/me 403 without consent_required => forbidden UI", async ({ page }) =
   await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
 });
 
+test("Trust Folders route loads with auth, consent and vehicle context", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "vip" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/trust/folders") {
+      return json(200, [
+        { id: 7, vehicle_id: "demo-1", owner_user_id: "u1", addon_key: "restauration", title: "Restauration 2026" },
+      ]);
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe(
+    "#/trust-folders?vehicle_id=demo-1&addon_key=restauration",
+  );
+  await expect(page.locator("main h1")).toContainText("Trust Folders");
+  await expect(page.locator("main")).toContainText("Restauration 2026");
+});
+
+test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "user" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
+});
+
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {
   await mockAppGateApi(page, "me_401");
   await boot(page);
