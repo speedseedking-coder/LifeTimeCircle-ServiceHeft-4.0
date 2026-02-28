@@ -96,3 +96,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
 - Nicht erlaubt vor `param(...)`: Executable Code (führt zu Gate-Fail).
 - Repo-weite Prüfung läuft über `tools/ps_param_gate.ps1` und ist in `tools/test_all.ps1` enthalten.
 - Lokal schneller Check: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ps_param_gate.ps1`
+
+## Public-QR Pflichttext (exakt, unverändert)
+
+Die Trust-Ampel bewertet ausschließlich die Dokumentations- und Nachweisqualität. Sie ist keine Aussage über den technischen Zustand des Fahrzeugs.
