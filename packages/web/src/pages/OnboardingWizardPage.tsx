@@ -1,7 +1,8 @@
 
-import { isConsentRequired } from "../lib.auth";
+import { authHeaders, getAuthToken, isConsentRequired } from "../lib.auth";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost, asString, extractApiError, isRecord } from "../api";
+import { apiGet, extractApiError, isRecord } from "../api";
+import { createVehicle as createVehicleApi, createVehicleEntry } from "../vehiclesApi";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -95,17 +96,17 @@ export default function OnboardingWizardPage(): JSX.Element {
   useEffect(() => {
     let active = true;
 
-    apiGet("/consent/status").then((res) => {
+    apiGet("/consent/status", { headers: authHeaders(getAuthToken()) }).then((res) => {
       if (!active) return;
 
       if (!res.ok) {
         const code = extractApiError(res.body);
         if (res.status === 401) {
-          window.location.hash = "/auth";
+          window.location.hash = "#/auth";
           return;
         }
         if (res.status === 403 && isConsentRequired(code)) {
-          window.location.hash = "/consent";
+          window.location.hash = "#/consent";
           return;
         }
         setGate("forbidden");
@@ -122,7 +123,7 @@ export default function OnboardingWizardPage(): JSX.Element {
 
       const isComplete = Boolean(body.is_complete);
       if (!isComplete) {
-        window.location.hash = "/consent";
+        window.location.hash = "#/consent";
         return;
       }
 
@@ -157,7 +158,7 @@ export default function OnboardingWizardPage(): JSX.Element {
     return null;
   }, [wizard.entryDraft.km]);
 
-  async function createVehicle() {
+  async function onCreateVehicle() {
     if (vinValidation) {
       setError(vinValidation);
       return;
@@ -166,16 +167,16 @@ export default function OnboardingWizardPage(): JSX.Element {
     setSubmitting(true);
     setError(null);
 
-    const res = await apiPost("/vehicles", { vin: normalizeVin(wizard.vin) });
+    const res = await createVehicleApi({ vin: normalizeVin(wizard.vin) }, { headers: authHeaders(getAuthToken()) });
 
     if (!res.ok) {
       const code = extractApiError(res.body);
       if (res.status === 401) {
-        window.location.hash = "/auth";
+        window.location.hash = "#/auth";
         return;
       }
       if (res.status === 403 && isConsentRequired(code)) {
-        window.location.hash = "/consent";
+        window.location.hash = "#/consent";
         return;
       }
       setError(toApiErrorMessage(res));
@@ -183,7 +184,7 @@ export default function OnboardingWizardPage(): JSX.Element {
       return;
     }
 
-    const vehicleId = isRecord(res.body) ? asString(res.body.id) : null;
+    const vehicleId = res.body.id;
     if (!vehicleId) {
       setError("Fahrzeug wurde erstellt, aber die Antwort enthält keine vehicleId.");
       setSubmitting(false);
@@ -207,21 +208,25 @@ export default function OnboardingWizardPage(): JSX.Element {
     setSubmitting(true);
     setError(null);
 
-    const res = await apiPost(`/vehicles/${encodeURIComponent(wizard.vehicleId)}/entries`, {
-      date: wizard.entryDraft.date,
-      type: wizard.entryDraft.type,
-      performed_by: wizard.entryDraft.performedBy,
-      km: Number(wizard.entryDraft.km),
-    });
+    const res = await createVehicleEntry(
+      wizard.vehicleId,
+      {
+        date: wizard.entryDraft.date,
+        type: wizard.entryDraft.type,
+        performed_by: wizard.entryDraft.performedBy,
+        km: Number(wizard.entryDraft.km),
+      },
+      { headers: authHeaders(getAuthToken()) },
+    );
 
     if (!res.ok) {
       const code = extractApiError(res.body);
       if (res.status === 401) {
-        window.location.hash = "/auth";
+        window.location.hash = "#/auth";
         return;
       }
       if (res.status === 403 && isConsentRequired(code)) {
-        window.location.hash = "/consent";
+        window.location.hash = "#/consent";
         return;
       }
       setError(toApiErrorMessage(res));
@@ -337,7 +342,7 @@ export default function OnboardingWizardPage(): JSX.Element {
             <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 1 }))} disabled={submitting}>
               Zurück
             </button>
-            <button type="button" onClick={createVehicle} disabled={submitting || Boolean(vinValidation)}>
+            <button type="button" onClick={onCreateVehicle} disabled={submitting || Boolean(vinValidation)}>
               {submitting ? "Speichert…" : "Fahrzeug speichern"}
             </button>
           </div>
