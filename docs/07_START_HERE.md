@@ -9,6 +9,7 @@
 - Arbeitsregeln: docs/06_WORK_RULES.md
 - Repo-Struktur: docs/04_REPO_STRUCTURE.md
 - Wartung/Start/Smoke: docs/05_MAINTENANCE_RUNBOOK.md
+- Verifizierter lokaler Systemcheck: docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md
 - Codex-Kontext: docs/00_CODEX_CONTEXT.md
 
 ## 2) 5-Minuten Start (Frontend + API)
@@ -39,6 +40,7 @@ URLs:
 ## 3) IST-Zustandsprüfung (bei jedem Kontextwechsel)
 Wenn vorhanden: 	ttools/ist_check.ps1
 - pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1
+- Verifizierter Bericht zum zuletzt geprüften lokalen Stand: docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md
 
 ## 4) Quality Gate (immer vor PR)
 Repo-Root:
@@ -53,4 +55,3 @@ Optional Web Build Smoke (Repo-Root):
 - object-level checks auf allen Vehicle/Dokument/Trust Ressourcen
 - keine PII/Secrets in Logs/Responses/Exports
 - Public-QR Pflichttext exakt und unverändert
-
