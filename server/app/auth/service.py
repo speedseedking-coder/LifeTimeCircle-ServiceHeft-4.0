@@ -8,7 +8,6 @@ from .audit import write_audit
 from .crypto import (
     email_hmac as email_hmac_fn,
     ip_hmac as ip_hmac_fn,
-    ua_hmac as ua_hmac_fn,
     new_otp,
     new_session_token,
     otp_hash as otp_hash_fn,
@@ -29,7 +28,6 @@ from .storage import (
     insert_session,
     get_session_by_token_hash,
     revoke_session,
-    insert_consent,
 )
 
 
@@ -58,7 +56,6 @@ def request_challenge(
 
     e_h = email_hmac_fn(settings.secret_key, email)
     ip_h = ip_hmac_fn(settings.secret_key, ip)
-    ua_h = ua_hmac_fn(settings.secret_key, user_agent)
 
     with db(settings.db_path) as conn:
         # Rate limits (request)
@@ -176,20 +173,18 @@ def verify_challenge_and_create_session(
     email: str,
     challenge_id: str,
     otp: str,
-    consents: list[dict],
     ip: str,
     user_agent: str,
     request_id: str,
 ) -> Tuple[str, str]:
     """
     Verify OTP (HMAC), enforce TTL + rate limits,
-    enforce consent versions (AGB+Datenschutz Pflicht, serverseitig).
+    then create a session token. Consent is handled separately via /consent/*.
     """
     init_db(settings.db_path)
 
     e_h = email_hmac_fn(settings.secret_key, email)
     ip_h = ip_hmac_fn(settings.secret_key, ip)
-    ua_h = ua_hmac_fn(settings.secret_key, user_agent)
 
     with db(settings.db_path) as conn:
         # rate limit verify by ip
@@ -290,61 +285,6 @@ def verify_challenge_and_create_session(
             )
             raise ValueError("INVALID")
 
-        # --- CONSENT GATE (Versionen serverseitig enforced) ---
-        req_terms = settings.terms_version_required
-        req_privacy = settings.privacy_version_required
-
-        terms_ok = any(
-            (c.get("doc_type") == "terms" and c.get("doc_version") == req_terms)
-            for c in consents
-        )
-        privacy_ok = any(
-            (c.get("doc_type") == "privacy" and c.get("doc_version") == req_privacy)
-            for c in consents
-        )
-
-        if not (terms_ok and privacy_ok):
-            has_terms_any = any(c.get("doc_type") == "terms" for c in consents)
-            has_privacy_any = any(c.get("doc_type") == "privacy" for c in consents)
-
-            if not (has_terms_any and has_privacy_any):
-                reason = "CONSENT_MISSING"
-            else:
-                reason = "CONSENT_VERSION_MISMATCH"
-
-            write_audit(
-                conn,
-                actor_id=user_id,
-                actor_role=role,
-                action="CONSENT_REQUIRED_BLOCK",
-                target_type="USER",
-                target_id=user_id,
-                scope="own",
-                result="denied",
-                reason_code=reason,
-                request_id=request_id,
-                redacted_metadata={
-                    "kind": "consent_gate",
-                    "terms_required": req_terms,
-                    "privacy_required": req_privacy,
-                },
-            )
-            raise ValueError("CONSENT_REQUIRED")
-
-        # store consents (ohne Klartext-PII)
-        for c in consents:
-            insert_consent(
-                conn,
-                user_id=user_id,
-                doc_type=c["doc_type"],
-                doc_version=c["doc_version"],
-                accepted_at=c["accepted_at"],
-                source=c.get("source", "ui"),
-                ip_hmac=ip_h,
-                ua_hmac=ua_h,
-                evidence_hash=c.get("evidence_hash"),
-            )
-
         mark_challenge_used(conn, challenge_id, _iso(now))
 
         # create session token
@@ -424,4 +364,3 @@ def logout(settings: AuthSettings, raw_token: str, request_id: str) -> None:
             request_id=request_id,
             redacted_metadata={"kind": "logout"},
         )
-

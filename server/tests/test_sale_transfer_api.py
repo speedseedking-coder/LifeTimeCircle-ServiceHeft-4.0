@@ -4,15 +4,10 @@ from __future__ import annotations
 import importlib
 import sqlite3
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Tuple
 
 import pytest
 from fastapi.testclient import TestClient
-
-
-def _iso_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _ensure_env(monkeypatch: pytest.MonkeyPatch, tmp_path) -> str:
@@ -34,57 +29,6 @@ def _load_app():
     return app
 
 
-def _fetch_consents_for_verify(client: TestClient) -> List[Dict[str, str]]:
-    """
-    /auth/verify erwartet: consents = [{doc_type, doc_version, accepted_at}, ...]
-    Wir holen /consent/current (public) und normalisieren. Fallback: terms/privacy v1.
-    """
-    accepted_at = _iso_now()
-    fallback = [
-        {"doc_type": "terms", "doc_version": "v1", "accepted_at": accepted_at},
-        {"doc_type": "privacy", "doc_version": "v1", "accepted_at": accepted_at},
-    ]
-
-    r = client.get("/consent/current")
-    if r.status_code != 200:
-        return fallback
-
-    data: Any = r.json()
-    docs: Any = None
-
-    if isinstance(data, list):
-        docs = data
-    elif isinstance(data, dict):
-        for k in ("documents", "docs", "consents", "required", "items"):
-            if k in data and isinstance(data[k], list):
-                docs = data[k]
-                break
-
-    out: List[Dict[str, str]] = []
-
-    if isinstance(docs, list):
-        for d in docs:
-            if not isinstance(d, dict):
-                continue
-            dt = d.get("doc_type") or d.get("type") or d.get("docType") or d.get("name")
-            dv = d.get("doc_version") or d.get("version") or d.get("docVersion")
-            if dt and dv:
-                out.append({"doc_type": str(dt), "doc_version": str(dv), "accepted_at": accepted_at})
-
-    # Alternative dict-shapes
-    if not out and isinstance(data, dict):
-        for dt in ("terms", "privacy"):
-            v = None
-            if isinstance(data.get(dt), str):
-                v = data.get(dt)
-            elif isinstance(data.get(dt), dict):
-                v = data[dt].get("version") or data[dt].get("doc_version")
-            if v:
-                out.append({"doc_type": dt, "doc_version": str(v), "accepted_at": accepted_at})
-
-    return out or fallback
-
-
 def _auth_login(client: TestClient, email: str) -> Tuple[str, str]:
     r = client.post("/auth/request", json={"email": email})
     assert r.status_code == 200, r.text
@@ -96,10 +40,7 @@ def _auth_login(client: TestClient, email: str) -> Tuple[str, str]:
     assert challenge_id, j
     assert dev_otp, j
 
-    consents = _fetch_consents_for_verify(client)
-
-    # /auth/verify Schema ist strikt: challenge_id + consents[*].doc_type/doc_version/accepted_at
-    payload = {"challenge_id": challenge_id, "otp": dev_otp, "email": email, "consents": consents}
+    payload = {"challenge_id": challenge_id, "otp": dev_otp, "email": email}
     r2 = client.post("/auth/verify", json=payload)
     assert r2.status_code == 200, r2.text
 

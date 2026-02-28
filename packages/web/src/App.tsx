@@ -1305,7 +1305,8 @@ export default function App() {
     }
 
     if (gateState === "consent_required" && route.kind !== "consent") {
-      window.location.hash = "#/consent";
+      const next = encodeURIComponent(safeNextHash(window.location.hash || "#/vehicles"));
+      window.location.hash = `#/consent?next=${next}`;
     }
   }, [gateState, route]);
 
