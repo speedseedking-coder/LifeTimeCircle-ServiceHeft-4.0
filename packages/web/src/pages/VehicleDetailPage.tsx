@@ -7,10 +7,12 @@ import {
   createVehicleEntry,
   createVehicleEntryRevision,
   getVehicle,
+  getVehicleTrustSummary,
   getVehicleEntryHistory,
   listVehicleEntries,
   type Vehicle,
   type VehicleEntry,
+  type VehicleTrustSummary,
 } from "../vehiclesApi";
 
 type ViewState = "loading" | "ready" | "forbidden" | "error";
@@ -106,11 +108,27 @@ function revisionLabel(entry: VehicleEntry): string {
   return `v${entry.version} von ${entry.revision_count}`;
 }
 
+function trustLightLabel(value: VehicleTrustSummary["trust_light"] | null): string {
+  if (value === "gruen") return "Gruen";
+  if (value === "gelb") return "Gelb";
+  if (value === "orange") return "Orange";
+  if (value === "rot") return "Rot";
+  return "Nicht verfuegbar";
+}
+
+function trustLevelMeaning(value: VehicleEntry["trust_level"] | null): string {
+  if (value === "T3") return "Dokument vorhanden";
+  if (value === "T2") return "Physisches Serviceheft vorhanden";
+  if (value === "T1") return "Physisches Serviceheft nicht vorhanden";
+  return "Nicht klassifiziert";
+}
+
 export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Element {
   const vehicleId = props.vehicleId;
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [entries, setEntries] = useState<VehicleEntry[]>([]);
+  const [trustSummary, setTrustSummary] = useState<VehicleTrustSummary | null>(null);
   const [historyByEntryId, setHistoryByEntryId] = useState<Record<string, VehicleEntry[]>>({});
   const [entryDraft, setEntryDraft] = useState<EntryDraft>(defaultDraft);
   const [revisionTarget, setRevisionTarget] = useState<VehicleEntry | null>(null);
@@ -126,9 +144,10 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
 
       const token = getAuthToken();
       const headers = authHeaders(token);
-      const [vehicleRes, entriesRes] = await Promise.all([
+      const [vehicleRes, entriesRes, trustRes] = await Promise.all([
         getVehicle(vehicleId, { headers }),
         listVehicleEntries(vehicleId, { headers }),
+        getVehicleTrustSummary(vehicleId, { headers }),
       ]);
       if (!alive) return;
 
@@ -155,9 +174,19 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
         setError(toErrorMessage(entriesRes));
         return;
       }
+      if (!trustRes.ok && trustRes.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      if (!trustRes.ok) {
+        setViewState("error");
+        setError(toErrorMessage(trustRes));
+        return;
+      }
 
       setVehicle(vehicleRes.body);
       setEntries(entriesRes.ok ? entriesRes.body : []);
+      setTrustSummary(trustRes.body);
       setViewState("ready");
     };
 
@@ -182,6 +211,11 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
       throw new Error(toErrorMessage(res));
     }
     setEntries(res.body);
+
+    const trustRes = await getVehicleTrustSummary(vehicleId, { headers });
+    if (trustRes.ok) {
+      setTrustSummary(trustRes.body);
+    }
   }
 
   async function onSubmitEntry() {
@@ -301,6 +335,9 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                           {revisionLabel(entry)} · {entry.km} km {entry.trust_level ? `· ${entry.trust_level}` : ""}
                         </div>
                       </div>
+                      <p className="ltc-muted" style={{ marginTop: 8 }}>
+                        {trustLevelMeaning(entry.trust_level)}
+                      </p>
                       {entry.note ? <p style={{ marginTop: 10 }}>{entry.note}</p> : null}
                       {entry.cost_amount != null ? <p className="ltc-muted">Kosten: {entry.cost_amount.toFixed(2)} EUR</p> : null}
 
@@ -334,8 +371,35 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           </section>
 
           <section className="ltc-card" style={{ marginTop: 16 }}>
+            <h2>Trust-Zusammenfassung</h2>
+            <p className="ltc-muted">T1 = kein physisches Serviceheft, T2 = physisches Serviceheft vorhanden, T3 = Dokument vorhanden.</p>
+            {trustSummary ? (
+              <div style={{ display: "grid", gap: 8 }}>
+                <p>
+                  <strong>Ampel:</strong> {trustLightLabel(trustSummary.trust_light)} · <strong>Verifizierung:</strong>{" "}
+                  {trustSummary.verification_level} · <strong>Oberstes T-Level:</strong> {trustSummary.top_trust_level ?? "nicht gesetzt"}
+                </p>
+                <p>
+                  <strong>Historie:</strong> {trustSummary.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
+                  <strong>Nachweise:</strong> {trustSummary.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
+                  <strong>Unfallstatus:</strong> {trustSummary.accident_status_label}
+                </p>
+                <p className="ltc-muted">{trustSummary.hint}</p>
+                {trustSummary.todo_codes.length > 0 ? (
+                  <div className="ltc-muted">
+                    <strong>Priorisierte To-dos:</strong> {trustSummary.todo_codes.join(", ")}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className="ltc-muted">Trust-Zusammenfassung wird geladen…</p>
+            )}
+          </section>
+
+          <section className="ltc-card" style={{ marginTop: 16 }}>
             <h2>{revisionTarget ? "Entry-Version aktualisieren" : "Neuen Entry anlegen"}</h2>
             <p className="ltc-muted">{optionalHint}</p>
+            <p className="ltc-muted">T1/T2/T3 bitte nur entsprechend der Nachweislage setzen.</p>
 
             {revisionTarget ? (
               <p className="ltc-muted">

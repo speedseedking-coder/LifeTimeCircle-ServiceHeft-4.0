@@ -21,6 +21,10 @@ except Exception:  # pragma: no cover
 
 from app.models.vehicle import Vehicle
 from app.models.vehicle_entry import VehicleEntry
+from app.services.vehicle_trust import (
+    accident_status_public_label,
+    derive_vehicle_trust_summary,
+)
 
 VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{11,17}$")  # excludes I,O,Q
 ALLOWED_ROLES = {"user", "vip", "dealer", "admin", "superadmin"}
@@ -87,6 +91,19 @@ class VehicleOut(BaseModel):
     vin_masked: str
     nickname: Optional[str] = None
     meta: Optional[dict[str, Any]] = None
+
+
+class VehicleTrustSummaryOut(BaseModel):
+    trust_light: str
+    hint: str
+    reason_codes: list[str]
+    todo_codes: list[str]
+    verification_level: str
+    accident_status: str
+    accident_status_label: str
+    history_status: str
+    evidence_status: str
+    top_trust_level: Optional[str] = None
 
 
 class VehicleEntryCreateIn(BaseModel):
@@ -189,6 +206,31 @@ def _entry_to_out(entry: VehicleEntry, revision_count: int) -> VehicleEntryOut:
     )
 
 
+def _latest_entries_for_vehicle(db: Session, vehicle_public_id: str) -> list[VehicleEntry]:
+    return (
+        db.query(VehicleEntry)
+        .filter(VehicleEntry.vehicle_id == vehicle_public_id, VehicleEntry.is_latest.is_(True))
+        .order_by(VehicleEntry.entry_date.desc(), VehicleEntry.created_at.desc())
+        .all()
+    )
+
+
+def _trust_summary_out(vehicle: Vehicle, entries: list[VehicleEntry]) -> VehicleTrustSummaryOut:
+    summary = derive_vehicle_trust_summary(vehicle_meta=vehicle.meta, entries=entries)
+    return VehicleTrustSummaryOut(
+        trust_light=summary.trust_light,
+        hint=summary.hint,
+        reason_codes=summary.reason_codes,
+        todo_codes=summary.todo_codes,
+        verification_level=summary.verification_level,
+        accident_status=summary.accident_status,
+        accident_status_label=accident_status_public_label(summary.accident_status),
+        history_status=summary.history_status,
+        evidence_status=summary.evidence_status,
+        top_trust_level=summary.top_trust_level,
+    )
+
+
 @router.post("", response_model=VehicleOut)
 @router.post("/", response_model=VehicleOut)
 def create_vehicle(payload: VehicleCreateIn, db: Session = Depends(get_db), actor: Any = Depends(require_actor)) -> VehicleOut:
@@ -256,13 +298,24 @@ def list_vehicle_entries(vehicle_id: str, db: Session = Depends(get_db), actor: 
     try:
         vehicle = _load_vehicle_for_actor(db, actor, vehicle_id)
         revision_counts = _revision_counts(db, vehicle.public_id)
-        entries = (
-            db.query(VehicleEntry)
-            .filter(VehicleEntry.vehicle_id == vehicle.public_id, VehicleEntry.is_latest.is_(True))
-            .order_by(VehicleEntry.entry_date.desc(), VehicleEntry.created_at.desc())
-            .all()
-        )
+        entries = _latest_entries_for_vehicle(db, vehicle.public_id)
         return [_entry_to_out(entry, revision_counts.get(entry.entry_group_id, 1)) for entry in entries]
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="internal_error")
+
+
+@router.get("/{vehicle_id}/trust-summary", response_model=VehicleTrustSummaryOut)
+def get_vehicle_trust_summary(
+    vehicle_id: str,
+    db: Session = Depends(get_db),
+    actor: Any = Depends(require_actor),
+) -> VehicleTrustSummaryOut:
+    try:
+        vehicle = _load_vehicle_for_actor(db, actor, vehicle_id)
+        entries = _latest_entries_for_vehicle(db, vehicle.public_id)
+        return _trust_summary_out(vehicle, entries)
     except HTTPException:
         raise
     except Exception:

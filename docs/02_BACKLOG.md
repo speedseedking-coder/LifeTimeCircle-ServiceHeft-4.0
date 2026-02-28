@@ -28,6 +28,7 @@ Definition of Done (kurz):
 - [x] `handleUnauthorized` raeumt `ltc_auth_token_v1` mit auf
 - [x] Playwright Mini-E2E deckt jetzt auch Admin-/Export-Step-up-Flows ab
 - [x] Admin-Web fuer Rollen, Moderator, VIP-Business-Freigaben und Full-Export-Step-up an bestehende APIs verdrahtet
+- [x] T1/T2/T3 jetzt fachlich aus Entries abgeleitet; Public-QR und Vehicle Detail zeigen echte Trust-Summary statt Platzhalter
 
 ## EPIC-01 | Fundament: Projektstruktur und Branding
 
@@ -75,7 +76,7 @@ Definition of Done (kurz):
 - [x] E2: Fahrzeugprofil und Timeline fachlich vervollstaendigen
 - [x] E3: Eintraege inkl. Versionierung breit in UI und API abschliessen
 - [x] E4: Dokumente/Nachweise mit Upload, Lookup und Review-Flow verdrahtet
-- [ ] E5: T1/T2/T3 fachlich und im UI komplett abbilden
+- [x] E5: T1/T2/T3 fachlich und im UI komplett abbilden
 - [x] E6: Trust Folders CRUD-light und Add-on-Gate vorhanden; Web-Flow auf Branch verdrahtet
 
 ## EPIC-06 | Public-QR Mini-Check
