@@ -40,6 +40,19 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
       return json(403, { detail: { code: "consent_required" } });
     }
 
+    if (path === "/api/vehicles") {
+      return json(200, []);
+    }
+
+    if (path.startsWith("/api/vehicles/")) {
+      return json(200, {
+        id: "veh_test_1",
+        vin_masked: "WAU********1234",
+        nickname: "Demo Fahrzeug",
+        meta: { nickname: "Demo Fahrzeug" },
+      });
+    }
+
     if (path.startsWith("/api/public/qr/")) {
       return json(200, { trust_light: "YELLOW", hint: "ok", disclaimer: "" });
     }
@@ -100,6 +113,20 @@ test("Token vorhanden => /auth/me mit Authorization Header + consent/status => r
   expect(api.meCalls).toBeGreaterThan(0);
   expect(api.consentCalls).toBeGreaterThan(0);
   expect(api.authHeaderOnMe).toBe("Bearer tok_123");
+});
+
+test("Vehicle detail route loads real API-backed detail panel", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await mockAppGateApi(page, "me_200_consent_ok");
+  await boot(page);
+  await setHash(page, "#/vehicles/veh_test_1");
+
+  await expect(page.locator("main h1")).toContainText("Vehicle Detail");
+  await expect(page.locator("main")).toContainText("WAU********1234");
+  await expect(page.locator("main")).toContainText("Demo Fahrzeug");
 });
 
 test("/auth/me 403 consent_required => redirect #/consent", async ({ page }) => {
