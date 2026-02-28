@@ -1,15 +1,11 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import {
-  buildConsentAcceptances,
-  fetchRequiredConsents,
-  normalizeRequiredConsents,
   logoutSession,
   readAuthChallenge,
   readVerifiedSession,
   requestAuthChallenge,
   verifyAuthChallenge,
-  type RequiredConsent,
 } from "../authConsentApi";
 import { extractApiError } from "../api";
 import { authHeaders, clearAuthToken, getAuthToken, setAuthToken } from "../lib.auth";
@@ -33,18 +29,11 @@ function toAuthErrorMessage(status: number, body: unknown): string {
   if (status === 429 && code === "LOCKED") return "Zu viele falsche Codes. Bitte neuen Code anfordern.";
   if (status === 400 && code === "EXPIRED") return "Der Code ist abgelaufen. Bitte neuen Code anfordern.";
   if (status === 400 && code === "INVALID") return "Code oder Challenge sind ungültig.";
-  if (status === 403 && code === "CONSENT_REQUIRED") {
-    return "Die angeforderten Consent-Versionen passen nicht zum aktuellen Server-Stand. Seite neu laden und erneut versuchen.";
-  }
   if (status === 0) return "Netzwerkfehler. Bitte Verbindung und Backend prüfen.";
   return "Authentifizierung fehlgeschlagen.";
 }
 
 export default function AuthPage(): JSX.Element {
-  const [requiredConsents, setRequiredConsents] = useState<RequiredConsent[]>([]);
-  const [consentLoadError, setConsentLoadError] = useState("");
-  const [consentLoading, setConsentLoading] = useState(true);
-
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [challengeId, setChallengeId] = useState("");
@@ -54,47 +43,8 @@ export default function AuthPage(): JSX.Element {
   const [error, setError] = useState("");
   const [tokenPresent, setTokenPresent] = useState(() => getAuthToken() !== null);
 
-  const [termsChecked, setTermsChecked] = useState(false);
-  const [privacyChecked, setPrivacyChecked] = useState(false);
-
   const nextHash = useMemo(() => nextHashFromLocation(), []);
-  const consentSummary = useMemo(
-    () => requiredConsents.map((item) => `${item.doc_type}:${item.doc_version}`).join(", "),
-    [requiredConsents],
-  );
-
-  useEffect(() => {
-    let alive = true;
-
-    const run = async () => {
-      setConsentLoading(true);
-      setConsentLoadError("");
-      const res = await fetchRequiredConsents();
-      if (!alive) return;
-
-      setConsentLoading(false);
-      if (!res.ok) {
-        setConsentLoadError("Consent-Versionen konnten nicht geladen werden.");
-        return;
-      }
-
-      const required = normalizeRequiredConsents(res.body);
-      if (required.length === 0) {
-        setConsentLoadError("Consent-Versionen fehlen oder haben ein unerwartetes Format.");
-        return;
-      }
-
-      setRequiredConsents(required);
-    };
-
-    void run();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const allChecksPresent = termsChecked && privacyChecked;
-  const canVerify = challengeId.trim().length > 0 && otp.trim().length > 0 && allChecksPresent && !consentLoading && !consentLoadError;
+  const canVerify = challengeId.trim().length > 0 && otp.trim().length > 0;
 
   async function onRequestChallenge(e: FormEvent) {
     e.preventDefault();
@@ -145,7 +95,6 @@ export default function AuthPage(): JSX.Element {
       email: email.trim(),
       challengeId: challengeId.trim(),
       otp: otp.trim(),
-      consents: buildConsentAcceptances(requiredConsents),
     });
     setBusy(null);
 
@@ -162,8 +111,7 @@ export default function AuthPage(): JSX.Element {
 
     setAuthToken(verified.accessToken);
     setTokenPresent(true);
-    const next = encodeURIComponent(nextHash);
-    window.location.hash = `#/consent?next=${next}`;
+    window.location.hash = nextHash;
   }
 
   async function onLogout() {
@@ -182,7 +130,7 @@ export default function AuthPage(): JSX.Element {
   return (
     <main style={{ padding: 12 }}>
       <h1>Auth</h1>
-      <p>OTP-Login über die echten Endpunkte `/auth/request` und `/auth/verify`. Danach geht der Flow in den Consent-Schritt.</p>
+      <p>OTP-Login über die echten Endpunkte `/auth/request` und `/auth/verify`. Ob danach Consent nötig ist, entscheidet der nachgelagerte App-Gate über `/consent/status`.</p>
 
       <section className="ltc-card" style={{ marginTop: 16 }}>
         <h2>Aktueller Einstieg</h2>
@@ -234,45 +182,24 @@ export default function AuthPage(): JSX.Element {
 
       <section className="ltc-card" style={{ marginTop: 16 }}>
         <h2>Schritt 2: Verify</h2>
+        <p className="ltc-muted">Verify erzeugt nur die Session. Falls Consent fehlt oder veraltet ist, leitet die App danach automatisch in den Consent-Schritt.</p>
 
-        {consentLoading ? <p className="ltc-muted">Lade Consent-Versionen...</p> : null}
-        {consentLoadError ? <InlineErrorBanner message={consentLoadError} /> : null}
+        <form onSubmit={(e) => void onVerify(e)}>
+          <label>
+            OTP
+            <input
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              autoComplete="one-time-code"
+              placeholder="Einmalcode"
+              style={{ display: "block", marginTop: 8, padding: 10, width: "100%", maxWidth: 240 }}
+            />
+          </label>
 
-        {!consentLoading && !consentLoadError ? (
-          <>
-            <p className="ltc-muted">
-              Für den Login-Vertrag werden die aktuellen Consent-Versionen mitgegeben: <code>{consentSummary}</code>
-            </p>
-
-            <form onSubmit={(e) => void onVerify(e)}>
-              <label>
-                OTP
-                <input
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  autoComplete="one-time-code"
-                  placeholder="Einmalcode"
-                  style={{ display: "block", marginTop: 8, padding: 10, width: "100%", maxWidth: 240 }}
-                />
-              </label>
-
-              <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-                <label>
-                  <input type="checkbox" checked={termsChecked} onChange={(e) => setTermsChecked(e.target.checked)} /> Ich bestätige die
-                  aktuelle Terms-Version.
-                </label>
-                <label>
-                  <input type="checkbox" checked={privacyChecked} onChange={(e) => setPrivacyChecked(e.target.checked)} /> Ich bestätige die
-                  aktuelle Privacy-Version.
-                </label>
-              </div>
-
-              <button type="submit" disabled={busy === "verify" || !canVerify} style={{ marginTop: 12 }}>
-                {busy === "verify" ? "Verifiziert..." : "Login verifizieren"}
-              </button>
-            </form>
-          </>
-        ) : null}
+          <button type="submit" disabled={busy === "verify" || !canVerify} style={{ marginTop: 12 }}>
+            {busy === "verify" ? "Verifiziert..." : "Login verifizieren"}
+          </button>
+        </form>
       </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}

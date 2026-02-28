@@ -46,7 +46,7 @@ Definition of Done (kurz):
 - [x] B3: Consent-Pflicht mit Version und Timestamp serverseitig vorhanden
 - [x] B4: Session / Token Handling inkl. Logout-Endpunkt vorhanden
 - [x] B5: Web `AuthPage` und `ConsentPage` auf echte Flows verdrahtet
-- [ ] B6: Auth-/Consent-Contract bereinigen, damit Login-Flow und nachgelagerter Consent-Schritt ohne Doppelung zusammenpassen
+- [x] B6: Auth-/Consent-Contract bereinigen, damit Login-Flow und nachgelagerter Consent-Schritt ohne Doppelung zusammenpassen
 
 ## EPIC-03 | Rollen und Rechte (RBAC)
 
@@ -123,6 +123,6 @@ Definition of Done (kurz):
 ## Naechste sinnvolle Arbeitsbloeke
 
 - [ ] N1: PR #254 reviewen und mergen
-- [ ] N2: Auth-/Consent-Contract zwischen `/auth/verify` und `/consent/*` vereinheitlichen
+- [x] N2: Auth-/Consent-Contract zwischen `/auth/verify` und `/consent/*` vereinheitlichen
 - [ ] N3: Fahrzeugprofil, Timeline und Entry-Versionierung weiterziehen
 - [ ] N4: Admin-Oberflaechen fuer Rollen, Moderator und Export-Freigaben bauen

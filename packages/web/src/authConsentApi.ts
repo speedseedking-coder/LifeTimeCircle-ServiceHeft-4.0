@@ -37,13 +37,11 @@ export async function verifyAuthChallenge(payload: {
   email: string;
   challengeId: string;
   otp: string;
-  consents: ConsentAcceptance[];
 }) {
   return apiPost("/auth/verify", {
     email: payload.email,
     challenge_id: payload.challengeId,
     otp: payload.otp,
-    consents: payload.consents,
   });
 }
 

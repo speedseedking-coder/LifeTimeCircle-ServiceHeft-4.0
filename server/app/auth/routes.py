@@ -60,7 +60,6 @@ def auth_verify(body: AuthVerifyIn, request: Request) -> AuthVerifyOut:
             email=body.email,
             challenge_id=body.challenge_id,
             otp=body.otp,
-            consents=[c.model_dump() for c in body.consents],
             ip=_client_ip(request),
             user_agent=request.headers.get("user-agent", ""),
             request_id=rid,
@@ -70,8 +69,6 @@ def auth_verify(body: AuthVerifyIn, request: Request) -> AuthVerifyOut:
     except ValueError as e:
         code = str(e)
 
-        if code == "CONSENT_REQUIRED":
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CONSENT_REQUIRED")
         if code == "RATE_LIMIT":
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="RATE_LIMIT")
         if code == "EXPIRED":

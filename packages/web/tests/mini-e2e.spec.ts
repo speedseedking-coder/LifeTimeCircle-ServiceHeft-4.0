@@ -194,15 +194,6 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
         body: JSON.stringify(body),
       });
 
-    if (path === "/api/consent/current") {
-      return json(200, {
-        required: [
-          { doc_type: "terms", doc_version: "v2" },
-          { doc_type: "privacy", doc_version: "v3" },
-        ],
-      });
-    }
-
     if (path === "/api/auth/request") {
       return json(200, {
         ok: true,
@@ -223,6 +214,17 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
       return json(200, { user_id: "u1", role: "user" });
     }
 
+    if (path === "/api/consent/status") {
+      return json(200, {
+        is_complete: false,
+        required: [
+          { doc_type: "terms", doc_version: "v2" },
+          { doc_type: "privacy", doc_version: "v3" },
+        ],
+        accepted: [],
+      });
+    }
+
     return route.fallback();
   });
 
@@ -236,12 +238,63 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
   await expect(page.locator('[data-testid="auth-dev-otp"]')).toHaveText("123456");
 
   await page.getByLabel("OTP").fill("123456");
-  await page.getByLabel(/Terms/).check();
-  await page.getByLabel(/Privacy/).check();
   await page.getByRole("button", { name: "Login verifizieren" }).click();
 
   await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/consent?next=%23%2Fdocuments");
   await expect.poll(async () => page.evaluate(() => window.localStorage.getItem("ltc_auth_token_v1"))).toBe("tok_auth_1");
+});
+
+test("Auth page goes directly to target when consent is already complete", async ({ page }) => {
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/request") {
+      return json(200, {
+        ok: true,
+        challenge_id: "challenge-456",
+        message: "Wenn die E-Mail-Adresse gültig ist, wurde ein Code gesendet.",
+        dev_otp: "654321",
+      });
+    }
+
+    if (path === "/api/auth/verify") {
+      return json(200, {
+        access_token: "tok_auth_2",
+        expires_at: "2026-03-01T10:00:00Z",
+      });
+    }
+
+    if (path === "/api/auth/me") {
+      return json(200, { user_id: "u1", role: "user" });
+    }
+
+    if (path === "/api/consent/status") {
+      return json(200, { is_complete: true, required: [], accepted: [] });
+    }
+
+    if (path === "/api/vehicles") return json(200, []);
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/auth?next=%23%2Fvehicles");
+
+  await page.getByLabel("E-Mail").fill("vip@example.com");
+  await page.getByRole("button", { name: "Code anfordern" }).click();
+  await page.getByLabel("OTP").fill("654321");
+  await page.getByRole("button", { name: "Login verifizieren" }).click();
+
+  await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/vehicles");
+  await expect(page.locator("main h1")).toContainText("Vehicles");
 });
 
 test("Consent page accepts required versions and continues to target route", async ({ page }) => {
@@ -326,7 +379,7 @@ test("Consent page accepts required versions and continues to target route", asy
   await page.getByRole("button", { name: "Weiter zum Zielbereich" }).click();
   await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/vehicles");
 });
-test("/auth/me 403 consent_required => redirect #/consent", async ({ page }) => {
+test("/auth/me 403 consent_required => redirect #/consent with preserved next target", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
   });
@@ -335,7 +388,7 @@ test("/auth/me 403 consent_required => redirect #/consent", async ({ page }) => 
   await boot(page);
 
   await setHash(page, "#/vehicles");
-  await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/consent");
+  await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/consent?next=%23%2Fvehicles");
 });
 
 test("/auth/me 403 without consent_required => forbidden UI", async ({ page }) => {
