@@ -72,8 +72,8 @@ Definition of Done (kurz):
 **Prio:** P0 | **Status:** In Progress
 
 - [x] E1: Fahrzeuge anlegen, listen und Details abrufen
-- [ ] E2: Fahrzeugprofil und Timeline fachlich vervollstaendigen
-- [ ] E3: Eintraege inkl. Versionierung breit in UI und API abschliessen
+- [x] E2: Fahrzeugprofil und Timeline fachlich vervollstaendigen
+- [x] E3: Eintraege inkl. Versionierung breit in UI und API abschliessen
 - [x] E4: Dokumente/Nachweise mit Upload, Lookup und Review-Flow verdrahtet
 - [ ] E5: T1/T2/T3 fachlich und im UI komplett abbilden
 - [x] E6: Trust Folders CRUD-light und Add-on-Gate vorhanden; Web-Flow auf Branch verdrahtet
@@ -124,5 +124,5 @@ Definition of Done (kurz):
 
 - [ ] N1: PR #254 reviewen und mergen
 - [x] N2: Auth-/Consent-Contract zwischen `/auth/verify` und `/consent/*` vereinheitlichen
-- [ ] N3: Fahrzeugprofil, Timeline und Entry-Versionierung weiterziehen
+- [x] N3: Fahrzeugprofil, Timeline und Entry-Versionierung weiterziehen
 - [ ] N4: Admin-Oberflaechen fuer Rollen, Moderator und Export-Freigaben bauen

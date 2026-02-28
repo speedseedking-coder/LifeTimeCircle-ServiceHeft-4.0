@@ -44,6 +44,111 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
       return json(200, []);
     }
 
+    if (path === "/api/vehicles/veh_test_1/entries") {
+      if (route.request().method() === "POST") {
+        return json(201, {
+          id: "entry_test_2",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "entry_test_2",
+          supersedes_entry_id: null,
+          version: 1,
+          revision_count: 1,
+          is_latest: true,
+          date: "2026-02-28",
+          type: "Service",
+          performed_by: "Eigenleistung",
+          km: 125000,
+          note: "Neuer Eintrag",
+          cost_amount: 120.5,
+          trust_level: "T2",
+          created_at: "2026-02-28T12:00:00Z",
+          updated_at: "2026-02-28T12:00:00Z",
+        });
+      }
+      return json(200, [
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 2,
+          revision_count: 2,
+          is_latest: true,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+      ]);
+    }
+
+    if (path === "/api/vehicles/veh_test_1/entries/entry_test_1/history") {
+      return json(200, [
+        {
+          id: "entry_test_0",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 1,
+          revision_count: 2,
+          is_latest: false,
+          date: "2026-02-18",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123000,
+          note: "Erste Fassung",
+          cost_amount: 450,
+          trust_level: "T2",
+          created_at: "2026-02-18T10:00:00Z",
+          updated_at: "2026-02-18T10:00:00Z",
+        },
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: "entry_test_0",
+          version: 2,
+          revision_count: 2,
+          is_latest: true,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+      ]);
+    }
+
+    if (path === "/api/vehicles/veh_test_1/entries/entry_test_1/revisions") {
+      return json(201, {
+        id: "entry_test_3",
+        vehicle_id: "veh_test_1",
+        entry_group_id: "grp_1",
+        supersedes_entry_id: "entry_test_1",
+        version: 3,
+        revision_count: 3,
+        is_latest: true,
+        date: "2026-02-22",
+        type: "Inspektion",
+        performed_by: "Werkstatt",
+        km: 123789,
+        note: "Version 3",
+        cost_amount: 525,
+        trust_level: "T3",
+        created_at: "2026-02-22T12:00:00Z",
+        updated_at: "2026-02-22T12:00:00Z",
+      });
+    }
+
     if (path.startsWith("/api/vehicles/")) {
       return json(200, {
         id: "veh_test_1",
@@ -159,6 +264,179 @@ test("Vehicle detail route loads real API-backed detail panel", async ({ page })
   await expect(page.locator("main h1")).toContainText("Vehicle Detail");
   await expect(page.locator("main")).toContainText("WAU********1234");
   await expect(page.locator("main")).toContainText("Demo Fahrzeug");
+  await expect(page.locator("main")).toContainText("Große Inspektion durchgeführt");
+  await expect(page.locator("main")).toContainText("v2 von 2");
+});
+
+test("Vehicle detail creates a revision and shows revision history", async ({ page }) => {
+  let historyLoaded = false;
+  let revisionCreated = false;
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "user" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/vehicles/veh_test_1") {
+      return json(200, {
+        id: "veh_test_1",
+        vin_masked: "WAU********1234",
+        nickname: "Demo Fahrzeug",
+        meta: { nickname: "Demo Fahrzeug" },
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/entries") {
+      if (route.request().method() === "POST") {
+        revisionCreated = true;
+        return json(201, {
+          id: "entry_test_3",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: "entry_test_1",
+          version: 3,
+          revision_count: 3,
+          is_latest: true,
+          date: "2026-02-22",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123789,
+          note: "Version 3",
+          cost_amount: 525,
+          trust_level: "T3",
+          created_at: "2026-02-22T12:00:00Z",
+          updated_at: "2026-02-22T12:00:00Z",
+        });
+      }
+      return json(200, [
+        {
+          id: revisionCreated ? "entry_test_3" : "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: revisionCreated ? "entry_test_1" : null,
+          version: revisionCreated ? 3 : 2,
+          revision_count: revisionCreated ? 3 : 2,
+          is_latest: true,
+          date: revisionCreated ? "2026-02-22" : "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: revisionCreated ? 123789 : 123456,
+          note: revisionCreated ? "Version 3" : "Große Inspektion durchgeführt",
+          cost_amount: revisionCreated ? 525 : 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-22T12:00:00Z",
+          updated_at: "2026-02-22T12:00:00Z",
+        },
+      ]);
+    }
+    if (path === "/api/vehicles/veh_test_1/entries/entry_test_1/revisions") {
+      revisionCreated = true;
+      return json(201, {
+        id: "entry_test_3",
+        vehicle_id: "veh_test_1",
+        entry_group_id: "grp_1",
+        supersedes_entry_id: "entry_test_1",
+        version: 3,
+        revision_count: 3,
+        is_latest: true,
+        date: "2026-02-22",
+        type: "Inspektion",
+        performed_by: "Werkstatt",
+        km: 123789,
+        note: "Version 3",
+        cost_amount: 525,
+        trust_level: "T3",
+        created_at: "2026-02-22T12:00:00Z",
+        updated_at: "2026-02-22T12:00:00Z",
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/entries/entry_test_1/history") {
+      historyLoaded = true;
+      return json(200, [
+        {
+          id: "entry_test_0",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 1,
+          revision_count: 3,
+          is_latest: false,
+          date: "2026-02-18",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123000,
+          note: "Erste Fassung",
+          cost_amount: 450,
+          trust_level: "T2",
+          created_at: "2026-02-18T10:00:00Z",
+          updated_at: "2026-02-18T10:00:00Z",
+        },
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: "entry_test_0",
+          version: 2,
+          revision_count: 3,
+          is_latest: false,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+        {
+          id: "entry_test_3",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: "entry_test_1",
+          version: 3,
+          revision_count: 3,
+          is_latest: true,
+          date: "2026-02-22",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123789,
+          note: "Version 3",
+          cost_amount: 525,
+          trust_level: "T3",
+          created_at: "2026-02-22T12:00:00Z",
+          updated_at: "2026-02-22T12:00:00Z",
+        },
+      ]);
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/vehicles/veh_test_1");
+
+  await page.getByRole("button", { name: "Versionshistorie laden" }).click();
+  await expect.poll(() => historyLoaded).toBe(true);
+  await expect(page.locator("main")).toContainText("v1");
+
+  await page.getByRole("button", { name: "Neue Version anlegen" }).click();
+  await page.getByLabel("Kilometerstand").fill("123789");
+  await page.getByLabel("Bemerkung (optional)").fill("Version 3");
+  await page.getByRole("button", { name: "Version speichern" }).click();
+
+  await expect.poll(() => revisionCreated).toBe(true);
 });
 
 test("Documents route uploads a file and renders returned document metadata", async ({ page }) => {
@@ -180,6 +458,69 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("service.pdf");
   await expect(page.locator("main")).toContainText("QUARANTINED");
   await expect(page.locator("main")).toContainText("PENDING");
+});
+
+test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "user" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/vehicles" && route.request().method() === "POST") {
+      return json(200, {
+        id: "veh_new_1",
+        vin_masked: "WAU********9999",
+        nickname: null,
+        meta: null,
+      });
+    }
+    if (path === "/api/vehicles/veh_new_1/entries") {
+      return json(201, {
+        id: "entry_new_1",
+        vehicle_id: "veh_new_1",
+        entry_group_id: "entry_new_1",
+        supersedes_entry_id: null,
+        version: 1,
+        revision_count: 1,
+        is_latest: true,
+        date: "2026-02-28",
+        type: "Service",
+        performed_by: "Eigenleistung",
+        km: 120000,
+        note: null,
+        cost_amount: null,
+        trust_level: null,
+        created_at: "2026-02-28T12:00:00Z",
+        updated_at: "2026-02-28T12:00:00Z",
+      });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/onboarding");
+
+  await page.getByLabel("VIN").fill("WAUZZZ1JZXW999999");
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await page.getByRole("button", { name: "Fahrzeug speichern" }).click();
+  await page.getByLabel("Kilometerstand").fill("120000");
+  await page.getByRole("button", { name: "Entry speichern" }).click();
+
+  await expect(page.locator("main")).toContainText("Geschafft");
+  await expect(page.locator('a[href="#/vehicles/veh_new_1"]')).toHaveCount(2);
 });
 
 test("Auth page requests OTP, verifies login and forwards into consent flow", async ({ page }) => {
