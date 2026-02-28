@@ -243,6 +243,17 @@ class VipBusinessStaffAddResponse(BaseModel):
     at: str
 
 
+class VipBusinessListRow(BaseModel):
+    business_id: str
+    owner_user_id: str
+    approved: bool
+    created_at: str
+    approved_at: Optional[str] = None
+    approved_by_user_id: Optional[str] = None
+    staff_user_ids: List[str] = Field(default_factory=list)
+    staff_count: int = 0
+
+
 class RoleSetResponse(BaseModel):
     ok: bool
     user_id: str
@@ -255,6 +266,60 @@ class AdminUserRow(BaseModel):
     user_id: str
     role: str
     created_at: str
+
+
+def _vip_business_row_to_response(row: sqlite3.Row) -> VipBusinessResponse:
+    return VipBusinessResponse(
+        ok=True,
+        business_id=row["business_id"],
+        owner_user_id=row["owner_user_id"],
+        approved=bool(row["approved_at"]),
+        created_at=row["created_at"],
+        approved_at=row["approved_at"],
+        approved_by_user_id=row["approved_by_user_id"],
+    )
+
+
+def _list_vip_businesses(conn: sqlite3.Connection) -> List[VipBusinessListRow]:
+    if not _table_exists(conn, "vip_businesses"):
+        return []
+
+    rows = conn.execute(
+        """
+        SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id
+        FROM vip_businesses
+        ORDER BY created_at DESC, business_id DESC;
+        """
+    ).fetchall()
+    if not rows:
+        return []
+
+    staff_rows = conn.execute(
+        """
+        SELECT business_id, user_id
+        FROM vip_business_staff
+        ORDER BY created_at ASC, user_id ASC;
+        """
+    ).fetchall() if _table_exists(conn, "vip_business_staff") else []
+
+    staff_by_business: Dict[str, List[str]] = {}
+    for staff_row in staff_rows:
+        business_id = str(staff_row["business_id"])
+        staff_by_business.setdefault(business_id, []).append(str(staff_row["user_id"]))
+
+    return [
+        VipBusinessListRow(
+            business_id=row["business_id"],
+            owner_user_id=row["owner_user_id"],
+            approved=bool(row["approved_at"]),
+            created_at=row["created_at"],
+            approved_at=row["approved_at"],
+            approved_by_user_id=row["approved_by_user_id"],
+            staff_user_ids=staff_by_business.get(str(row["business_id"]), []),
+            staff_count=len(staff_by_business.get(str(row["business_id"]), [])),
+        )
+        for row in rows
+    ]
 
 
 def _apply_role_change(
@@ -320,6 +385,14 @@ def admin_list_users(_: AuthContext = Depends(require_roles("admin", "superadmin
             "SELECT user_id, role, created_at FROM auth_users ORDER BY created_at DESC LIMIT 200;"
         ).fetchall()
         return [AdminUserRow(user_id=r["user_id"], role=r["role"], created_at=r["created_at"]) for r in rows]
+
+
+@router.get("/vip-businesses", response_model=List[VipBusinessListRow])
+def admin_list_vip_businesses(_: AuthContext = Depends(require_roles("admin", "superadmin"))):
+    settings = load_settings()
+    with _connect(settings.db_path) as conn:
+        _ensure_vip_business_tables(conn)
+        return _list_vip_businesses(conn)
 
 
 @router.post("/users/{user_id}/role", response_model=RoleSetResponse)
@@ -478,15 +551,7 @@ def superadmin_approve_vip_business(
             (business_id,),
         ).fetchone()
 
-        return VipBusinessResponse(
-            ok=True,
-            business_id=row2["business_id"],
-            owner_user_id=row2["owner_user_id"],
-            approved=bool(row2["approved_at"]),
-            created_at=row2["created_at"],
-            approved_at=row2["approved_at"],
-            approved_by_user_id=row2["approved_by_user_id"],
-        )
+        return _vip_business_row_to_response(row2)
 
 
 @router.post("/vip-businesses/{business_id}/staff/{user_id}", response_model=VipBusinessStaffAddResponse)

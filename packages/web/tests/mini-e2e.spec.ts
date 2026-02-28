@@ -809,6 +809,204 @@ test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
   await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
 });
 
+test("Admin route manages roles, VIP businesses and export grants", async ({ page }) => {
+  let users = [
+    { user_id: "uid-user-1", role: "user", created_at: "2026-02-28T10:00:00Z" },
+    { user_id: "uid-mod-1", role: "user", created_at: "2026-02-28T09:00:00Z" },
+  ];
+  let businesses = [
+    {
+      business_id: "biz-demo-1",
+      owner_user_id: "uid-owner-1",
+      approved: false,
+      created_at: "2026-02-28T10:30:00Z",
+      approved_at: null,
+      approved_by_user_id: null,
+      staff_user_ids: [],
+      staff_count: 0,
+    },
+  ];
+  let grantIssued = false;
+  let fullLoaded = false;
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_admin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+
+    if (path === "/api/admin/users") return json(200, users);
+
+    if (path === "/api/admin/users/uid-user-1/role") {
+      users = users.map((item) => (item.user_id === "uid-user-1" ? { ...item, role: "vip" } : item));
+      return json(200, {
+        ok: true,
+        user_id: "uid-user-1",
+        old_role: "user",
+        new_role: "vip",
+        at: "2026-02-28T11:00:00Z",
+      });
+    }
+
+    if (path === "/api/admin/vip-businesses" && route.request().method() === "GET") {
+      return json(200, businesses);
+    }
+
+    if (path === "/api/admin/vip-businesses" && route.request().method() === "POST") {
+      businesses = [
+        {
+          business_id: "biz-demo-1",
+          owner_user_id: "uid-owner-1",
+          approved: false,
+          created_at: "2026-02-28T10:30:00Z",
+          approved_at: null,
+          approved_by_user_id: null,
+          staff_user_ids: [],
+          staff_count: 0,
+        },
+        ...businesses.filter((item) => item.business_id !== "biz-demo-1"),
+      ];
+      return json(200, {
+        ok: true,
+        business_id: "biz-demo-1",
+        owner_user_id: "uid-owner-1",
+        approved: false,
+        created_at: "2026-02-28T10:30:00Z",
+        approved_at: null,
+        approved_by_user_id: null,
+      });
+    }
+
+    if (path === "/api/admin/vip-businesses/biz-demo-1/approve") {
+      businesses = businesses.map((item) =>
+        item.business_id === "biz-demo-1"
+          ? {
+              ...item,
+              approved: true,
+              approved_at: "2026-02-28T11:05:00Z",
+              approved_by_user_id: "sa-1",
+            }
+          : item,
+      );
+      return json(200, {
+        ok: true,
+        business_id: "biz-demo-1",
+        owner_user_id: "uid-owner-1",
+        approved: true,
+        created_at: "2026-02-28T10:30:00Z",
+        approved_at: "2026-02-28T11:05:00Z",
+        approved_by_user_id: "sa-1",
+      });
+    }
+
+    if (path === "/api/admin/vip-businesses/biz-demo-1/staff/uid-staff-1") {
+      businesses = businesses.map((item) =>
+        item.business_id === "biz-demo-1"
+          ? {
+              ...item,
+              approved: true,
+              approved_at: "2026-02-28T11:05:00Z",
+              approved_by_user_id: "sa-1",
+              staff_user_ids: ["uid-staff-1"],
+              staff_count: 1,
+            }
+          : item,
+      );
+      return json(200, {
+        ok: true,
+        business_id: "biz-demo-1",
+        user_id: "uid-staff-1",
+        at: "2026-02-28T11:06:00Z",
+      });
+    }
+
+    if (path === "/api/export/vehicle/veh-admin-1") {
+      return json(200, {
+        data: {
+          target: "vehicle",
+          id: "veh-admin-1",
+          _redacted: true,
+          vehicle: { public_id: "veh-admin-1" },
+        },
+      });
+    }
+
+    if (path === "/api/export/vehicle/veh-admin-1/grant") {
+      grantIssued = true;
+      return json(200, {
+        vehicle_id: "veh-admin-1",
+        export_token: "grant-token-1",
+        token: "grant-token-1",
+        expires_at: "2026-02-28T11:20:00Z",
+        ttl_seconds: 300,
+        one_time: true,
+        header: "X-Export-Token",
+      });
+    }
+
+    if (path === "/api/export/vehicle/veh-admin-1/full") {
+      fullLoaded = true;
+      expect(route.request().headers()["x-export-token"]).toBe("grant-token-1");
+      return json(200, {
+        vehicle_id: "veh-admin-1",
+        ciphertext: "ciphertext-demo-1",
+        alg: "fernet",
+        one_time: true,
+      });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/admin");
+
+  await expect(page.locator("main h1")).toContainText("Admin");
+  await expect(page.locator('[data-testid="admin-page"]')).toContainText("uid-user-1");
+
+  const userCard = page.locator("article").filter({ hasText: "uid-user-1" }).first();
+  await userCard.getByLabel("Zielrolle").selectOption("vip");
+  await userCard.getByRole("button", { name: "Rolle setzen" }).click();
+  await expect(page.locator("main")).toContainText("wurde auf vip gesetzt");
+
+  await page.getByLabel("Owner User-ID").fill("uid-owner-1");
+  await page.getByLabel("Business-ID (optional)").fill("biz-demo-1");
+  await page.getByRole("button", { name: "VIP-Business anlegen" }).click();
+  await expect(page.locator("main")).toContainText("biz-demo-1");
+
+  const businessCard = page.locator("article").filter({ hasText: "biz-demo-1" }).first();
+  await businessCard.getByRole("button", { name: "Freigeben" }).click();
+  await expect(page.locator("main")).toContainText("wurde freigegeben");
+
+  await businessCard.getByLabel("Staff User-ID").fill("uid-staff-1");
+  await businessCard.getByRole("button", { name: "Staff hinzufügen" }).click();
+  await expect(page.locator("main")).toContainText("uid-staff-1");
+
+  await page.getByLabel("Ziel-ID").fill("veh-admin-1");
+  await page.getByRole("button", { name: "Redacted laden" }).click();
+  await expect(page.locator("main")).toContainText("veh-admin-1");
+
+  await page.getByRole("button", { name: "Full Grant anfordern" }).click();
+  await expect.poll(() => grantIssued).toBe(true);
+  await expect(page.locator("main")).toContainText("grant-token-1");
+
+  await page.getByRole("button", { name: "Voll-Export laden" }).click();
+  await expect.poll(() => fullLoaded).toBe(true);
+  await expect(page.locator("main")).toContainText("ciphertext-demo-1");
+});
+
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {
   await mockAppGateApi(page, "me_401");
   await boot(page);
