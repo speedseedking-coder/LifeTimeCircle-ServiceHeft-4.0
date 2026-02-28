@@ -56,7 +56,12 @@ jobs:
         run: poetry run pytest -q
 
       - name: LTC docs unified validator
-        run: pwsh -NoProfile -ExecutionPolicy Bypass 
+        working-directory: ${{ github.workspace }}
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File "$GITHUB_WORKSPACE/server/scripts/patch_docs_unified_final_refresh.ps1"
+      - name: OpenAPI duplicate audit
+        run: poetry run python ./scripts/check_openapi_duplicates.py
+      - name: RBAC route audit
+        run: poetry run python ./scripts/rbac_route_audit.py
       - name: Setup Node (web)
         uses: actions/setup-node@v4
         with:
@@ -83,4 +88,3 @@ jobs:
         run: |
           npm ci
           npm run build
-
