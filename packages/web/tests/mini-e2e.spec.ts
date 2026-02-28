@@ -53,6 +53,38 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
       });
     }
 
+    if (path === "/api/documents/admin/quarantine") {
+      return json(403, { detail: "forbidden" });
+    }
+
+    if (path === "/api/documents/upload") {
+      return json(200, {
+        id: "doc_test_1",
+        filename: "service.pdf",
+        content_type: "application/pdf",
+        size_bytes: 24,
+        status: "QUARANTINED",
+        scan_status: "PENDING",
+        pii_status: "OK",
+        created_at: "2026-02-28T12:00:00Z",
+        created_by_user_id: "u1",
+      });
+    }
+
+    if (path.startsWith("/api/documents/") && !path.endsWith("/download") && !path.endsWith("/approve") && !path.endsWith("/reject") && !path.endsWith("/scan")) {
+      return json(200, {
+        id: "doc_test_1",
+        filename: "service.pdf",
+        content_type: "application/pdf",
+        size_bytes: 24,
+        status: "QUARANTINED",
+        scan_status: "PENDING",
+        pii_status: "OK",
+        created_at: "2026-02-28T12:00:00Z",
+        created_by_user_id: "u1",
+      });
+    }
+
     if (path.startsWith("/api/public/qr/")) {
       return json(200, { trust_light: "YELLOW", hint: "ok", disclaimer: "" });
     }
@@ -127,6 +159,27 @@ test("Vehicle detail route loads real API-backed detail panel", async ({ page })
   await expect(page.locator("main h1")).toContainText("Vehicle Detail");
   await expect(page.locator("main")).toContainText("WAU********1234");
   await expect(page.locator("main")).toContainText("Demo Fahrzeug");
+});
+
+test("Documents route uploads a file and renders returned document metadata", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await mockAppGateApi(page, "me_200_consent_ok");
+  await boot(page);
+  await setHash(page, "#/documents");
+
+  await page.locator("#documents-upload-input").setInputFiles({
+    name: "service.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%%EOF\n", "utf8"),
+  });
+  await page.getByRole("button", { name: "Dokument hochladen" }).click();
+
+  await expect(page.locator("main")).toContainText("service.pdf");
+  await expect(page.locator("main")).toContainText("QUARANTINED");
+  await expect(page.locator("main")).toContainText("PENDING");
 });
 
 test("/auth/me 403 consent_required => redirect #/consent", async ({ page }) => {
