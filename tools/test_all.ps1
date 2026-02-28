@@ -75,6 +75,26 @@ try {
     }
   }
 
+  Invoke-Step -Name "OpenAPI audit (server): poetry run python ./scripts/check_openapi_duplicates.py" -Script {
+    Push-Location (Join-Path $repoRoot "server")
+    try {
+      & poetry run python ".\scripts\check_openapi_duplicates.py"
+      if ($LASTEXITCODE -ne 0) { throw "OpenAPI audit failed (exit=$LASTEXITCODE)" }
+    } finally {
+      Pop-Location
+    }
+  }
+
+  Invoke-Step -Name "RBAC route audit (server): poetry run python ./scripts/rbac_route_audit.py" -Script {
+    Push-Location (Join-Path $repoRoot "server")
+    try {
+      & poetry run python ".\scripts\rbac_route_audit.py"
+      if ($LASTEXITCODE -ne 0) { throw "RBAC route audit failed (exit=$LASTEXITCODE)" }
+    } finally {
+      Pop-Location
+    }
+  }
+
   Invoke-Step -Name "Web build (packages/web): npm ci + npm run build" -Script {
     Push-Location (Join-Path $repoRoot "packages/web")
     try {
