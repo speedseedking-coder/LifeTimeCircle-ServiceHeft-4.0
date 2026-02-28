@@ -26,8 +26,8 @@ Definition of Done (kurz):
 - [x] Documents im Web auf echte API verdrahtet (Upload, Lookup, Download-Link, Admin-Quarantaene)
 - [x] Trust Folders Backend in main verfuegbar; Web-Flow auf diesem Branch verdrahtet
 - [x] `handleUnauthorized` raeumt `ltc_auth_token_v1` mit auf
-- [x] Playwright Mini-E2E lokal gruen: 11/11
-- [x] PR fuer aktuellen Branch erstellt: #254
+- [x] Playwright Mini-E2E deckt jetzt auch Admin-/Export-Step-up-Flows ab
+- [x] Admin-Web fuer Rollen, Moderator, VIP-Business-Freigaben und Full-Export-Step-up an bestehende APIs verdrahtet
 
 ## EPIC-01 | Fundament: Projektstruktur und Branding
 
@@ -61,11 +61,11 @@ Definition of Done (kurz):
 
 ## EPIC-04 | Admin (Minimal)
 
-**Prio:** P0 | **Status:** In Progress
+**Prio:** P0 | **Status:** Done
 
 - [x] D1: Grundlagen fuer Rollen-/Moderator-Administration serverseitig vorhanden
-- [ ] D2: Admin-Oberflaechen fuer Rollen setzen, Moderator-Akkreditierung und Staff-Freigaben finalisieren
-- [ ] D3: Export-Full nur SUPERADMIN mit Step-Up und UI-Flow abschliessen
+- [x] D2: Admin-Oberflaechen fuer Rollen setzen, Moderator-Akkreditierung und Staff-Freigaben finalisieren
+- [x] D3: Export-Full nur SUPERADMIN mit Step-Up und UI-Flow abschliessen
 
 ## EPIC-05 | Service Heft Kern
 
@@ -96,12 +96,12 @@ Definition of Done (kurz):
 
 ## EPIC-08 | Security und Privacy Baseline
 
-**Prio:** P0 | **Status:** In Progress
+**Prio:** P0 | **Status:** Done
 
 - [x] H1: Audit-/Redaction-Baseline vorhanden
 - [x] H2: HMAC-Pseudonyme und No-PII-Grundsaetze verankert
 - [x] H3: Export standardmaessig redacted
-- [ ] H4: Full-Export mit kompletter UI-/Step-Up-Strecke fertigziehen
+- [x] H4: Full-Export mit kompletter UI-/Step-Up-Strecke fertigziehen
 
 ## EPIC-09 | Uploads: Allowlist, Limits, Quarantine-by-default
 
@@ -113,16 +113,16 @@ Definition of Done (kurz):
 
 ## EPIC-10 | Web Qualitaetsgates und Regression-Schutz
 
-**Prio:** P0 | **Status:** In Progress
+**Prio:** P0 | **Status:** Done
 
 - [x] J1: `tools/test_all.ps1` als deterministischer Sammel-Runner
 - [x] J2: CI mit Build, Backend-Tests, OpenAPI-Audit und RBAC-Audit
 - [x] J3: Playwright Mini-E2E fuer App-Gates, Public-QR, Vehicles, Documents und Trust Folders
-- [ ] J4: Weitere E2E-Coverage fuer Auth-, Consent- und spaetere Admin-Flows ausbauen
+- [x] J4: Weitere E2E-Coverage fuer Auth-, Consent- und spaetere Admin-Flows ausbauen
 
 ## Naechste sinnvolle Arbeitsbloeke
 
 - [ ] N1: PR #254 reviewen und mergen
 - [x] N2: Auth-/Consent-Contract zwischen `/auth/verify` und `/consent/*` vereinheitlichen
 - [x] N3: Fahrzeugprofil, Timeline und Entry-Versionierung weiterziehen
-- [ ] N4: Admin-Oberflaechen fuer Rollen, Moderator und Export-Freigaben bauen
+- [x] N4: Admin-Oberflaechen fuer Rollen, Moderator und Export-Freigaben bauen
