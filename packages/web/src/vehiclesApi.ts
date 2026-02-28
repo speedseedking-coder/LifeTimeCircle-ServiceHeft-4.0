@@ -7,6 +7,19 @@ export type Vehicle = {
   meta: Record<string, unknown> | null;
 };
 
+export type VehicleTrustSummary = {
+  trust_light: "rot" | "orange" | "gelb" | "gruen";
+  hint: string;
+  reason_codes: string[];
+  todo_codes: string[];
+  verification_level: "niedrig" | "mittel" | "hoch";
+  accident_status: "unfallfrei" | "nicht_unfallfrei" | "unbekannt";
+  accident_status_label: string;
+  history_status: "vorhanden" | "nicht_vorhanden";
+  evidence_status: "vorhanden" | "nicht_vorhanden";
+  top_trust_level: "T1" | "T2" | "T3" | null;
+};
+
 export type VehicleEntry = {
   id: string;
   vehicle_id: string;
@@ -123,6 +136,38 @@ function mapVehicleEntry(body: unknown): VehicleEntry | null {
   };
 }
 
+function mapVehicleTrustSummary(body: unknown): VehicleTrustSummary | null {
+  if (!isRecord(body)) return null;
+  if (
+    (body.trust_light !== "rot" && body.trust_light !== "orange" && body.trust_light !== "gelb" && body.trust_light !== "gruen") ||
+    typeof body.hint !== "string" ||
+    !Array.isArray(body.reason_codes) ||
+    !Array.isArray(body.todo_codes) ||
+    (body.verification_level !== "niedrig" && body.verification_level !== "mittel" && body.verification_level !== "hoch") ||
+    (body.accident_status !== "unfallfrei" && body.accident_status !== "nicht_unfallfrei" && body.accident_status !== "unbekannt") ||
+    typeof body.accident_status_label !== "string" ||
+    (body.history_status !== "vorhanden" && body.history_status !== "nicht_vorhanden") ||
+    (body.evidence_status !== "vorhanden" && body.evidence_status !== "nicht_vorhanden")
+  ) {
+    return null;
+  }
+
+  const top_trust_level = body.top_trust_level === "T1" || body.top_trust_level === "T2" || body.top_trust_level === "T3" ? body.top_trust_level : null;
+
+  return {
+    trust_light: body.trust_light,
+    hint: body.hint,
+    reason_codes: body.reason_codes.filter((item): item is string => typeof item === "string"),
+    todo_codes: body.todo_codes.filter((item): item is string => typeof item === "string"),
+    verification_level: body.verification_level,
+    accident_status: body.accident_status,
+    accident_status_label: body.accident_status_label,
+    history_status: body.history_status,
+    evidence_status: body.evidence_status,
+    top_trust_level,
+  };
+}
+
 async function request<T>(method: "GET" | "POST", path: string, init?: RequestInit, body?: unknown): Promise<VehicleApiResult<T>> {
   const url = `/api${normalizePath(path)}`;
   const hasBody = typeof body !== "undefined";
@@ -185,7 +230,7 @@ export async function getVehicle(id: string, init?: RequestInit): Promise<Vehicl
 }
 
 export async function createVehicle(
-  payload: { vin: string; nickname?: string | null },
+  payload: { vin: string; nickname?: string | null; meta?: Record<string, unknown> | null },
   init?: RequestInit,
 ): Promise<VehicleApiResult<Vehicle>> {
   const body: Record<string, unknown> = {
@@ -194,10 +239,21 @@ export async function createVehicle(
   if (payload.nickname && payload.nickname.trim().length > 0) {
     body.nickname = payload.nickname.trim();
   }
+  if (payload.meta && isRecord(payload.meta)) {
+    body.meta = payload.meta;
+  }
 
   const res = await request<unknown>("POST", "/vehicles", init, body);
   if (!res.ok) return res;
   const mapped = mapVehicle(res.body);
+  if (!mapped) return { ok: false, status: 500, error: "invalid_body", body: res.body };
+  return { ok: true, status: res.status, body: mapped };
+}
+
+export async function getVehicleTrustSummary(id: string, init?: RequestInit): Promise<VehicleApiResult<VehicleTrustSummary>> {
+  const res = await request<unknown>("GET", `/vehicles/${encodeURIComponent(id)}/trust-summary`, init);
+  if (!res.ok) return res;
+  const mapped = mapVehicleTrustSummary(res.body);
   if (!mapped) return { ok: false, status: 500, error: "invalid_body", body: res.body };
   return { ok: true, status: res.status, body: mapped };
 }

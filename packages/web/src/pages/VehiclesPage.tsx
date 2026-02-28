@@ -46,6 +46,7 @@ export default function VehiclesPage(): JSX.Element {
   const [error, setError] = useState("");
   const [vin, setVin] = useState("");
   const [nickname, setNickname] = useState("");
+  const [accidentStatus, setAccidentStatus] = useState<"unknown" | "accident_free" | "not_free">("unknown");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -93,7 +94,14 @@ export default function VehiclesPage(): JSX.Element {
 
     const token = getAuthToken();
     const headers = authHeaders(token);
-    const res = await createVehicle({ vin: normalizedVin, nickname }, { headers });
+    const res = await createVehicle(
+      {
+        vin: normalizedVin,
+        nickname,
+        meta: { accident_status: accidentStatus },
+      },
+      { headers },
+    );
 
     setCreating(false);
     if (!res.ok) {
@@ -108,6 +116,7 @@ export default function VehiclesPage(): JSX.Element {
     setVehicles((prev) => [...prev, res.body]);
     setVin("");
     setNickname("");
+    setAccidentStatus("unknown");
     window.location.hash = `#/vehicles/${encodeURIComponent(res.body.id)}`;
   }
 
@@ -139,6 +148,18 @@ export default function VehiclesPage(): JSX.Element {
                 autoComplete="off"
                 style={{ display: "block", marginTop: 8, padding: 10, width: "100%" }}
               />
+            </label>
+            <label>
+              Unfallstatus
+              <select
+                value={accidentStatus}
+                onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
+                style={{ display: "block", marginTop: 8, padding: 10, width: "100%" }}
+              >
+                <option value="unknown">Unbekannt</option>
+                <option value="accident_free">Unfallfrei</option>
+                <option value="not_free">Nicht unfallfrei</option>
+              </select>
             </label>
           </div>
 

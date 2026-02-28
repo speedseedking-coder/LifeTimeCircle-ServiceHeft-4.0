@@ -17,6 +17,7 @@ type WizardState = {
   step: WizardStep;
   vin: string;
   vehicleId: string | null;
+  accidentStatus: "unknown" | "accident_free" | "not_free";
   entryDraft: EntryDraft;
 };
 
@@ -29,6 +30,7 @@ const initialState: WizardState = {
   step: 1,
   vin: "",
   vehicleId: null,
+  accidentStatus: "unknown",
   entryDraft: {
     date: today,
     type: "Service",
@@ -80,6 +82,8 @@ export default function OnboardingWizardPage(): JSX.Element {
         step: parsed.step === 2 || parsed.step === 3 ? parsed.step : 1,
         vin: typeof parsed.vin === "string" ? parsed.vin : prev.vin,
         vehicleId: typeof parsed.vehicleId === "string" ? parsed.vehicleId : null,
+        accidentStatus:
+          parsed.accidentStatus === "accident_free" || parsed.accidentStatus === "not_free" ? parsed.accidentStatus : "unknown",
         entryDraft: {
           date: parsed.entryDraft?.date || prev.entryDraft.date,
           type: parsed.entryDraft?.type || prev.entryDraft.type,
@@ -167,7 +171,13 @@ export default function OnboardingWizardPage(): JSX.Element {
     setSubmitting(true);
     setError(null);
 
-    const res = await createVehicleApi({ vin: normalizeVin(wizard.vin) }, { headers: authHeaders(getAuthToken()) });
+    const res = await createVehicleApi(
+      {
+        vin: normalizeVin(wizard.vin),
+        meta: { accident_status: wizard.accidentStatus },
+      },
+      { headers: authHeaders(getAuthToken()) },
+    );
 
     if (!res.ok) {
       const code = extractApiError(res.body);
@@ -338,6 +348,23 @@ export default function OnboardingWizardPage(): JSX.Element {
           <p>
             VIN erfasst: <code>{maskVin(wizard.vin)}</code>
           </p>
+          <label style={{ display: "block", marginBottom: 12 }}>
+            Unfallstatus
+            <select
+              value={wizard.accidentStatus}
+              onChange={(e) =>
+                setWizard((prev) => ({
+                  ...prev,
+                  accidentStatus: e.target.value as WizardState["accidentStatus"],
+                }))
+              }
+              style={{ display: "block", marginTop: 8, padding: 8, width: "100%", maxWidth: 420 }}
+            >
+              <option value="unknown">Unbekannt</option>
+              <option value="accident_free">Unfallfrei</option>
+              <option value="not_free">Nicht unfallfrei</option>
+            </select>
+          </label>
           <div style={{ display: "flex", gap: 10 }}>
             <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 1 }))} disabled={submitting}>
               Zurück

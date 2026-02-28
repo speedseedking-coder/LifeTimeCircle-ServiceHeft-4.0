@@ -3,11 +3,16 @@ import React from "react";
 import { TrustAmpelDisclaimer } from "../components/TrustAmpelDisclaimer";
 import { httpFetch } from "../lib/httpFetch";
 
-type TrustLight = "GREEN" | "YELLOW" | "RED";
+type TrustLight = "GREEN" | "YELLOW" | "ORANGE" | "RED";
 
 type PublicQrResponse = {
   trust_light: string;
   hint: string;
+  history_status: string;
+  evidence_status: string;
+  verification_level: string;
+  accident_status: string;
+  accident_status_label: string;
   disclaimer: string;
 };
 
@@ -17,14 +22,19 @@ const PUBLIC_QR_DISCLAIMER_TEXT =
 
 function normalizeTrustLight(x: string): TrustLight {
   const v = (x || "").trim().toUpperCase();
+  if (v === "GRUEN") return "GREEN";
+  if (v === "GELB") return "YELLOW";
+  if (v === "ORANGE") return "ORANGE";
+  if (v === "ROT") return "RED";
   if (v === "GREEN") return "GREEN";
   if (v === "YELLOW") return "YELLOW";
+  if (v === "ORANGE") return "ORANGE";
   if (v === "RED") return "RED";
   return "YELLOW";
 }
 
 function TrustLightBadge({ value }: { value: TrustLight }) {
-  const color = value === "GREEN" ? "#16a34a" : value === "YELLOW" ? "#ca8a04" : "#dc2626";
+  const color = value === "GREEN" ? "#16a34a" : value === "YELLOW" ? "#ca8a04" : value === "ORANGE" ? "#ea580c" : "#dc2626";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -136,7 +146,23 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
           )}
 
           {!loading && !error && (
-            <div style={{ opacity: 0.9 }}>{data?.hint || "Hinweis nicht verfuegbar."}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ opacity: 0.9 }}>{data?.hint || "Hinweis nicht verfuegbar."}</div>
+              <div style={{ display: "grid", gap: 6, fontSize: 14, opacity: 0.88 }}>
+                <div>
+                  <strong>Historie:</strong> {data?.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}
+                </div>
+                <div>
+                  <strong>Nachweise:</strong> {data?.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}
+                </div>
+                <div>
+                  <strong>Verifizierung:</strong> {data?.verification_level || "nicht verfuegbar"}
+                </div>
+                <div>
+                  <strong>Unfallstatus:</strong> {data?.accident_status_label || "Unbekannt"}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </section>
@@ -150,4 +176,3 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
     </main>
   );
 }
-

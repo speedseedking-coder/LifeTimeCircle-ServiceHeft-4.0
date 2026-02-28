@@ -44,6 +44,21 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
       return json(200, []);
     }
 
+    if (path === "/api/vehicles/veh_test_1/trust-summary") {
+      return json(200, {
+        trust_light: "gruen",
+        hint: "Dokumentation ist vollständig nachweisbar.",
+        reason_codes: [],
+        todo_codes: [],
+        verification_level: "hoch",
+        accident_status: "unfallfrei",
+        accident_status_label: "Unfallfrei",
+        history_status: "vorhanden",
+        evidence_status: "vorhanden",
+        top_trust_level: "T3",
+      });
+    }
+
     if (path === "/api/vehicles/veh_test_1/entries") {
       if (route.request().method() === "POST") {
         return json(201, {
@@ -191,7 +206,16 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
     }
 
     if (path.startsWith("/api/public/qr/")) {
-      return json(200, { trust_light: "YELLOW", hint: "ok", disclaimer: "" });
+      return json(200, {
+        trust_light: "gelb",
+        hint: "Dokumentation vorhanden, aber Nachweise sind teilweise unvollständig.",
+        history_status: "vorhanden",
+        evidence_status: "nicht_vorhanden",
+        verification_level: "mittel",
+        accident_status: "unbekannt",
+        accident_status_label: "Unbekannt",
+        disclaimer: "",
+      });
     }
 
     // fallback for unexpected calls (should not happen)
@@ -295,6 +319,20 @@ test("Vehicle detail creates a revision and shows revision history", async ({ pa
         vin_masked: "WAU********1234",
         nickname: "Demo Fahrzeug",
         meta: { nickname: "Demo Fahrzeug" },
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/trust-summary") {
+      return json(200, {
+        trust_light: "gruen",
+        hint: "Dokumentation ist vollständig nachweisbar.",
+        reason_codes: [],
+        todo_codes: [],
+        verification_level: "hoch",
+        accident_status: "unfallfrei",
+        accident_status_label: "Unfallfrei",
+        history_status: "vorhanden",
+        evidence_status: "vorhanden",
+        top_trust_level: "T3",
       });
     }
     if (path === "/api/vehicles/veh_test_1/entries") {
