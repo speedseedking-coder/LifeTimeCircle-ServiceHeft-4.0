@@ -326,7 +326,6 @@ test("Consent page accepts required versions and continues to target route", asy
   await page.getByRole("button", { name: "Weiter zum Zielbereich" }).click();
   await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/vehicles");
 });
-
 test("/auth/me 403 consent_required => redirect #/consent", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
