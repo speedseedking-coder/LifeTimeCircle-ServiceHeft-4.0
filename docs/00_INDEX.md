@@ -32,6 +32,8 @@ Regel: Policies liegen in `docs/policies/`, Modul- und Term-Definitionen in `doc
 
 \- Rechte-Matrix (RBAC – implementierbar): `docs/03\_RIGHTS\_MATRIX.md`
 
+\- Verifizierter Systemcheck (2026-02-28): `docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md`
+
 
 
 ---

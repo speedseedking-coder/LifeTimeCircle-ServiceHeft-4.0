@@ -1,6 +1,6 @@
 # LifeTimeCircle – Service Heft 4.0
 **MASTER CHECKPOINT (SoT)**  
-Stand: **2026-02-06** (Europe/Berlin)
+Stand: **2026-02-28** (Europe/Berlin)
 
 Projekt:
 - Brand: **LifeTimeCircle**
@@ -8,6 +8,7 @@ Projekt:
 - Ziel: **produktionsreif (keine Demo)**
 - Security: **deny-by-default + least privilege**, RBAC **serverseitig enforced**
 - Source of Truth: **./docs** (keine Altpfade/Altversionen)
+- Verifizierter lokaler Systemcheck (ergänzend, nicht vor SoT-Priorität): `docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md`
 
 ---
 
@@ -18,7 +19,36 @@ Projekt:
 
 ---
 
+## Verifizierter IST-Stand (lokaler Workspace) — 2026-02-28
+- Verifikationsbasis: `docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md`
+- Lokal verifizierter Arbeitsbranch: `feat/web-final-trust-folder-flow`
+- Verifizierter HEAD: `6bdaf54` (`docs(work_rules): add mandatory Public-QR disclaimer`)
+- Git-Status zum Prüfzeitpunkt: Working tree clean
+- Remote-Abgleich zum Prüfzeitpunkt: `ahead 1` gegen `origin/feat/web-final-trust-folder-flow`
+- Lokale Quality Gates:
+  - `git diff --check` ✅
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1` ✅
+  - Backend-Tests im Projekt-Setup innerhalb des IST-Checks ✅
+  - `npm ci` und `npm run build` im Web innerhalb des IST-Checks ✅
+- Verifizierter technischer Stand:
+  - Backend vorhanden unter `server/app` (FastAPI)
+  - Frontend vorhanden unter `packages/web` (React + TypeScript + Vite)
+  - App-/Consent-/RBAC-Guards vorhanden
+  - Public-QR Pflichttext mehrfach korrekt verankert
+  - Moderator-Restriktionen und deny-by-default Leitplanken im Codebestand nachweisbar
+- Lokaler Vorsprung gegenüber `origin` betrifft verifizierbar laufende Arbeiten in:
+  - `packages/web/src/authConsentApi.ts`
+  - `packages/web/src/pages/AuthPage.tsx`
+  - `packages/web/src/pages/ConsentPage.tsx`
+  - `packages/web/tests/mini-e2e.spec.ts`
+  - `docs/02_BACKLOG.md`
+- Vorrangregel für diesen Checkpoint:
+  - Wenn ältere Branch-/PR-Referenzen weiter unten dem verifizierten lokalen Stand widersprechen, gilt für den Workspace-IST vom 2026-02-28 dieser Abschnitt zusammen mit `docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md`.
+
+---
+
 ## WIP / Offene PRs / Branch-Stand (nicht main)
+- Hinweis: Die nachfolgenden Branch-/PR-Notizen sind historische Arbeits- und Merge-Referenzen. Für den lokal verifizierten Stand am 2026-02-28 gilt bei Konflikten der Abschnitt **Verifizierter IST-Stand (lokaler Workspace)** oben.
 
 ### WIP: NEXT-BLOCK nach P0 — Frontend App-Shell (Auth/Consent/RBAC-Navigation)
   - Note [PR-210-MERGED]: App-Shell (PR #210) ist via sync/pr-210-main in main gemerged (HEAD ce0ef1f).
@@ -457,5 +487,3 @@ Projekt:
 - Ziel: Next Block nach PR79 (SoT-first, deny-by-default)
 - DoD: tools/test_all.ps1 ALL GREEN ✅
 - Hinweis: PR wird erst erstellt, sobald mindestens 1 Commit vom main abweicht.
-
-
