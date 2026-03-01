@@ -3,186 +3,134 @@
 Stand: **2026-03-01** (Europe/Berlin)
 
 ## Zweck
-Dieses Dokument beschreibt, wie der Release Candidate `rc-2026-03-01` in eine produktive Umgebung deployt wird. Es ersetzt keine detaillierte Infrastruktur-Architektur, sondern enthält die grundlegenden Schritte und Entscheidungspunkte.
 
----
+Dieses Dokument beschreibt den **realisierbaren** Produktionspfad für `rc-2026-03-01`. Stand heute ist der belastbare Pfad:
 
-## 1) Deployment-Architektur (Entscheidung erforderlich)
+- ein einzelner Linux-Host oder eine VM
+- nginx oder vergleichbarer Reverse Proxy
+- FastAPI/Uvicorn direkt aus dem Repo
+- SQLite auf persistentem Datenträger
+- Frontend als statischer Build
 
-Folgende Optionen müssen geklärt werden:
+## Zielarchitektur für den Go-Live
 
-| Frage | Optionen | Status |
-|-------|----------|--------|
-| **Hosting-Plattform** | Heroku, AWS EC2, GCP Cloud Run, On-Premise, anderes | ⚠️ TBD |
-| **API-Server** | FastAPI/Uvicorn direkt, Docker, Managed Service | ⚠️ TBD |
-| **Frontend** | Static CDN, Vercel, Netlify, same-host | ⚠️ TBD |
-| **Datenbank** | PostgreSQL managed (RDS, Cloud SQL), local, SQLite | ⚠️ TBD |
-| **TLS/Domain** | Let's Encrypt, wildcard cert, automatisch erneuerbar? | ⚠️ TBD |
+| Baustein | Vorgabe am 2026-03-06 |
+|---------|------------------------|
+| **Host** | 1 VM / 1 Server |
+| **Backend** | `poetry run uvicorn app.main:app` |
+| **Frontend** | `packages/web/dist` hinter nginx |
+| **DB** | SQLite |
+| **Datei-Storage** | persistente lokale Verzeichnisse |
+| **TLS** | Let's Encrypt oder vorhandenes Zertifikat |
 
----
+Nicht Teil des Pflichtpfads für den Go-Live:
 
-## 2) Voraussetzungen vor Deployment
+- RDS/PostgreSQL
+- ECS/Kubernetes
+- Docker-basierte Deployments
+- App-seitige `boto3`-Secrets-Integration
 
-### 2.1 Code & Release
-- [ ] RC-Tag `rc-2026-03-01` ist gepusht
-- [ ] Alle Gates sind grün (lokale Verifikation)
-- [ ] CHANGELOG.md und Release-Notes aktuell
+## Voraussetzungen
 
-### 2.2 Infrastruktur
-- [ ] Ziel-Domain festgelegt (z. B. `app.lifetimecircle.de` oder ähnlich)
-- [ ] Produktionsumgebung benannt (z. B. `prod`, `production`)
-- [ ] DNS-Einträge vorbereitet/bereit zum Schalten
+### Code
 
-### 2.3 Konfiguration
-- [ ] Produktiver `LTC_SECRET_KEY` generiert (mind. 32 Zeichen, kryptographisch stark)
-- [ ] weitere Secrets dokumentiert (siehe Abschnitt 3)
-- [ ] Umgebungsvariablen für Prod konfiguriert
+- `rc-2026-03-01` ist verfügbar
+- Backend-Tests und Web-Build sind grün
+- keine offenen P0-Fehler
 
-### 2.4 Datenbank
-- [ ] Produktive DB-Instance vorbereitet
-- [ ] Backup-Routine aktiviert
-- [ ] Restore-Test durchgeführt
-- [ ] Datenbankzugriff für API-Service konfiguriert
+### Host
 
-### 2.5 Monitoring & Logging
-- [ ] Monitoring für API-Verfügbarkeit geplant (z. B. Uptime Robot, DataDog, New Relic)
-- [ ] Error-/Crash-Reporting eingerichtet (z. B. Sentry)
-- [ ] Logging konfiguriert (zentral, ohne PII-Leaks)
+- Domain zeigt auf den Zielhost
+- Port 443 erreichbar
+- ausreichend Disk für `data` und `storage`
+- regelmäßige Host-Backups oder Dateisystem-Snapshots konfiguriert
 
----
+### Pflicht-Konfiguration
 
-## 3) Secrets Management
+- `LTC_SECRET_KEY=<32+ Zeichen>`
+- `LTC_ENV=prod`
+- `LTC_DATABASE_URL=sqlite+pysqlite:////var/lib/lifetimecircle/data/app.db`
+- `LTC_DB_PATH=/var/lib/lifetimecircle/data/app.db`
 
-### Neue Secrets für Prod erforderlich:
+## Verzeichnislayout
 
-1. **LTC_SECRET_KEY** (Pflicht)
-   - Länge: mind. 32 Zeichen
-   - Zeichen: alphanumerisch + spezial, z. B. Ausgabe von `openssl rand -hex 32`
-   - Speicherung: Secrets-Manager (GitHub Secrets, AWS Secrets Manager, Vault, etc.)
-   - Rotation: Plan festlegen (z. B. quartalsweise)
+Empfohlene Aufteilung:
 
-2. **Database Password** (optional, abhängig von Setup)
-   - Wenn separate Datenbank: Strong password
-   - Speicherung: Secrets Manager, nicht im Code
+```text
+/opt/lifetimecircle/app                    # Repo-Checkout
+/var/lib/lifetimecircle/data               # persistente SQLite-Dateien
+/var/lib/lifetimecircle/storage            # persistente Upload-Dateien
+/var/www/lifetimecircle/web/dist           # statische Web-Dateien
+/etc/lifetimecircle/api.env                # geschützte Env-Datei
+```
 
-3. **TLS/Certificate** (optional, abhängig von Setup)
-   - Let's Encrypt automatisiert oder manuell?
-   - Auto-Renewal konfigurieren
+Wichtig: Der aktuelle Code erwartet `server/data` und `server/storage`. Deshalb vor dem ersten Start:
 
-### Secrets NICHT im Code/Repo speichern:
-- ✅ Github Actions: `${{ secrets.LTC_SECRET_KEY }}`
-- ✅ Environment Variables (Server-Umgebung)
-- ✅ Secrets Manager (AWS/GCP/Azure/Vault)
-- ❌ `.env` Datei (außer lokal mit `.gitignore`)
-- ❌ Hardcoded in Python/TypeScript
-
----
-
-## 4) Deployment-Schritte (generisch)
-
-### Phase 1: Code Preparation
 ```bash
-# 1. Code auf Prod vorbereiten (vom Tag auschecken)
-git clone <repo>
-cd LifeTimeCircle-ServiceHeft-4.0
+mkdir -p /var/lib/lifetimecircle/data /var/lib/lifetimecircle/storage
+rm -rf /opt/lifetimecircle/app/server/data
+rm -rf /opt/lifetimecircle/app/server/storage
+ln -s /var/lib/lifetimecircle/data /opt/lifetimecircle/app/server/data
+ln -s /var/lib/lifetimecircle/storage /opt/lifetimecircle/app/server/storage
+```
+
+## Deployment-Schritte
+
+### 1. Checkout und Build
+
+```bash
+git clone <repo-url> /opt/lifetimecircle/app
+cd /opt/lifetimecircle/app
 git checkout rc-2026-03-01
 
-# 2. Dependencies installieren
 cd server
-poetry install --no-dev
+poetry install
+
 cd ../packages/web
 npm ci
 npm run build
 ```
 
-### Phase 2: Environment Setup
-```bash
-# 1. Secrets setzen (in Prod-Umgebung)
-export LTC_SECRET_KEY="<generated-strong-secret>"
-export DATABASE_URL="<prod-db-connection>"
+### 2. Env-Datei anlegen
 
-# 2. Runtime-Verzeichnisse
-mkdir -p /var/lib/lifetimecircle/{data,storage}
-chmod -R 755 /var/lib/lifetimecircle
+```bash
+cat >/etc/lifetimecircle/api.env <<'EOF'
+LTC_ENV=prod
+LTC_SECRET_KEY=<REDACTED_32_PLUS_CHARS>
+LTC_DATABASE_URL=sqlite+pysqlite:////var/lib/lifetimecircle/data/app.db
+LTC_DB_PATH=/var/lib/lifetimecircle/data/app.db
+EOF
+
+chmod 600 /etc/lifetimecircle/api.env
 ```
 
-### Phase 3: Services Starten
-```bash
-# Backend (FastAPI/Uvicorn)
-cd server
-poetry run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+### 3. Backend per systemd starten
 
-# Frontend (statische Files via Web-Server, z. B. nginx oder einfach static host)
-# Beispiel nginx config: siehe Anhang
+```ini
+[Unit]
+Description=LifeTimeCircle API
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/lifetimecircle/app/server
+EnvironmentFile=/etc/lifetimecircle/api.env
+ExecStart=/usr/bin/env poetry run uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-### Phase 4: Health Check
-```bash
-# API Health
-curl -X GET https://app.lifetimecircle.de/api/health
+### 4. Frontend ausliefern
 
-# Frontend
-curl -X GET https://app.lifetimecircle.de/
+```bash
+mkdir -p /var/www/lifetimecircle/web
+rsync -a --delete /opt/lifetimecircle/app/packages/web/dist/ /var/www/lifetimecircle/web/dist/
 ```
 
----
+### 5. nginx konfigurieren
 
-## 5) Smoke Tests nach Deployment
-
-Nach erfolgreichem Deploy diese Flows manuell oder per E2E-Test verifizieren:
-
-1. [ ] Public Entry-Seite antwortet (→ `/`)
-2. [ ] Auth-Flow starten (→ `/auth`)
-3. [ ] Public QR-Route funktioniert (→ `/public/qr/:vehicle_id`)
-4. [ ] Admin kann sich mit Step-up einloggen (→ `/admin`)
-5. [ ] API-Health-Endpoint antwortet (→ `/api/health`)
-
-Siehe auch `docs/98_WEB_E2E_SMOKE.md` für erweiterte Szenarien.
-
----
-
-## 6) Rollback Plan
-
-Bei kritischen Fehlern nach Deployment:
-
-1. DNS auf alte Prod-Version zurückstellen (falls alte Version noch läuft)
-2. oder: In die vorherige Container/Build-Version zurückkehren
-3. oder: Database-Backup zurückspielen (falls nötig)
-
-**Dokumentieren:**
-- Wie lange ein Rollback dauert (RTO – Recovery Time Objective)
-- Wie viel Datenverlust akzeptabel ist (RPO – Recovery Point Objective)
-- Wer entscheidet Rollback und wie wird kommuniziert?
-
----
-
-## 7) Monitoring & Alerting
-
-Mindestens folgende Metriken überwachen:
-
-| Metrik | Alert-Schwelle | Kanal |
-|--------|-----------------|--------|
-| **API Response Time** | > 5s | Slack/Email |
-| **API Status Codes 5xx** | > 1% | Slack/Email |
-| **Disk Space** | < 10% frei | Slack/Email |
-| **Memory Usage** | > 80% | Slack/Email |
-| **Database Connections** | > 90% pool | Slack/Email |
-| **Frontend Load Time** | > 3s | Monitoring System |
-
----
-
-## 8) Post-Deployment Betreuung
-
-- **Hour 1:** Intensives Monitoring, ansprechbar sein
-- **Hour 12:** Prüfe Logs auf Fehler, verifiziere Nightly-Backups
-- **Tag 1–7:** Tägliche Checks, Feedback von Nutzern sammeln
-- **Woche 2+:** Leichte Monitoring-Reduktion, aber Alerting aktiv
-
----
-
-## 9) Anhänge
-
-### nginx-Config Beispiel (statische Web + Reverse-Proxy)
 ```nginx
 server {
     listen 443 ssl http2;
@@ -191,26 +139,63 @@ server {
     ssl_certificate /etc/letsencrypt/live/app.lifetimecircle.de/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/app.lifetimecircle.de/privkey.pem;
 
-    # Frontend (static files)
     location / {
         root /var/www/lifetimecircle/web/dist;
         try_files $uri /index.html;
     }
 
-    # API Proxy
-    location /api {
-        proxy_pass http://localhost:8000;
-        proxy_set_header X-Forwarded-For $remote_addr;
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-
-    # Logging ohne PII
-    access_log /var/log/nginx/app.access.log combined buffer=32k flush=5s;
 }
 ```
 
-### Referenzen
-- `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
-- `docs/13_GO_LIVE_CHECKLIST.md`
-- `docs/05_MAINTENANCE_RUNBOOK.md`
-- `.github/workflows/ci.yml` (CI-Automatisierung als Referenz)
+## Verifikation
+
+### Technisch
+
+```bash
+systemctl restart lifetimecircle-api
+systemctl status lifetimecircle-api --no-pager
+curl -fsS http://127.0.0.1:8000/health
+curl -fsS https://app.lifetimecircle.de/api/health
+```
+
+### Smoke-Tests
+
+- Public Startseite lädt
+- Auth-Startseite lädt
+- Public-QR-Route lädt
+- Admin-Login startet
+- Dokument-Upload-Pfad schreibt Dateien auf persistenten Storage
+
+## Rollback
+
+Wenn der Deploy fehlschlägt:
+
+1. `git checkout <letzter_stabiler_tag>`
+2. Frontend erneut bauen und nach `/var/www/lifetimecircle/web/dist/` synchronisieren
+3. `systemctl restart lifetimecircle-api`
+4. `curl https://app.lifetimecircle.de/api/health`
+
+Nur wenn Daten beschädigt sind:
+
+1. Host-Snapshot oder Dateisystem-Backup zurückspielen
+2. Integrität von `/var/lib/lifetimecircle/data/app.db` und `/var/lib/lifetimecircle/data/documents.sqlite` prüfen
+
+## Mindest-Monitoring
+
+- Health-Check alle 1 Minute
+- 5xx-Rate alarmieren ab > 1% für 15 Minuten
+- Disk-Warnung ab < 15% frei
+- Disk-kritisch ab < 10% frei
+- TLS-Ablaufwarnung 14 Tage vorher
+
+## Referenzen
+
+- `docs/MASTER_GOLIVE_COORDINATION.md`
+- `docs/15_MONITORING_INCIDENT_RESPONSE.md`
+- `docs/16_SECRETS_MANAGEMENT.md`

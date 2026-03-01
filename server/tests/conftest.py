@@ -4,6 +4,9 @@ import os
 
 # Minimal deterministic test secret (>=16 chars) – test-only
 os.environ["LTC_SECRET_KEY"] = os.environ.get("LTC_SECRET_KEY") or "test-secret-key-1234567890"
+# Export-P0 Tests nutzen historische X-LTC-* Header. Im echten Betrieb bleibt das
+# per ENV-Gate abgeschaltet; fuer Tests wird es explizit aktiviert.
+os.environ["LTC_ALLOW_DEV_HEADERS"] = os.environ.get("LTC_ALLOW_DEV_HEADERS") or "1"
 
 # Ensure settings read the env (cache clear if present)
 try:

@@ -12,15 +12,30 @@ import {
 } from "../lib/appGate";
 import { type Route } from "../lib/appRouting";
 
+function routeGateKey(route: Route): string {
+  return JSON.stringify(route);
+}
+
 export function useAppGate(route: Route): { actorRole: Role | null; gateState: AppGateState } {
-  const [gateState, setGateState] = useState<AppGateState>(() => (isGuardedRoute(route) ? "loading" : "ready"));
+  const guarded = isGuardedRoute(route);
+  const currentRouteKey = routeGateKey(route);
+  const [gateState, setGateState] = useState<AppGateState>(() => (guarded ? "loading" : "ready"));
   const [actorRole, setActorRole] = useState<Role | null>(null);
+  const [resolvedRouteKey, setResolvedRouteKey] = useState<string>(() => (guarded ? "" : currentRouteKey));
 
   useEffect(() => {
     let active = true;
 
-    if (!isGuardedRoute(route)) {
+    const settle = (nextGateState: AppGateState, nextActorRole: Role | null) => {
+      if (!active) return;
+      setActorRole(nextActorRole);
+      setGateState(nextGateState);
+      setResolvedRouteKey(currentRouteKey);
+    };
+
+    if (!guarded) {
       setGateState("ready");
+      setResolvedRouteKey(currentRouteKey);
       return () => {
         active = false;
       };
@@ -28,13 +43,13 @@ export function useAppGate(route: Route): { actorRole: Role | null; gateState: A
 
     const token = getAuthToken();
     if (!token) {
-      setActorRole(null);
-      setGateState("unauth");
+      settle("unauth", null);
       return () => {
         active = false;
       };
     }
 
+    setResolvedRouteKey("");
     setGateState("loading");
     const headers = authHeaders(token);
 
@@ -43,35 +58,31 @@ export function useAppGate(route: Route): { actorRole: Role | null; gateState: A
 
       if (!response.ok) {
         if (response.status === 401) {
-          setActorRole(null);
-          setGateState("unauth");
+          settle("unauth", null);
           return;
         }
         if (response.status === 403 && isConsentRequiredBody(response.body)) {
-          setActorRole(null);
-          setGateState("consent_required");
+          settle("consent_required", null);
           return;
         }
-        setActorRole(null);
-        setGateState("forbidden");
+        settle("forbidden", null);
         return;
       }
 
       const role = roleFromMe(response.body);
-      setActorRole(role);
 
       if (role === null) {
-        setGateState("forbidden");
+        settle("forbidden", null);
         return;
       }
 
       if (route.kind === "consent") {
-        setGateState("ready");
+        settle("ready", role);
         return;
       }
 
       if (!canAccessRouteByRole(route, role)) {
-        setGateState("forbidden");
+        settle("forbidden", role);
         return;
       }
 
@@ -80,33 +91,34 @@ export function useAppGate(route: Route): { actorRole: Role | null; gateState: A
 
         if (!consentResponse.ok) {
           if (consentResponse.status === 401) {
-            setGateState("unauth");
+            settle("unauth", null);
             return;
           }
           if (consentResponse.status === 403 && isConsentRequiredBody(consentResponse.body)) {
-            setGateState("consent_required");
+            settle("consent_required", role);
             return;
           }
-          setGateState("forbidden");
+          settle("forbidden", role);
           return;
         }
 
         if (!isRecord(consentResponse.body) || consentResponse.body.is_complete !== true) {
-          setGateState("consent_required");
+          settle("consent_required", role);
           return;
         }
 
-        setGateState("ready");
+        settle("ready", role);
       });
     });
 
     return () => {
       active = false;
     };
-  }, [route]);
+  }, [currentRouteKey, guarded, route]);
 
   useEffect(() => {
-    if (!isGuardedRoute(route)) return;
+    if (!guarded) return;
+    if (resolvedRouteKey !== currentRouteKey) return;
 
     if (gateState === "unauth") {
       if ((window.location.hash || "").startsWith("#/auth")) return;
@@ -119,7 +131,12 @@ export function useAppGate(route: Route): { actorRole: Role | null; gateState: A
       const next = encodeURIComponent(safeNextHash(window.location.hash || "#/vehicles"));
       window.location.hash = `#/consent?next=${next}`;
     }
-  }, [gateState, route]);
+  }, [currentRouteKey, gateState, guarded, resolvedRouteKey, route]);
 
-  return { actorRole, gateState };
+  const pending = guarded && resolvedRouteKey !== currentRouteKey;
+
+  return {
+    actorRole: pending ? null : actorRole,
+    gateState: pending ? "loading" : gateState,
+  };
 }

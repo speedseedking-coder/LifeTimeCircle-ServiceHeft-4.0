@@ -1,317 +1,100 @@
-# DevOps: Infrastruktur-Architektur – Entscheidungsmatrix & Aktionsplan
+# DevOps: Infrastruktur-Architektur – Aktionsplan
 
 Stand: **2026-03-01** (Europe/Berlin)
 
 **Owner:** DevOps-Lead / Infrastructure-Lead  
 **Deadline:** Bis **2026-03-03**  
-**Docs zum Lesen:** `docs/00_OPERATIONS_OVERVIEW.md` + `docs/14_DEPLOYMENT_GUIDE.md`
+**Docs zum Lesen:** `docs/00_OPERATIONS_OVERVIEW.md`, `docs/14_DEPLOYMENT_GUIDE.md`
 
----
+## Ziel für den 2026-03-06
 
-## Phase 1: Architektur-Entscheidungen treffen (Tag 1–2)
+Baue eine **Single-Node-Produktionsumgebung**, die exakt zum Ist-Code passt:
 
-### 1.1 Fragen zur Plattform-Wahl
+- ein Host
+- nginx oder vergleichbarer Reverse Proxy
+- `uvicorn app.main:app`
+- SQLite auf persistentem Datenträger
+- `server/data` und `server/storage` persistent angebunden
 
-Beantworte diese Fragen und dokumentiere die Gründe:
+Nicht als Pflicht behandeln:
 
-| Frage | Optionen | Gewählt | Grund | Kosten (geschätzt) |
-|-------|----------|---------|-------|-------------------|
-| **Cloud-Plattform?** | AWS / GCP / Azure / Heroku / On-Premise | ☐ TBD | | |
-| **API-Hosting?** | Docker Compose / ECS / GKE / Direct Deploy / Heroku | ☐ TBD | | |
-| **Frontend-Hosting?** | S3+CloudFront / GCS+CDN / Netlify / Vercel / Same-Host | ☐ TBD | | |
-| **Datenbank?** | RDS PostgreSQL / Cloud SQL / Aurora / Self-hosted | ☐ TBD | | |
-| **Monitoring-Tool?** | New Relic / DataDog / Prometheus / CloudWatch | ☐ TBD | | |
-| **Log-Aggregation?** | ELK / Splunk / CloudLogging / None | ☐ TBD | | |
+- Docker
+- ECS/Kubernetes
+- PostgreSQL/RDS
+- neue CI/CD-Pipeline
 
-**Beispiel-Entscheidung (AWS):**
-```
-Cloud: AWS
-  → API: Docker auf ECS Fargate
-  → Frontend: S3 + CloudFront
-  → Database: RDS PostgreSQL (multi-AZ)
-  → Monitoring: CloudWatch + X-Ray
-  → Logs: CloudWatch Logs
-  Kosten: ~$500–1000/Monat
-```
+## Checkliste
 
----
+### 1. Host und Netz
 
-## Phase 2: Infrastruktur provisio**nieren (Tag 2–3)
+- [ ] Zielhost bereitgestellt
+- [ ] SSH-/Admin-Zugang geprüft
+- [ ] Domain zeigt auf Host
+- [ ] Port 443 erreichbar
+- [ ] TLS-Zertifikat aktiv oder beantragt
 
-### 2.1 Checkliste: Networking & Security Setup
+### 2. Persistenz
 
-- [ ] **VPC / Network**
-  - [ ] VPC erstellen (z. B. 10.0.0.0/16)
-  - [ ] Subnets: Public (für ALB), Private (für API), Private (für RDS)
-  - [ ] Internet Gateway, NAT Gateway konfigurieren
-  - [ ] Route Tables setzen up
-  - Dokumentieren: VPC-ID, Subnet-IDs, CIDR-Ranges
+- [ ] `/var/lib/lifetimecircle/data` angelegt
+- [ ] `/var/lib/lifetimecircle/storage` angelegt
+- [ ] `server/data` auf persistentes `data` verlinkt
+- [ ] `server/storage` auf persistentes `storage` verlinkt
+- [ ] Schreibtest und Neustart-Test durchgeführt
 
-- [ ] **Security Groups**
-  - [ ] SG für ALB: Inbound 80, 443 (HTTP/HTTPS) von überall
-  - [ ] SG für API: Inbound 8000 vom ALB only
-  - [ ] SG für RDS: Inbound 5432 vom API-SG only
-  - [ ] Egress: Default allow (oder restrictive nach Bedarf)
+### 3. Runtime
 
-- [ ] **IAM Rollen & Policies**
-  - [ ] ECS Task Execution Role (inkl. CloudWatch Logs, ECR access)
-  - [ ] S3 access für Frontend Bucket
-  - [ ] RDS access secrets (Secret Manager Integration)
-  - [ ] CloudWatch Metrics & Logs permissions
+- [ ] Repo auf Zielhost ausgecheckt
+- [ ] `rc-2026-03-01` aktiviert
+- [ ] `poetry install` in `server/` erfolgreich
+- [ ] `npm ci && npm run build` in `packages/web/` erfolgreich
+- [ ] `systemd`-Service für API angelegt
+- [ ] Reverse Proxy konfiguriert
 
-**Output:** Dokumentation mit ARNs, IDs, Security Group Rules
+### 4. Staging und Production
 
----
+- [ ] Staging nutzt dasselbe Betriebsmodell wie Production
+- [ ] `/api/health` extern erfolgreich
+- [ ] `/health` intern erfolgreich
+- [ ] Frontend-Startseite erfolgreich
 
-### 2.2 Checkliste: RDS Setup (PostgreSQL)
+### 5. Backups
 
-- [ ] **Datenbank-Instance**
-  - [ ] Engine: PostgreSQL 14+
-  - [ ] Instance type: db.t3.small (oder größer für Prod)
-  - [ ] Multi-AZ: JA (für High Availability)
-  - [ ] Storage: 100 GB (gp3), Auto-scaling enabled
-  - [ ] Deleted protection: JA
-  - [ ] Backup retention: 30 Tage
+- [ ] Backup oder Snapshot für `/var/lib/lifetimecircle` definiert
+- [ ] Restore-Probe dokumentiert
 
-- [ ] **Parameter Group & Options**
-  - [ ] `max_connections` = 100 (ggf. mehr)
-  - [ ] `shared_preload_libraries` = 'pg_stat_statements' (für Monitoring)
-  - [ ] Enhanced monitoring enabled
-
-- [ ] **Zugriff & Secrets**
-  - [ ] Admin-Password generiert (32 Bytes, sicher)
-  - [ ] In AWS Secrets Manager gespeichert (Secret-Name: `prod/db/password`)
-  - [ ] Endpoint dokumentiert (z. B. `prod-db.cxxxxxx.eu-central-1.rds.amazonaws.com`)
-
-- [ ] **Backup & Restore Test**
-  - [ ] Automated backups enabled
-  - [ ] Manual snapshot erstellt & dokumentiert
-  - [ ] Restore-Test durchgeführt (Snapshot → neue DB → verify connectivity)
-
-**Output:** RDS Endpoint, Security Group ID, Secret ARN
-
----
-
-### 2.3 Checkliste: Docker Registry Setup
-
-Wenn Docker verwendet wird:
-
-- [ ] **Repo für container images**
-  - [ ] ECR (AWS), GCR (GCP), ACR (Azure) oder Docker Hub
-  - [ ] Repository erstellt: `lifetimecircle-api`, `lifetimecircle-web`
-  - [ ] Image tagging strategy: `rc-2026-03-01`, `latest`, `staging`
-  - [ ] Lifecycle policy: alte Images nach 30 Tagen löschen
-
-- [ ] **IAM access für Builds**
-  - [ ] CI/CD-User hat `push` Permissions
-  - [ ] Prod-Server hat `pull` Permissions
-
-**Output:** Registry URLs, Access Credentials dokumentiert
-
----
-
-### 2.4 Checkliste: TLS & Domain
-
-- [ ] **Domain kaufen / aktivieren**
-  - [ ] Domain registriert: z. B. `lifetimecircle.de`
-  - [ ] Registrar zugänglich (z. B. Namecheap, Route53)
-  - [ ] Nameserver aktualisiert (falls nötig)
-
-- [ ] **SSL/TLS-Zertifikat**
-  - [ ] Let's Encrypt Certificate erstellt (ACM wenn AWS)
-  - [ ] For domains: `app.lifetimecircle.de` + `www.`, ggf. `api.`
-  - [ ] Auto-renewal konfiguriert (ACM macht das auto)
-  - [ ] Zertifikat in ALB / CDN konfiguriert
-
-- [ ] **DNS Records**
-  - [ ] A Record: `app.lifetimecircle.de` → ALB IP / CloudFront
-  - [ ] CNAME: `www.lifetimecircle.de` → ALB (optional)
-  - [ ] Ggf. `api.lifetimecircle.de` → API Endpoint
-  - [ ] SPF, DKIM für Email (wenn Mail-Versand)
-
-- [ ] **Redirect-Regeln**
-  - [ ] HTTP → HTTPS (ALB Target Group Rule)
-  - [ ] HTTP Status Code: 301 Permanent Redirect
-  - [ ] Test: `curl -L http://app.lifetimecircle.de` → redirects zu HTTPS
-
-**Output:** Domain, TLS Cert ARN, DNS Records dokumentiert
-
----
-
-## Phase 3: Deployment-Pipeline vorbereiten (Tag 3)
-
-### 3.1 Build & Push Pipeline
-
-Erstelle Deployment-Skript (Pseudo-Code):
+## Minimaler Deploy-Ablauf
 
 ```bash
-#!/bin/bash
-# deploy.sh – Build, Push, Deploy
-
-set -e
-
-# 1. Code auschecken
+cd /opt/lifetimecircle/app
 git checkout rc-2026-03-01
 
-# 2. Secrets laden
-export LTC_SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id prod/LTC_SECRET_KEY --query SecretString --output text)
-export DATABASE_URL=$(aws secretsmanager get-secret-value --secret-id prod/DATABASE_URL --query SecretString --output text)
-
-# 3. Build Backend
 cd server
-poetry install --no-dev
-poetry build  # oder Docker build
+poetry install
 
-# 4. Build Frontend
 cd ../packages/web
 npm ci
 npm run build
+rsync -a --delete dist/ /var/www/lifetimecircle/web/dist/
 
-# 5. Push zu Registry
-aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 123456789.dkr.ecr.eu-central-1.amazonaws.com
-docker build -t lifetimecircle-api:rc-2026-03-01 -f server/Dockerfile .
-docker tag lifetimecircle-api:rc-2026-03-01 123456789.dkr.ecr.eu-central-1.amazonaws.com/lifetimecircle-api:rc-2026-03-01
-docker push 123456789.dkr.ecr.eu-central-1.amazonaws.com/lifetimecircle-api:rc-2026-03-01
+systemctl restart lifetimecircle-api
+systemctl reload nginx
 
-# 6. Deploy zu Staging
-aws ecs update-service --cluster staging --service api --force-new-deployment
-
-# 7. Verify
-sleep 30
-curl -X GET https://staging.lifetimecircle.de/api/health
-
-echo "✅ Deployed!"
+curl -fsS https://app.lifetimecircle.de/api/health
 ```
 
-**Zu delegieren:** 
-- [ ] Deployment-Skript ins Repo (`tools/deploy_prod.sh`)
-- [ ] In CI/CD Pipeline (GitHub Actions) integrieren
+## Deliverables bis 2026-03-03 EOD
 
----
+- [ ] Hostname / IP / Domain dokumentiert
+- [ ] Pfadmodell dokumentiert
+- [ ] systemd-Unit dokumentiert
+- [ ] Reverse-Proxy-Konfiguration dokumentiert
+- [ ] Backup-Mechanismus dokumentiert
+- [ ] Staging-URL an Security, SRE und Release kommuniziert
 
-### 3.2 CI/CD Integration (GitHub Actions)
+## Wenn mehr Architektur gewünscht ist
 
-Erstelle `.github/workflows/deploy-prod.yml`:
+Falls Product oder Management auf PostgreSQL, Container oder Secret-Manager-Integration besteht:
 
-```yaml
-name: Deploy Production
-
-on:
-  workflow_dispatch:
-  push:
-    tags:
-      - 'prod-*'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Deploy to Production
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-central-1
-        run: |
-          bash ./tools/deploy_prod.sh
-      
-      - name: Smoke Test
-        run: |
-          curl -X GET https://app.lifetimecircle.de/api/health
-```
-
----
-
-## Phase 4: Dokumentation & Handoff (Tag 4)
-
-### 4.1 Infrastructure-As-Code (IaC) – Option
-
-Falls Zeit: Terraform/CloudFormation Templates:
-
-```hcl
-# main.tf (Terraform)
-resource "aws_rds_instance" "prod" {
-  identifier = "lifetimecircle-prod"
-  engine     = "postgres"
-  instance_class = "db.t3.small"
-  allocated_storage = 100
-  # ...
-}
-
-resource "aws_ecs_cluster" "prod" {
-  name = "lifetimecircle-prod"
-}
-
-resource "aws_ecs_service" "api" {
-  name = "api"
-  cluster = aws_ecs_cluster.prod.name
-  # ...
-}
-```
-
----
-
-### 4.2 Dokumentation für SRE/Ops
-
-Erstelle `docs/INFRASTRUCTURE_PROD.md` mit:
-
-- [ ] **Architektur-Diagram** (VPC, VPC-Layout, Security Groups)
-- [ ] **Wichtige IDs & Endpoints**
-  ```
-  VPC: vpc-xxxxx
-  ALB: arn:aws:elasticloadbalancing:...
-  RDS Endpoint: prod-db.cxxxxxx.eu-central-1.rds.amazonaws.com
-  API Container: 123456789.dkr.ecr.eu-central-1.amazonaws.com/lifetimecircle-api:rc-2026-03-01
-  Frontend Bucket: s3://lifetimecircle-frontend-prod
-  Frontend CDN: d123abc.cloudfront.net
-  ```
-
-- [ ] **Scaling Policy** (wenn ECS/K8s)
-  - Min replicas: 2
-  - Max replicas: 10
-  - Scale-up trigger: CPU > 70%
-  - Scale-down trigger: CPU < 30%
-
-- [ ] **Disaster Recovery Plan**
-  - RTO: Recovery Time Objective (target: < 1h)
-  - RPO: Recovery Point Objective (target: < 15 min)
-  - Backup location: S3 cross-region
-
----
-
-## Checklist: Was muss SRE-Lead / Security-Lead wissen?
-
-Nach DevOps-Provisioning informieren:
-
-- [ ] **SRE-Lead:**
-  - RDS Endpoint & Connection String
-  - API Container Endpoint
-  - Frontend CDN URL
-  - Monitoring-Hook Informationen (CloudWatch, Logs)
-
-- [ ] **Security-Lead:**
-  - RDS Admin Password (in Secrets Manager)
-  - `LTC_SECRET_KEY` generierter Wert (in Secrets Manager)
-  - Security Group IDs (für Audit)
-  - IAM Role ARNs (für KMS Access, falls needed)
-
----
-
-## Deadline & Output
-
-**Deadline:** **2026-03-03 EOD**
-
-**Deliverables:**
-- [ ] Entscheidungsmatrix ausgefüllt
-- [ ] VPC, Subnets, Security Groups → dokumentiert
-- [ ] RDS PostgreSQL → online & getestet
-- [ ] Docker Registry → ready
-- [ ] Domain & TLS → konfiguriert
-- [ ] Deploy-Skript → in Repo
-- [ ] `docs/INFRASTRUCTURE_PROD.md` → erstellt
-- [ ] Handoff-Mail an SRE/Security mit allen IDs
-
----
-
-**Wenn fertig → Inform SRE-Lead, Security-Lead können starten!** ✅
+- als **separates Architekturprojekt** aufnehmen
+- nicht in diesen Go-Live pressen
+- Go-Live-Termin neu verhandeln

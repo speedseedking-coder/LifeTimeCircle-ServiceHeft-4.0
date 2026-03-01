@@ -3,341 +3,120 @@
 Stand: **2026-03-01** (Europe/Berlin)
 
 ## Zweck
-Dieses Dokument definiert, wie Geheimnisse (Secrets, API-Keys, Passwörter) sicher gespeichert, verwaltet und rotiert werden.
 
----
+Dieses Dokument beschreibt das Secrets-Handling für den realistischen Go-Live-Pfad am **2026-03-06**. Das Repo erwartet derzeit klassische Umgebungsvariablen. Eine direkte Integration mit AWS Secrets Manager, Azure Key Vault oder `boto3` ist **nicht** Teil des Pflichtpfads.
 
-## 1) Secrets Inventory
+## Benötigte Secrets und sensible Werte
 
-### 1.1 Secrets, die LifeTimeCircle braucht
+| Name | Pflicht | Zweck |
+|------|---------|-------|
+| `LTC_SECRET_KEY` | Ja | Signatur- und Session-Secret |
+| `LTC_DATABASE_URL` | Ja für absolute Pfade | SQLAlchemy-Verbindung zur SQLite-Datei |
+| `LTC_DB_PATH` | Ja für Auth | Pfad zur SQLite-Datei für Auth-Komponenten |
+| TLS-Zertifikat / Private Key | Ja | HTTPS |
+| SMTP-Zugangsdaten | Optional | falls Mailer produktiv aktiv ist |
 
-| Secret | Zweck | Länge | Rotation | Kritikalität |
-|--------|-------|-------|----------|--------------|
-| **LTC_SECRET_KEY** | Signing von JWTs, Session-Keys | ≥ 32 Bytes | quartalsweise | 🔴 Kritisch |
-| **Database Password** | PostgreSQL Connection | ≥ 16 Bytes | halbjährlich | 🔴 Kritisch |
-| **TLS Private Key** | HTTPS/SSL | – | auto (Let's Encrypt) | 🔴 Kritisch |
-| **Admin API Token** (optional) | Maschinenbenutzer für Integr. | ≥ 32 Bytes | halbjährlich | 🟡 Wichtig |
-| **External Service Keys** (optional) | z. B. Email-Service, SMS-Gateway | je nach Service | je nach Service | 🟡 Wichtig |
+Für den aktuellen Go-Live ist **kein PostgreSQL-Passwort** erforderlich, solange Production auf SQLite läuft.
 
-### 1.2 Was ist KEIN Secret?
+## Lokale Entwicklung
 
-```
-❌ Environment: "production", "staging" (public Info)
-❌ Version: "v1.0.0", "rc-2026-03-01" (Git-History)
-❌ Config: Database-Host, API-Port (nicht sensitive)
-✅ Aber: Wenn DB-Host intern ist → könnte auch Secret sein
-```
+Beispiel für lokal oder Staging:
 
----
-
-## 2) Storage: Wo Secrets leben
-
-### 2.1 Lokale Entwicklung
-
-**Aktueller Stand (Repo):**
-- `.gitignore` schließt `.env` aus ✅
-- `server/tests/conftest.py` nutzt Fallback (`dev-key`) ✅
-- Start-Skripte setzen Fallback-Keys ✅
-
-**Best Practice lokal:**
 ```powershell
-# .env.local (NICHT commetten!)
 LTC_SECRET_KEY=dev_test_secret_key_32_chars_minimum__OK
-DATABASE_URL=sqlite:///./data/app.db
-
-# Laden in PowerShell
-Get-Content .env.local | ForEach-Object {
-    $name, $value = $_ -split '=', 2
-    Set-Item -Path env:$name -Value $value
-}
+LTC_DATABASE_URL=sqlite+pysqlite:///./data/app.db
+LTC_DB_PATH=./data/app.db
 ```
 
-### 2.2 CI/CD (GitHub Actions)
+Keine `.env` oder Secret-Dateien committen.
 
-**Aktueller Stand (Repo):**
-- GitHub Secrets konfigurieren (Repo-Settings)
-- `.github/workflows/ci.yml` nutzt sie ✅
+## Production-Ablage
 
-**Anleitung zum Einrichten:**
-1. GitHub Repo → Settings → Secrets and variables → Actions
-2. New repository secret:
-   - Name: `LTC_SECRET_KEY`
-   - Value: `<generierter-64-char-string>`
-3. In Workflow nutzen: `${{ secrets.LTC_SECRET_KEY }}`
+Für den Go-Live sind diese Varianten zulässig:
 
-**Code-Beispiel (aktuell):**
-```yaml
-env:
-  LTC_SECRET_KEY: ${{ secrets.LTC_SECRET_KEY }}
+1. geschützte Env-Datei auf dem Host, z. B. `/etc/lifetimecircle/api.env`
+2. Passwortmanager plus manuell gepflegte Env-Datei
+3. externer Secret Store, **wenn** die Werte vor Prozessstart in Umgebungsvariablen injiziert werden
+
+Nicht zulässig:
+
+- Klartext im Repo
+- Versand per Chat oder E-Mail
+- ungeschützte Dateien mit offenen Dateirechten
+
+## Empfohlenes Production-Format
+
+```text
+LTC_ENV=prod
+LTC_SECRET_KEY=<REDACTED_32_PLUS_CHARS>
+LTC_DATABASE_URL=sqlite+pysqlite:////var/lib/lifetimecircle/data/app.db
+LTC_DB_PATH=/var/lib/lifetimecircle/data/app.db
 ```
 
-### 2.3 Production (TBD – Entscheidung erforderlich)
-
-| Lösung | Pros | Cons | Reife |
-|--------|------|------|--------|
-| **AWS Secrets Manager** | Managed, Auto-Rotation, IAM-Integration | Kostenpflichtig, AWS-abhängig | ⭐⭐⭐⭐⭐ |
-| **Azure Key Vault** | Managed, Auto-Rotation, IAM | Azure-abhängig | ⭐⭐⭐⭐ |
-| **HashiCorp Vault** | Universell, mächtig, Self-hosted | Komplexer zu betreiben | ⭐⭐⭐⭐ |
-| **Environment Variables** | Einfach | Sichtbar in Prozess-Liste, nicht rotierbar | ⭐ |
-| **Docker Secrets / Compose** | Für Dev OK | Production nicht ideal | ⭐⭐ |
-| **.env Datei (encrypted)** | Einfach | Manuelle Rotation, Versionierung schwer | ⭐⭐ |
-
-**Empfehlung für Production:** AWS Secrets Manager oder Azure Key Vault (falls bereits IaC vorhanden), ansonsten HashiCorp Vault.
-
----
-
-## 3) Secret-Generierung
-
-### 3.1 LTC_SECRET_KEY generieren
+Dateirechte für die Env-Datei:
 
 ```bash
-# Linux/Mac
+chown root:root /etc/lifetimecircle/api.env
+chmod 600 /etc/lifetimecircle/api.env
+```
+
+## Generierung
+
+### `LTC_SECRET_KEY`
+
+```bash
 openssl rand -hex 32
-
-# PowerShell
-[System.Convert]::ToBase64String([System.Random]::new().Next() * 1000000 | % {[byte]$_}) | 
-  % {$_ -replace '[^a-zA-Z0-9]',''} | 
-  select -First 32
-
-# Oder: Python
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-
-# Beispiel-Output:
-# abc123def456ghi789jkl012mno345pq
 ```
 
-### 3.2 Database Password generieren
+Alternativ:
 
 ```bash
-# Ähnlich wie oben, mind. 16 Zeichen
-openssl rand -hex 16
-
-# Oder pw-manager: Dashlane, 1Password, Bitwarden
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### 3.3 Sichere Speicherung (sofort nach Generierung)
+Keine Beispielwerte oder echte Secrets in Dokumente eintragen.
 
-```
-✅ Screenshot/ Password Manager (verschlüsselt)
-✅ Passwort-Manager (1Password, Bitwarden, LastPass)
-✅ Secret Manager (AWS/Azure/Vault)
-❌ Unverschlüsselt in Emails senden
-❌ Plaintext in Docs/Wikis
-❌ Slack/Teams (keine Enterprise-Backup)
-```
+## Nutzung im Betrieb
 
----
+Der API-Prozess liest die Werte direkt aus der Umgebung:
 
-## 4) Secrets in Code & Deployment
+- `LTC_SECRET_KEY` ist Pflicht, sonst startet die API nicht
+- `LTC_DATABASE_URL` steuert die Hauptdatenbank
+- `LTC_DB_PATH` wird von Auth-Komponenten separat verwendet
 
-### 4.1 Python (FastAPI-Server)
+Deshalb müssen `LTC_DATABASE_URL` und `LTC_DB_PATH` **auf dieselbe Datenbankdatei zeigen**.
 
-**Aktuell (gut) ✅:**
-```python
-# Aus Umgebungsvariable laden
-import os
-SECRET_KEY = os.environ.get("LTC_SECRET_KEY") or "fallback-dev-key"
+## Rotation
 
-# Fallback nur für Dev/Test
-if not SECRET_KEY or len(SECRET_KEY) < 16:
-    raise ValueError("LTC_SECRET_KEY zu kurz!")
-```
+### Standard
 
-**Production (noch besser):**
-```python
-# Mit Pydantic Settings + Validation
-from pydantic_settings import BaseSettings
+- `LTC_SECRET_KEY`: quartalsweise oder nach Incident
+- TLS-Zertifikate: automatisiert erneuern oder rechtzeitig manuell
+- SMTP-Zugangsdaten: bei Personalwechsel oder Provider-Änderung
 
-class Settings(BaseSettings):
-    LTC_SECRET_KEY: str  # Pflicht!
-    DATABASE_URL: str = "sqlite:///./data/app.db"
-    
-    class Config:
-        env_file = ".env"  # optional, für lokal
-        case_sensitive = True
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if len(self.LTC_SECRET_KEY) < 32:
-            raise ValueError("SECRET_KEY muss >= 32 zeichen sein")
+### Ablauf bei `LTC_SECRET_KEY`
 
-settings = Settings()
-# Wirft hier sofort Error wenn nicht valide!
-```
+1. neuen Wert generieren
+2. Env-Datei aktualisieren
+3. API neu starten
+4. `/api/health` prüfen
+5. laufende Sessions als potenziell ungültig betrachten
 
-### 4.2 React / Frontend
+## Incident-Fall
 
-**Beachte:** Frontend hat direkten Browserzugriff!
+Wenn ein Secret kompromittiert ist:
 
-```javascript
-// ❌ FALSCH: Secrets ins Frontend builden
-const API_SECRET = process.env.REACT_APP_SECRET_KEY;
+1. Wert sofort ersetzen
+2. Host- und Zugriffsprotokolle prüfen
+3. API neu starten
+4. Incident dokumentieren
+5. Ursache beheben
 
-// ✅ RICHTIG: Dynamisch vom Backend laden
-async function getPublicConfig() {
-  const resp = await fetch('/api/config/public');
-  const data = await resp.json();
-  return data.featuresEnabled; // OK: public info nur
-}
+## Offene Betriebsentscheidungen
 
-// ✅ RICHTIG: Backend macht Auth, Frontend hat nur Token
-const token = localStorage.getItem('auth_token');
-fetch('/api/vehicles', {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-```
+Vor Go-Live festzuziehen:
 
----
-
-## 5) Secret-Rotation
-
-### 5.1 Rotations-Plan
-
-```
-LTC_SECRET_KEY:
-  Frequenz: Quartalsweise (alle 3 Monate)
-  Grund: Best Practice für symmetrische Keys
-  Vorankündigung: 2 Wochen
-  
-Database Password:
-  Frequenz: Halbjährlich (alle 6 Monate)
-  Grund: Standard-Sicherheit
-  Methode: Neues Passwort setzen, Alte Sessions invalidieren
-  
-TLS Certificates:
-  Frequenz: Auto via Let's Encrypt ✅
-  Grund: Standard ACME-Renewal
-  
-Admin API Tokens:
-  Frequenz: On-demand oder quartalsweise
-  Grund: Falls kompromittiert oder regelmäßig
-```
-
-### 5.2 Rotation durchführen (LTC_SECRET_KEY)
-
-```bash
-# 1. NEUEN Key generieren
-NEW_SECRET=$(openssl rand -hex 32)
-
-# 2. Im Secret Manager speichern (z. B. AWS)
-aws secretsmanager update-secret \
-  --secret-id LTC_SECRET_KEY \
-  --secret-string "$NEW_SECRET"
-
-# 3. Oder in GitHub Secrets aktualisieren (Web UI)
-# Settings → Secrets → LTC_SECRET_KEY → Update
-
-# 4. Prod-Deployment auslösen (mit neuem Secret)
-# CI/CD pipelines starten → Lädt den neuen Secret
-
-# 5. Alte Sessions invalidieren (Optional)
-# Falls alte Tokens noch gültig sind, manuell invalidieren:
-# DELETE FROM sessions WHERE created_at < now() - interval '24 hours';
-
-# 6. Verifizieren
-curl -X GET https://app.lifetimecircle.de/api/health
-# → 200 OK mit neuem Secret
-```
-
-### 5.3 Kompromittierte Secrets (NOTFALL)
-
-```
-Verdacht: Secret ist leaked/exposed
-
-Sofort (< 1h):
-1. Secret in Secret Manager inaktivieren/löschen
-2. Neuen Secret generieren
-3. Production redeploy mit neuem Secret
-4. Logs auf verdächtige Zugriffe durchsuchen
-5. Benutzer ggf. auffordern, neu zu authentifizieren
-
-Nachher:
-- Post-Mortem: Wie wurde das Secret exposed?
-- Fix: Verhindere zukünftige Leaks
-- Audit: Logs prüfen, wer hat was zugegriffen?
-```
-
----
-
-## 6) Zugriffskontrolle
-
-### 6.1 Wer darf Secrets lesenaccess?
-
-```
-GitHub Secrets (für CI):
-  ✅ Repository-Admin
-  ✅ CI/CD-System (automatisch)
-  ❌ Public (NIEMALS!)
-
-AWS Secrets Manager / Azure Key Vault:
-  ✅ Prod-Server (via IAM Role)
-  ✅ DevOps-Lead
-  ✅ Security-Lead
-  ❌ Developer im Team (nur lokal dev-keys)
-
-Production-Server:
-  ✅ Deployment-Process (sudo, limited)
-  ❌ SSH-User-Shell direkt (Secrets ausgelesen)
-```
-
-### 6.2 Audit & Logging
-
-```
-Jeden Secret-Zugriff loggen:
-- Wer hat Secret-Manager aufgerufen?
-- Wann?
-- Welches Secret?
-- Von wo (IP)?
-
-In AWS:
-- CloudTrail enabled
-- Secret Manager API calls logged
-
-Regelmäßig prüfen:
-- Unerwartete Zugriffe?
-- Alte Server noch Zugriff?
-```
-
----
-
-## 7) Checkliste: Bevor wir live gehen
-
-- [ ] **LTC_SECRET_KEY** generiert (≥ 32 Bytes, kryptographisch stark)
-- [ ] **GitHub Secrets** eingerichtet (LTC_SECRET_KEY + Database Password)
-- [ ] **Production Secret Manager** gewählt und konfiguriert (AWS/Azure/Vault)
-- [ ] **IAM Policies** eingerichtet (nur notwendige Services/Rollen lesen Secrets)
-- [ ] **Rotation Plan** dokumentiert (Frequenz, Prozess, Tests)
-- [ ] **Secret-Zugriff nicht hardcoded** in Code (alle aus Env-Variablen)
-- [ ] **Audit-Logging** aktiviert (wer liest Secrets?)
-- [ ] **Notfall-Plan** für kompromittierte Secrets dokumentiert
-- [ ] **Team geschult** (wo nicht zu speichern, wie zu rotieren)
-
----
-
-## 8) Referenzen
-
-- `docs/14_DEPLOYMENT_GUIDE.md`
-- `docs/15_MONITORING_INCIDENT_RESPONSE.md`
-- `README.md` (Dev Setup mit Secret-Keys)
-- `.github/workflows/ci.yml` (GitHub Secrets nutzen)
-- OWASP: Secret Management Cheat Sheet
-- NIST: Special Publication 800-57 (Key Management)
-
----
-
-## 9) Notizen für Team
-
-**Für Developers:**
-- Lokale `.env` Datei mit Fallback-Keys ist OK
-- `.env` wird nicht gecommittet (`.gitignore`)
-- Niemals echte Production-Secrets lokal speichern!
-
-**Für DevOps/SRE:**
-- Production Secret Manager Setup **vor** Go-Live
-- IAM Policies testen: Can prod-server read from secret-manager?
-- Rotation-Automatisierung einrichten (wenn möglich)
-
-**Für Security:**
-- Regelmäßige Audits der Secret-Zugriffe
-- Incident-Response für Leaks planen
-- Pentests bedenken Secret-Management prüfen
+- wo die Produktions-Env-Datei liegt
+- wer Schreibzugriff darauf hat
+- wer Rotation freigibt
+- wie die Notfall-Erreichbarkeit der Security-Verantwortlichen aussieht

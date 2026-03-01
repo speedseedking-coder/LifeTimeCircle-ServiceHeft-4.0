@@ -1,183 +1,178 @@
 # 2026-03-01 Release Hardening Sprint – Summary
 
-Stand: **2026-03-01 14:30 UTC** (Europe/Berlin)
+Stand: **2026-03-01 18:50 CET** (Europe/Berlin)
 
 ---
 
-## 🎯 Ziel
-Projekt von nachgelagerten RC-Verifikationen zu vollständiger **Operativer Produktionsreife** bringen.
+## Ziel
+
+Den technisch verifizierten Release Candidate `rc-2026-03-01` in einen belastbar dokumentierten Go-Live-Kandidaten ueberfuehren, ohne den Ist-Code architektonisch falsch darzustellen.
 
 ---
 
-## ✅ Vollständig abgeschlossen
+## Abgeschlossene Arbeit
 
-### 1️⃣ Release & Code-Qualität (Commit 464e766)
-- ✅ CHANGELOG.md gefüllt mit RC-Eintrag
-- ✅ RECENT_FILES.txt (Änderungs-Snapshot) erstellt
-- ✅ COMMIT_LIST.txt (Git-Historie) erstellt
-- ✅ Git-Tag `rc-2026-03-01` gesetzt & gepusht
-- ✅ Alle Gates erneut verifiziert (grün)
+### 1. Release- und Nachweisbasis
 
-### 2️⃣ Infrastruktur-Dokumentation (Commit 713ac00)
+Commit: `464e766`
 
-#### 📘 docs/00_OPERATIONS_OVERVIEW.md
-- Einstiegspunkt für Ops-Team
-- Checklisten pro Phase (Vorbereitung, Test, Live, Nach-Deploy)
-- Rollzuordnung (DevOps, Security, SRE, Release Manager, etc.)
-- Kontakt & Eskalations-Template (TBD-Felder)
+- `CHANGELOG.md` aktualisiert
+- `RECENT_FILES.txt` erzeugt
+- `COMMIT_LIST.txt` erzeugt
+- Git-Tag `rc-2026-03-01` erstellt
 
-#### 📗 docs/14_DEPLOYMENT_GUIDE.md
-- Architektur-Entscheidungsmatrix (Hosting, API, DB, Frontend, TLS)
-- Voraussetzungen vor Deployment
-- Phase-by-Phase Anleitung (Code, Environment, Services, Health Checks)
-- Smoke Tests nach Deploy
-- Rollback-Prozeduren (schnell & Datenbank)
-- nginx-Config-Beispiel
-- SLO-Definition & Monitoring-Setup (grob)
+### 2. Operations-Dokumentation aufgebaut
 
-#### 📙 docs/15_MONITORING_INCIDENT_RESPONSE.md
-- Monitoring-Strategie (Komponenten, SLOs)
-- Alert-Regeln (Kritisch & Warnung)
-- Incident-Response-Runbook (4 Kategorien: API, DB, Frontend, Security)
-- Eskalation & Paging
-- Rollback-Prozedur (mit SQL-Beispiel)
-- Logging & Retention Policy
-- Post-Incident-Review-Template
+Commit: `713ac00`
 
-#### 📕 docs/16_SECRETS_MANAGEMENT.md
-- Secrets-Inventory (LTC_SECRET_KEY, DB-PW, TLS-Key, Admin-Token)
-- Storage-Optionen (Lokal, CI/CD, Production)
-- Secret-Generierung (openssl, Python, Best Practices)
-- Verwendung in Python & React
-- Rotations-Plan (Frequenz & Prozess)
-- Notfall-Handling (kompromittierte Secrets)
-- Checkliste vor Live-Gehen
-- Team-Rollen & Handlungsschritte
+- `docs/00_OPERATIONS_OVERVIEW.md` als operativen Einstiegspunkt angelegt
+- `docs/14_DEPLOYMENT_GUIDE.md` fuer den realen Deployment-Pfad angelegt
+- `docs/15_MONITORING_INCIDENT_RESPONSE.md` fuer Monitoring und Incident-Handling angelegt
+- `docs/16_SECRETS_MANAGEMENT.md` fuer Secrets, Rotation und Notfaelle angelegt
 
-### 3️⃣ Master-Dokumentation Updates
-- ✅ docs/99_MASTER_CHECKPOINT.md erweitert (Links zu Ops-Docs)
-- ✅ docs/99_MASTER_CHECKPOINT.md: Praktische Einstiegsfragen aktualisiert
+### 3. Sprint-Zusammenfassung erstellt
 
----
+Commit: `cab3d4c`
 
-## 🔍 Verifikation (letzte Durchläufe)
+- `docs/SPRINT_2026-03-01_SUMMARY.md` erstmals erzeugt
 
-```
-✅ npm run build         → ✓ built in 1.03s
-✅ npm run e2e          → ✓ 32 passed (26.7s)
-✅ git status --short   → (clean)
-✅ git push             → erfolgreich
-```
+### 4. Rollenspezifische Aufgabenlisten erstellt
 
-**Commit-Kette:**
-- 464e766 docs: record changelog and recent file/commit lists for release candidate
-- 713ac00 docs: add comprehensive operations & infrastructure runbooks for production deployment
+Commit: `7166da5`
+
+- `docs/TASK_DEVOPS_INFRASTRUCTURE.md`
+- `docs/TASK_SECURITY_SECRETS.md`
+- `docs/TASK_SRE_MONITORING.md`
+- `docs/TASK_RELEASE_MANAGER_GOLIVE.md`
+
+### 5. Master-Koordination erstellt
+
+Commit: `0b79f69`
+
+- `docs/MASTER_GOLIVE_COORDINATION.md`
+
+### 6. Spaete Korrekturen fuer Realitaetsabgleich und Security
+
+Lokaler Workspace-Stand am Abend des 2026-03-01:
+
+- `docs/GO_LIVE_BLOCKERS_AND_TARGET_STATE_2026-03-01.md` dokumentiert, dass PostgreSQL/RDS, Containerisierung und App-seitige Secret-Manager-Integration kein Day-0-Pflichtpfad sind.
+- `docs/CODEX_HANDOVER_2026-03-01.md` fasst den operativen Zielzustand fuer neue Bearbeiter zusammen.
+- `server/app/routers/documents.py` nutzt die zentrale Actor-Policy statt unkontrollierter Legacy-Header.
+- `server/app/routers/export_vehicle.py` akzeptiert Legacy-Header nur noch hinter dem expliziten Dev-Gate.
+- `server/tests/test_sensitive_routes_dev_header_gate.py` deckt diese Regression ab.
 
 ---
 
-## 📋 Operativer Checklist Status
+## Verbindliches Zielbild fuer den Go-Live
 
-### ✅ Jetzt ready:
-- Code-Release ist identifiziert & verifiziert
-- Deployment-Guide vorhanden (Entscheidungshilfen)
-- Monitoring-Runbook vorhanden (Alerts, Incident-Response)
-- Secrets-Management dokumentiert (Generierung, Rotation, Storage)
-- Operations-Übersicht für alle Rollen bereit
-- Master-Checkpoint aktualisiert
+Fuer den geplanten Go-Live am **Donnerstag, 2026-03-06, 10:00 CET** gilt als freigegebenes Day-0-Modell:
 
-### ⚠️ Noch TBD (nächste Phase):
-1. **Konkrete Architektur-Entscheidung** (Cloud-Plattform, Hosting...)
-2. **Secrets-Manager Setup** (AWS/Azure/Vault real aktivieren)
-3. **Monitoring-Tool** wählen & konfigurieren
-4. **DNS & TLS** produktiv einrichten
-5. **On-Call-Rota & Kontakte** definieren
-6. **Staging-Deploy** für Stress-Test
-7. **Stakeholder-Freigaben** einholen
+- Single-Node Production
+- Backend via `poetry run uvicorn app.main:app`
+- Frontend als statischer Build hinter Reverse Proxy
+- SQLite auf persistentem Datentraeger
+- persistente lokale Verzeichnisse fuer `server/data` und `server/storage`
 
----
+Nicht Teil des verbindlichen Day-0-Modells:
 
-## 🚀 Architektur der Docs
+- RDS oder PostgreSQL als Pflicht
+- Docker, ECS oder Kubernetes als Pflicht
+- Multi-Instance-Betrieb
+- App-seitige Integration eines Secret Managers
 
-```
-LifeTimeCircle-ServiceHeft-4.0/docs/
-├─ 00_INDEX.md
-├─ 00_OPERATIONS_OVERVIEW.md              ⭐ NEW (Einstieg für Ops)
-├─ 00_CODEX_CONTEXT.md                    (Agent-Briefing)
-├─ 00_PROJECT_BRIEF.md
-├─ 01_DECISIONS.md                        (Architektonische Entscheidungen)
-├─ 02_PRODUCT_SPEC_UNIFIED.md             (Fachliche Features)
-├─ 03_RIGHTS_MATRIX.md                    (RBAC Spezifikation)
-├─ 04_MODULE_CATALOG.md
-├─ 05_MAINTENANCE_RUNBOOK.md              (Lokale Dev-Routinen)
-├─ 06_TERMS_GLOSSARY.md
-├─ 07_START_HERE.md                       (Entry Point)
-├─ 07_WEBSITE_COPY_MASTER_CONTEXT.md      (Copy SoT)
-├─ 12_RELEASE_CANDIDATE_2026-03-01.md    (RC Spezifikation)
-├─ 13_GO_LIVE_CHECKLIST.md                (Pre-Live Checkboxes)
-├─ 14_DEPLOYMENT_GUIDE.md                 ⭐ NEW (Wie deployen)
-├─ 15_MONITORING_INCIDENT_RESPONSE.md     ⭐ NEW (Ops & Incidents)
-├─ 16_SECRETS_MANAGEMENT.md               ⭐ NEW (Secrets sicher)
-├─ 98_WEB_E2E_SMOKE.md                    (Web Testing)
-└─ 99_MASTER_CHECKPOINT.md                (SoT – Projekt-Stand)
-```
+Wenn eines dieser erweiterten Zielbilder gefordert wird, ist das ein separates Architekturprojekt und kein reiner Betriebsrest.
 
 ---
 
-## 👥 Nächste Schritte nach Übergabe
+## Was jetzt belastbar vorliegt
 
-### Ops-Lead (DevOps / Infrastructure)
-→ Liest `docs/00_OPERATIONS_OVERVIEW.md` + `docs/14_DEPLOYMENT_GUIDE.md`
-→ Füllt Entscheidungsmatrix aus (Cloud wählen, Provisioning starten)
-
-### Security-Lead
-→ Liest `docs/16_SECRETS_MANAGEMENT.md`
-→ Setzt Production Secret-Manager auf (AWS/Azure/Vault)
-
-### SRE / On-Call
-→ Liest `docs/15_MONITORING_INCIDENT_RESPONSE.md`
-→ Konfiguriert Monitoring-Tool, Alerting, On-Call-Rota
-
-### Release-Manager
-→ Liest `docs/13_GO_LIVE_CHECKLIST.md` + `docs/00_OPERATIONS_OVERVIEW.md`
-→ Koordiniert Stakeholder-Freigaben, Kommunikations-Plan
+- Release Candidate `rc-2026-03-01` ist technisch verifiziert.
+- Kernpfade fuer Web und Backend sind ueber Build, E2E und Tests abgesichert.
+- Go-Live-Dokumentation ist auf den realistischen Single-Node-Pfad korrigiert.
+- Rollenbezogene Arbeitslisten fuer DevOps, Security, SRE und Release Management liegen vor.
+- Die Security-Haertung fuer sensible Header-Fallbacks ist umgesetzt und getestet.
 
 ---
 
-## 📊 Metriken
+## Offene Arbeit vor echtem Go-Live
 
-| Metrik | Wert |
-|--------|------|
-| **New Documentation Files** | 4 |
-| **Updated Documentation** | 1 |
-| **Total Ops-Docs (Seiten)** | ~150 (geschätzt) |
-| **Code Quality** | ✅ All Gates Green |
-| **E2E Tests** | ✅ 32/32 passed |
-| **Release Status** | 🟢 RC-Ready |
+### Operativ offen
 
----
+- Host oder VM bereitstellen
+- Domain, TLS und Redirect-Regeln einrichten
+- persistente Pfade fuer Daten und Storage anbinden
+- `LTC_SECRET_KEY` produktiv setzen
+- Staging im gleichen Betriebsmodell wie Production aufsetzen
+- Monitoring, Alarmierung und On-Call aktivieren
+- Rollback und Backup/Restore pruefen
+- organisatorische und rechtliche Freigaben einholen
 
-## 🎓 Lessons für kommende Releases
+### Nicht mehr als offen formulierbar
 
-- **Operatives Planung sollte parallel zu Code laufen**, nicht nach
-- **Secrets-Management MUSS vor Deploy-Entscheidung klar sein**
-- **Monitoring & Alerting sollten im Staging-Test laufen, nicht erst on-live**
-- **Rollback-Tests sollten vor Live durchgespielt werden**
-- **On-Call & Kontakte müssen **vor** Go-Live klar sein**
+Diese Punkte duerfen nicht mehr so dargestellt werden, als waeren sie bereits vorbereitet oder Pflicht fuer den 2026-03-06-Go-Live:
 
----
-
-## 🏁 Fazit
-
-**LifeTimeCircle Service Heft 4.0 ist technisch Release-Ready ** (rc-2026-03-01).
-
-Die **Operativen Grundlagen** sind dokumentiert und bereit zur Umsetzung.
-
-**Von hier aus:** Konkrete Infrastruktur-Implementierung & Stakeholder-Freigaben sind nächste Phase.
-
-**Feedback-Punkt:** Diese Docs sollten mit echtem Ops-Team (DevOps, SRE, Security) validiert werden, um sicherzustellen, dass sie mit euren Werkzeugen & Prozessen passen.
+- VPC-/Cloud-Architekturentscheidungen als Muss
+- RDS/PostgreSQL-Migration als Muss
+- Docker-/ECS-/Kubernetes-Deployment als Muss
+- produktive Secret-Manager-Integration im App-Code als Muss
 
 ---
 
-**Sprint-Abschluss:** ✅  
-**Nächste Phase:** Infrastructure Setup & Staging Deploy  
-**Geschätzter Go-Live:** Nach Infra-Setup & Final QA (TBD)  
+## Verifikation
+
+In der Sprint-Session verifiziert:
+
+- `git diff --check`
+- `npm run build`
+- `npm run e2e`
+- `poetry run pytest -q`
+
+Fuer die spaeten Security-Korrekturen zusaetzlich verifiziert:
+
+- `poetry run pytest -q .\tests\test_sensitive_routes_dev_header_gate.py`
+
+Hinweis:
+
+- Der fruehe RC-Stand war clean.
+- Der aktuelle Workspace ist nach den spaeten Korrekturen bewusst nicht clean, solange die lokalen Aenderungen noch nicht committet sind.
+
+---
+
+## Relevante Dokumente
+
+Zuerst lesen:
+
+1. `docs/99_MASTER_CHECKPOINT.md`
+2. `docs/CODEX_HANDOVER_2026-03-01.md`
+3. `docs/MASTER_GOLIVE_COORDINATION.md`
+4. `docs/14_DEPLOYMENT_GUIDE.md`
+5. `docs/15_MONITORING_INCIDENT_RESPONSE.md`
+6. `docs/16_SECRETS_MANAGEMENT.md`
+
+Nach Rolle:
+
+- DevOps: `docs/TASK_DEVOPS_INFRASTRUCTURE.md`
+- Security: `docs/TASK_SECURITY_SECRETS.md`
+- SRE: `docs/TASK_SRE_MONITORING.md`
+- Release: `docs/TASK_RELEASE_MANAGER_GOLIVE.md`
+
+Ergaenzend:
+
+- `docs/GO_LIVE_BLOCKERS_AND_TARGET_STATE_2026-03-01.md`
+- `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
+- `docs/13_GO_LIVE_CHECKLIST.md`
+
+---
+
+## Fazit
+
+Der Sprint hat den Release Candidate nicht in eine neue Zielarchitektur ueberfuehrt, sondern die reale Betriebsfaehigkeit sauber beschrieben.
+
+Stand **2026-03-01 18:50 CET** ist die belastbare Linie:
+
+- Code verifiziert
+- Security-Hotfix fuer sensible Header-Fallbacks umgesetzt
+- Go-Live-Doku konsistent auf Single-Node + SQLite + persistenten lokalen Storage gezogen
+- operative Ausfuehrung und Freigaben weiterhin offen
+
+Die naechste Phase ist deshalb nicht "Architektur entwerfen", sondern das dokumentierte Day-0-Modell wirklich ausfuehren oder den Go-Live-Termin bei abweichendem Zielbild neu bewerten.
