@@ -121,7 +121,7 @@ export default function VehiclesPage(): JSX.Element {
   }
 
   return (
-    <main className="ltc-main">
+    <main className="ltc-main ltc-main--wide">
       <h1>Vehicles</h1>
       <p>Owner-scoped Vehicle-Liste mit serverseitigem Consent-, RBAC- und Object-Level-Enforcement.</p>
 
@@ -208,17 +208,17 @@ export default function VehiclesPage(): JSX.Element {
         </section>
       ) : null}
 
-      <section style={{ marginTop: 16 }}>
+      <section className="ltc-page-nav">
         <h2>Navigation (Hash)</h2>
-        <ul>
-          <li>
-            <a href="#/documents">Zu Documents</a>
+        <ul className="ltc-list">
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/documents">Zu Documents</a>
           </li>
-          <li>
-            <a href="#/onboarding">Zu Onboarding</a>
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/onboarding">Zu Onboarding</a>
           </li>
-          <li>
-            <a href="#/consent">Zu Consent</a>
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/consent">Zu Consent</a>
           </li>
         </ul>
       </section>

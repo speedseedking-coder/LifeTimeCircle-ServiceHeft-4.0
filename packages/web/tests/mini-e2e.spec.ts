@@ -1200,3 +1200,99 @@ test("responsive stylesheet includes mobile-first media queries (640px, 768px, 1
   expect(mediaQueryText.toLowerCase()).toContain("min-width");
   expect(mediaQueries.length).toBeGreaterThan(0);
 });
+
+test("mobile layouts avoid horizontal overflow on vehicles, vehicle detail and admin at 375px", async ({ page }) => {
+  let role: "user" | "superadmin" = "user";
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_mobile");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/vehicles") return json(200, [{ id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} }]);
+    if (path === "/api/vehicles/veh_test_1") {
+      return json(200, { id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} });
+    }
+    if (path === "/api/vehicles/veh_test_1/trust-summary") {
+      return json(200, {
+        trust_light: "gruen",
+        hint: "Dokumentation ist vollständig nachweisbar.",
+        reason_codes: ["history_complete", "evidence_verified"],
+        todo_codes: ["review_next_service"],
+        verification_level: "hoch",
+        accident_status: "unfallfrei",
+        accident_status_label: "Unfallfrei",
+        history_status: "vorhanden",
+        evidence_status: "vorhanden",
+        top_trust_level: "T3",
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/entries") {
+      return json(200, [
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 2,
+          revision_count: 2,
+          is_latest: true,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+      ]);
+    }
+    if (path === "/api/admin/users") {
+      return json(200, [{ user_id: "uid-user-1", role: "user", created_at: "2026-02-28T10:00:00Z" }]);
+    }
+    if (path === "/api/admin/vip-businesses") {
+      return json(200, [
+        {
+          business_id: "biz-demo-1",
+          owner_user_id: "uid-owner-1",
+          approved: true,
+          created_at: "2026-02-28T10:30:00Z",
+          approved_at: "2026-02-28T11:05:00Z",
+          approved_by_user_id: "sa-1",
+          staff_user_ids: ["uid-staff-1"],
+          staff_count: 1,
+        },
+      ]);
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+
+  for (const scenario of [
+    { hash: "#/vehicles", nextRole: "user" as const },
+    { hash: "#/vehicles/veh_test_1", nextRole: "user" as const },
+    { hash: "#/admin", nextRole: "superadmin" as const },
+  ]) {
+    role = scenario.nextRole;
+    await setHash(page, scenario.hash);
+    const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+    expect(hasOverflow).toBe(false);
+  }
+});

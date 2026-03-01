@@ -39,13 +39,13 @@
 ## Mobile Responsiveness
 
 ### Breakpoints (CSS)
-- [ ] 375px (iPhone SE) – lowest
+- [x] 375px (iPhone SE) – lowest
 - [x] 768px (iPad) – mid
 - [ ] 1920px (Desktop) – high
 
 ### Tests Needed
-- Form layouts responsive (stack on mobile)
-- Button groups wrap properly
+- [x] Form layouts responsive (stack on mobile)
+- [x] Button groups wrap properly
 - Lists have adequate spacing
 - Text readable without zoom
 - Touch targets >= 44x44px
