@@ -258,7 +258,7 @@ export default function OnboardingWizardPage(): JSX.Element {
 
   if (gate === "loading") {
     return (
-      <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+      <main className="ltc-main ltc-main--wide">
         <h1>Onboarding Wizard</h1>
         <p>Consent wird geprüft…</p>
       </main>
@@ -267,10 +267,10 @@ export default function OnboardingWizardPage(): JSX.Element {
 
   if (gate === "forbidden") {
     return (
-      <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+      <main className="ltc-main ltc-main--wide">
         <h1>Onboarding Wizard</h1>
         <p>Der Wizard ist aktuell nicht verfügbar.</p>
-        {error ? <p style={{ color: "#fca5a5" }}>{error}</p> : null}
+        {error ? <p className="ltc-error-message">{error}</p> : null}
         <a href="#/auth">Zurück zu Auth</a>
       </main>
     );
@@ -278,65 +278,67 @@ export default function OnboardingWizardPage(): JSX.Element {
 
   if (done && wizard.vehicleId) {
     return (
-      <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+      <main className="ltc-main ltc-main--wide">
         <h1>Geschafft 🎉</h1>
         <p>Fahrzeug und erster Entry wurden erfolgreich angelegt.</p>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
+        <div className="ltc-button-group">
           <a
             href={`#/vehicles/${encodeURIComponent(wizard.vehicleId)}`}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 12,
-              border: "1px solid rgba(122,162,247,0.7)",
-              background: "rgba(122,162,247,0.18)",
-            }}
+            className="ltc-button ltc-button--primary"
           >
             Zum Fahrzeug
           </a>
-          <a href="#/documents">Dokument hochladen</a>
-          <a href={`#/vehicles/${encodeURIComponent(wizard.vehicleId)}`}>Weitere Einträge</a>
+          <a href="#/documents" className="ltc-button ltc-button--secondary">
+            Dokument hochladen
+          </a>
+          <a href={`#/vehicles/${encodeURIComponent(wizard.vehicleId)}`} className="ltc-button ltc-button--secondary">
+            Weitere Einträge
+          </a>
         </div>
-        <div style={{ marginTop: 16 }}>
+        <section className="ltc-section ltc-section--card" style={{ marginTop: 16 }}>
           <button type="button" onClick={restart}>
             Neu starten
           </button>
-        </div>
+        </section>
       </main>
     );
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+    <main className="ltc-main ltc-main--wide">
       <h1>Onboarding Wizard</h1>
       <p>In wenigen Schritten zum ersten belastbaren Nachweis: Fahrzeug anlegen und ersten Entry speichern.</p>
 
-      <ol style={{ display: "flex", gap: 12, paddingLeft: 20 }}>
-        <li style={{ opacity: wizard.step === 1 ? 1 : 0.7 }}>VIN</li>
-        <li style={{ opacity: wizard.step === 2 ? 1 : 0.7 }}>Fahrzeug</li>
-        <li style={{ opacity: wizard.step === 3 ? 1 : 0.7 }}>Erster Entry</li>
+      <ol className="ltc-stepper">
+        <li className={wizard.step === 1 ? "" : "ltc-stepper__inactive"}>VIN</li>
+        <li className={wizard.step === 2 ? "" : "ltc-stepper__inactive"}>Fahrzeug</li>
+        <li className={wizard.step === 3 ? "" : "ltc-stepper__inactive"}>Erster Entry</li>
       </ol>
 
       <h2>{stepTitle(wizard.step)}</h2>
 
       {wizard.step === 1 ? (
         <section>
-          <label htmlFor="vin-input">VIN</label>
+          <label htmlFor="vin-input" className="ltc-form-group__label">
+            VIN
+          </label>
           <input
             id="vin-input"
+            className="ltc-form-group__input"
             value={wizard.vin}
             onChange={(e) => setWizard((prev) => ({ ...prev, vin: e.target.value }))}
             placeholder="z. B. WAUZZZ..."
             autoComplete="off"
-            style={{ display: "block", marginTop: 8, padding: 8, width: "100%", maxWidth: 420 }}
           />
-          <p style={{ marginTop: 8, opacity: 0.85 }}>
+          <p className="ltc-helper-text">
             Warum VIN? Wir nutzen die VIN nur zur eindeutigen Zuordnung. Public wird sie maskiert angezeigt.
           </p>
-          {vinValidation ? <p style={{ color: "#fca5a5" }}>{vinValidation}</p> : null}
+          {vinValidation ? <p className="ltc-error-message">{vinValidation}</p> : null}
           <button
             type="button"
             onClick={() => setWizard((prev) => ({ ...prev, step: 2, vin: normalizeVin(prev.vin) }))}
             disabled={Boolean(vinValidation)}
+            className="ltc-button ltc-button--primary"
           >
             Weiter
           </button>
@@ -348,9 +350,13 @@ export default function OnboardingWizardPage(): JSX.Element {
           <p>
             VIN erfasst: <code>{maskVin(wizard.vin)}</code>
           </p>
-          <label style={{ display: "block", marginBottom: 12 }}>
-            Unfallstatus
+          <div className="ltc-form-group">
+            <label htmlFor="accident-status" className="ltc-form-group__label">
+              Unfallstatus
+            </label>
             <select
+              id="accident-status"
+              className="ltc-form-group__select"
               value={wizard.accidentStatus}
               onChange={(e) =>
                 setWizard((prev) => ({
@@ -358,18 +364,17 @@ export default function OnboardingWizardPage(): JSX.Element {
                   accidentStatus: e.target.value as WizardState["accidentStatus"],
                 }))
               }
-              style={{ display: "block", marginTop: 8, padding: 8, width: "100%", maxWidth: 420 }}
             >
               <option value="unknown">Unbekannt</option>
               <option value="accident_free">Unfallfrei</option>
               <option value="not_free">Nicht unfallfrei</option>
             </select>
-          </label>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 1 }))} disabled={submitting}>
+          </div>
+          <div className="ltc-button-group ltc-button-group--row">
+            <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 1 }))} disabled={submitting} className="ltc-button ltc-button--secondary">
               Zurück
             </button>
-            <button type="button" onClick={onCreateVehicle} disabled={submitting || Boolean(vinValidation)}>
+            <button type="button" onClick={onCreateVehicle} disabled={submitting || Boolean(vinValidation)} className="ltc-button ltc-button--primary">
               {submitting ? "Speichert…" : "Fahrzeug speichern"}
             </button>
           </div>
@@ -378,48 +383,64 @@ export default function OnboardingWizardPage(): JSX.Element {
 
       {wizard.step === 3 ? (
         <section>
-          <div style={{ display: "grid", gap: 10, maxWidth: 420 }}>
-            <label>
-              Datum
+          <div className="ltc-form-grid">
+            <div className="ltc-form-group">
+              <label htmlFor="entry-date" className="ltc-form-group__label">
+                Datum
+              </label>
               <input
+                id="entry-date"
+                className="ltc-form-group__input"
                 type="date"
                 value={wizard.entryDraft.date}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, date: e.target.value } }))}
               />
-            </label>
-            <label>
-              Typ
+            </div>
+            <div className="ltc-form-group">
+              <label htmlFor="entry-type" className="ltc-form-group__label">
+                Typ
+              </label>
               <input
+                id="entry-type"
+                className="ltc-form-group__input"
                 type="text"
                 value={wizard.entryDraft.type}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, type: e.target.value } }))}
               />
-            </label>
-            <label>
-              Durchgeführt von
+            </div>
+            <div className="ltc-form-group">
+              <label htmlFor="entry-performer" className="ltc-form-group__label">
+                Durchgeführt von
+              </label>
               <input
+                id="entry-performer"
+                className="ltc-form-group__input"
                 type="text"
                 value={wizard.entryDraft.performedBy}
                 onChange={(e) =>
                   setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, performedBy: e.target.value } }))
                 }
               />
-            </label>
-            <label>
-              Kilometerstand
+            </div>
+            <div className="ltc-form-group">
+              <label htmlFor="entry-km" className="ltc-form-group__label">
+                Kilometerstand
+              </label>
               <input
+                id="entry-km"
+                className="ltc-form-group__input"
                 type="number"
                 min={0}
                 value={wizard.entryDraft.km}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, km: e.target.value } }))}
               />
-            </label>
+            </div>
           </div>
 
-          {kmValidation ? <p style={{ color: "#fca5a5" }}>{kmValidation}</p> : null}
+          {kmValidation ? <p className="ltc-error-message">{kmValidation}</p> : null}
 
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 2 }))} disabled={submitting}>
+          <div className="ltc-button-group ltc-button-group--row">
+            <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 2 }))} disabled={submitting} className="ltc-button ltc-button--secondary">
               Zurück
             </button>
             <button
@@ -432,6 +453,7 @@ export default function OnboardingWizardPage(): JSX.Element {
                 wizard.entryDraft.type.trim().length === 0 ||
                 wizard.entryDraft.performedBy.trim().length === 0
               }
+              className="ltc-button ltc-button--primary"
             >
               {submitting ? "Speichert…" : "Entry speichern"}
             </button>
@@ -440,9 +462,9 @@ export default function OnboardingWizardPage(): JSX.Element {
       ) : null}
 
       {error ? (
-        <section style={{ marginTop: 14 }}>
-          <p style={{ color: "#fca5a5" }}>{error}</p>
-          <button type="button" onClick={() => setError(null)}>
+        <section className="ltc-section ltc-section--error">
+          <p className="ltc-error-message">{error}</p>
+          <button type="button" onClick={() => setError(null)} className="ltc-button ltc-button--secondary">
             Fehler schließen
           </button>
         </section>

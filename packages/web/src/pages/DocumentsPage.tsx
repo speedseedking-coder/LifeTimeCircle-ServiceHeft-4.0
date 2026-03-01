@@ -61,7 +61,7 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
   }
 
   return (
-    <section className="ltc-card" style={{ marginTop: 12 }}>
+    <section className="ltc-card ltc-section ltc-section--card">
       <h2>{props.title}</h2>
       <p>
         <strong>Datei:</strong> {props.doc.filename}
@@ -84,17 +84,17 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
       </p>
 
       {props.admin ? (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"))}>
+        <div className="ltc-button-group">
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"))} className="ltc-button ltc-button--secondary">
             Scan CLEAN
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "INFECTED"))}>
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "INFECTED"))} className="ltc-button ltc-button--secondary">
             Scan INFECTED
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => approveDocument(props.doc.id))}>
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => approveDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
             Approve
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id))}>
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
             Reject
           </button>
         </div>
@@ -223,11 +223,11 @@ export default function DocumentsPage(): JSX.Element {
   }
 
   return (
-    <main style={{ padding: 12 }}>
+    <main className="ltc-main">
       <h1>Documents</h1>
       <p>Live-Anbindung für Upload, Dokument-Abruf, Download und Admin-Quarantäne gemäß Backend-Vertrag.</p>
 
-      <section className="ltc-card" style={{ marginTop: 16 }}>
+      <section className="ltc-card ltc-section ltc-section--card">
         <h2>Upload</h2>
         <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
         <form onSubmit={(e) => void onUpload(e)}>
@@ -237,26 +237,26 @@ export default function DocumentsPage(): JSX.Element {
             accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
             onChange={(e) => setSelectedFile(e.currentTarget.files?.[0] ?? null)}
           />
-          <div style={{ marginTop: 10 }}>
-            <button type="submit" disabled={uploading || !selectedFile}>
+          <div className="ltc-button-group">
+            <button type="submit" disabled={uploading || !selectedFile} className="ltc-button ltc-button--primary">
               {uploading ? "Lädt hoch..." : "Dokument hochladen"}
             </button>
           </div>
         </form>
       </section>
 
-      <section className="ltc-card" style={{ marginTop: 16 }}>
+      <section className="ltc-card ltc-section ltc-section--card">
         <h2>Dokument-ID prüfen</h2>
         <form onSubmit={(e) => void onLookup(e)}>
           <input
+            className="ltc-form-group__input"
             value={lookupId}
             onChange={(e) => setLookupId(e.target.value)}
             placeholder="Dokument-ID eingeben"
             autoComplete="off"
-            style={{ width: "100%", maxWidth: 420, padding: 10 }}
           />
-          <div style={{ marginTop: 10 }}>
-            <button type="submit" disabled={lookupBusy}>
+          <div className="ltc-button-group">
+            <button type="submit" disabled={lookupBusy} className="ltc-button ltc-button--primary">
               {lookupBusy ? "Prüft..." : "Dokument laden"}
             </button>
           </div>
@@ -268,12 +268,12 @@ export default function DocumentsPage(): JSX.Element {
       {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} /> : null}
 
       {recentDocs.length > 0 ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section ltc-section--card">
           <h2>Kürzlich hochgeladen</h2>
-          <ul>
+          <ul className="ltc-list">
             {recentDocs.map((doc) => (
-              <li key={doc.id}>
-                <a href={`#/documents`} onClick={() => setLookupDoc(doc)}>
+              <li key={doc.id} className="ltc-list__item">
+                <a href={`#/documents`} className="ltc-list__link" onClick={() => setLookupDoc(doc)}>
                   {doc.filename}
                 </a>{" "}
                 <span className="ltc-muted">({doc.status} / {doc.scan_status})</span>
@@ -284,7 +284,7 @@ export default function DocumentsPage(): JSX.Element {
       ) : null}
 
       {adminVisible ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section ltc-section--card">
           <h2>Admin-Quarantäne</h2>
           {adminDocs.length === 0 ? (
             <p className="ltc-muted">Keine Dokumente in Quarantäne.</p>
@@ -297,20 +297,20 @@ export default function DocumentsPage(): JSX.Element {
       ) : null}
 
       {adminForbidden ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section ltc-section--card">
           <h2>Admin-Quarantäne</h2>
           <p className="ltc-muted">Admin-Review ist für die aktuelle Rolle nicht sichtbar.</p>
         </section>
       ) : null}
 
-      <section style={{ marginTop: 16 }}>
+      <section className="ltc-section">
         <h2>Navigation (Hash)</h2>
-        <ul>
-          <li>
-            <a href="#/vehicles">Zu Vehicles</a>
+        <ul className="ltc-list">
+          <li className="ltc-list__item">
+            <a href="#/vehicles" className="ltc-list__link">Zu Vehicles</a>
           </li>
-          <li>
-            <a href="#/onboarding">Zu Onboarding</a>
+          <li className="ltc-list__item">
+            <a href="#/onboarding" className="ltc-list__link">Zu Onboarding</a>
           </li>
         </ul>
       </section>

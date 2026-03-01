@@ -121,76 +121,86 @@ export default function VehiclesPage(): JSX.Element {
   }
 
   return (
-    <main style={{ padding: 12 }}>
+    <main className="ltc-main">
       <h1>Vehicles</h1>
       <p>Owner-scoped Vehicle-Liste mit serverseitigem Consent-, RBAC- und Object-Level-Enforcement.</p>
 
-      <section className="ltc-card" style={{ marginTop: 16 }}>
+      <section className="ltc-card ltc-section--card">
         <h2>Neues Fahrzeug anlegen</h2>
         <form onSubmit={(e) => void onCreate(e)}>
-          <div style={{ display: "grid", gap: 10, maxWidth: 420 }}>
-            <label>
-              VIN
-              <input
-                value={vin}
-                onChange={(e) => setVin(e.target.value)}
-                placeholder="z. B. WAUZZZ..."
-                autoComplete="off"
-                style={{ display: "block", marginTop: 8, padding: 10, width: "100%" }}
-              />
-            </label>
-            <label>
-              Nickname (optional)
-              <input
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="z. B. Familienauto"
-                autoComplete="off"
-                style={{ display: "block", marginTop: 8, padding: 10, width: "100%" }}
-              />
-            </label>
-            <label>
-              Unfallstatus
-              <select
-                value={accidentStatus}
-                onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
-                style={{ display: "block", marginTop: 8, padding: 10, width: "100%" }}
-              >
-                <option value="unknown">Unbekannt</option>
-                <option value="accident_free">Unfallfrei</option>
-                <option value="not_free">Nicht unfallfrei</option>
-              </select>
-            </label>
+          <div className="ltc-form-grid">
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                VIN
+                <input
+                  className="ltc-form-group__input"
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value)}
+                  placeholder="z. B. WAUZZZ..."
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                Nickname (optional)
+                <input
+                  className="ltc-form-group__input"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="z. B. Familienauto"
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                Unfallstatus
+                <select
+                  className="ltc-form-group__select"
+                  value={accidentStatus}
+                  onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
+                >
+                  <option value="unknown">Unbekannt</option>
+                  <option value="accident_free">Unfallfrei</option>
+                  <option value="not_free">Nicht unfallfrei</option>
+                </select>
+              </label>
+            </div>
           </div>
 
-          <button type="submit" disabled={creating} style={{ marginTop: 12, padding: "10px 14px" }}>
-            {creating ? "Speichert..." : "Fahrzeug speichern"}
-          </button>
+          <div className="ltc-button-group">
+            <button type="submit" className="ltc-button ltc-button--primary" disabled={creating}>
+              {creating ? "Speichert..." : "Fahrzeug speichern"}
+            </button>
+          </div>
         </form>
       </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}
 
       {viewState === "loading" ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section--card">
           <div className="ltc-muted">Vehicles werden geladen...</div>
         </section>
       ) : null}
 
       {viewState === "ready" ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section--card">
           <h2>Meine Fahrzeuge</h2>
           {vehicles.length === 0 ? (
             <p className="ltc-muted">Noch keine Fahrzeuge vorhanden.</p>
           ) : (
-            <ul>
+            <ul className="ltc-list">
               {vehicles.map((vehicle) => (
-                <li key={vehicle.id}>
-                  <a href={`#/vehicles/${encodeURIComponent(vehicle.id)}`}>
+                <li key={vehicle.id} className="ltc-list__item">
+                  <a className="ltc-list__link" href={`#/vehicles/${encodeURIComponent(vehicle.id)}`}>
                     {vehicle.nickname?.trim() || vehicle.vin_masked}
                   </a>{" "}
                   <span className="ltc-muted">({vehicle.vin_masked})</span> ·{" "}
-                  <a href={trustFoldersHref(vehicle.id)}>Trust Folders</a>
+                  <a className="ltc-list__link" href={trustFoldersHref(vehicle.id)}>
+                    Trust Folders
+                  </a>
                 </li>
               ))}
             </ul>

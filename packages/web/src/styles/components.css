@@ -198,6 +198,46 @@
   transition: all var(--ltc-transition-fast);
 }
 
+/* ========== SYSTEM ERROR / STATE PAGES ========== */
+/* shared container used by NotFound/401/403/consent pages */
+.ltc-system-error {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ltc-space-4);
+}
+
+.ltc-system-error__card {
+  text-align: center;
+  max-width: 400px;
+}
+
+.ltc-system-error__icon {
+  font-size: 48px;
+  margin-bottom: var(--ltc-space-4);
+}
+
+.ltc-system-error__title {
+  font-size: var(--ltc-h2-size);
+}
+
+.ltc-system-error__message {
+  color: var(--ltc-color-text-secondary);
+  margin: var(--ltc-space-4) 0;
+}
+
+.ltc-system-error__actions {
+  display: flex;
+  gap: var(--ltc-space-3);
+  justify-content: center;
+  margin-top: var(--ltc-space-6);
+}
+
+.ltc-system-error__actions--column {
+  flex-direction: column;
+}
+
 .ltc-card--hoverable:hover {
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: var(--ltc-shadow-md);
@@ -379,6 +419,204 @@
   font-size: var(--ltc-text-xs);
   color: var(--ltc-color-error);
   margin-left: 28px;
+}
+
+/* ========== FORM LAYOUTS ========== */
+.ltc-form-grid {
+  display: grid;
+  gap: var(--ltc-space-2);
+  max-width: 420px;
+}
+
+.ltc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ltc-space-2);
+}
+
+.ltc-form-group__label {
+  font-size: var(--ltc-text-sm);
+  font-weight: 600;
+  color: var(--ltc-color-text-primary);
+}
+
+.ltc-form-group__input,
+.ltc-form-group__select,
+.ltc-form-group__textarea {
+  display: block;
+  margin-top: var(--ltc-space-2);
+  padding: var(--ltc-space-3) var(--ltc-space-4);
+  width: 100%;
+  font-size: var(--ltc-text-base);
+  font-family: var(--ltc-font-family);
+  background: var(--ltc-color-bg-secondary);
+  color: var(--ltc-color-text-primary);
+  border: 1px solid var(--ltc-color-border);
+  border-radius: var(--ltc-radius-base);
+  transition: all var(--ltc-transition-fast);
+}
+
+.ltc-form-group__input:focus,
+.ltc-form-group__select:focus,
+.ltc-form-group__textarea:focus {
+  outline: none;
+  border-color: var(--ltc-color-brand);
+  box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
+}
+
+.ltc-form-group__input:disabled,
+.ltc-form-group__select:disabled,
+.ltc-form-group__textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== BUTTON GROUPS ========== */
+.ltc-button-group {
+  display: flex;
+  gap: var(--ltc-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--ltc-space-4);
+}
+
+.ltc-button-group--block {
+  flex-direction: column;
+}
+
+.ltc-button-group--block button,
+.ltc-button-group--block .ltc-button {
+  width: 100%;
+}
+
+/* ========== MAIN LAYOUT ========== */
+.ltc-main {
+  padding: var(--ltc-space-3);
+}
+
+.ltc-main--wide {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ltc-main--narrow {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ========== CONTENT SECTIONS ========== */
+.ltc-section {
+  margin-top: var(--ltc-space-4);
+}
+
+.ltc-section--card {
+  margin-top: var(--ltc-space-4);
+}
+
+.ltc-section__subtitle {
+  font-size: var(--ltc-text-sm);
+  color: var(--ltc-color-text-secondary);
+  margin-top: var(--ltc-space-2);
+}
+
+/* ========== ERROR MESSAGING ========== */
+.ltc-error-message {
+  color: var(--ltc-color-error);
+  font-size: var(--ltc-text-sm);
+  margin-top: var(--ltc-space-2);
+}
+
+.ltc-error-banner {
+  background: var(--ltc-color-error-bg);
+  border: 1px solid var(--ltc-color-error-border);
+  color: var(--ltc-color-text-primary);
+  padding: var(--ltc-space-3) var(--ltc-space-4);
+  border-radius: var(--ltc-radius-base);
+  margin-top: var(--ltc-space-4);
+}
+
+/* ========== LIST STYLES ========== */
+.ltc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ltc-list__item {
+  padding: var(--ltc-space-2) 0;
+  border-bottom: 1px solid var(--ltc-color-border);
+}
+
+.ltc-list__item:last-child {
+  border-bottom: none;
+}
+
+.ltc-list__link {
+  color: var(--ltc-color-brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ltc-list__link:hover {
+  text-decoration: underline;
+}
+
+/* ========== BUTTON GROUPS - EXTENDED ========== */
+.ltc-button-group--row {
+  margin-top: var(--ltc-space-3);
+}
+
+/* ========== FORM GROUP WRAPPER ========== */
+.ltc-form-group {
+  display: block;
+  margin-bottom: var(--ltc-space-3);
+}
+
+.ltc-form-group__label {
+  display: block;
+  margin-bottom: var(--ltc-space-2);
+  font-weight: 500;
+  color: var(--ltc-color-text-primary);
+}
+
+/* ========== HELPER & VALIDATION TEXT ========== */
+.ltc-helper-text {
+  font-size: var(--ltc-text-sm);
+  color: var(--ltc-color-text-secondary);
+  margin-top: var(--ltc-space-2);
+  line-height: var(--ltc-line-height-tight);
+}
+
+.ltc-helper-text--error {
+  color: var(--ltc-color-error);
+}
+
+/* ========== STEP INDICATORS ========== */
+.ltc-stepper {
+  display: flex;
+  gap: var(--ltc-space-3);
+  list-style: none;
+  padding: 0;
+  margin: var(--ltc-space-3) 0;
+  font-weight: 500;
+}
+
+.ltc-stepper li {
+  position: relative;
+  opacity: 1;
+  transition: opacity var(--ltc-transition-fast);
+}
+
+.ltc-stepper__inactive {
+  opacity: 0.65;
+}
+
+/* ========== SECTION VARIANTS ========== */
+.ltc-section--error {
+  background: var(--ltc-color-error-bg);
+  border: 1px solid var(--ltc-color-error-border);
+  padding: var(--ltc-space-3);
+  border-radius: var(--ltc-radius-base);
+  margin-top: var(--ltc-space-4);
 }
 
 /* ========== SKELETON ========== */

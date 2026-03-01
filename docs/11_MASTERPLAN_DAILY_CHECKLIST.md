@@ -78,6 +78,7 @@
 - [x] Debug-/Blog-/News-Scaffold-Routen und zentralen Route-Renderer aus `App.tsx` ausgelagert.
 - [x] Scaffold-Shell in Intro-/Gate-Teilkomponenten zerlegt und explizite `notFound`-Route ergänzt.
 - [x] 401/403/404-Systemzustände auf gemeinsames Layout umgestellt und `notFound` per E2E abgesichert.
+- [x] Blog/News‑Routes vorerst deaktiviert durch Feature‑Flag (FEATURES.blogNews) – Code bei Bedarf wieder aktivierbar.
 - [x] `App.tsx` weiter auf Routing, Gates und Verdrahtung reduziert.
 - [x] Build/E2E nach diesem Refactor erneut bestätigen (`18/18`).
 
