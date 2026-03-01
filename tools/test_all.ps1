@@ -40,6 +40,25 @@ function Invoke-BomScan {
   throw "Weder 'python' noch 'py' gefunden fuer BOM-Gate."
 }
 
+function Invoke-NpmCiOrReuseExisting {
+  & npm ci --no-audit --fund=false
+  $npmCiExit = $LASTEXITCODE
+  if ($npmCiExit -eq 0) {
+    return
+  }
+
+  if ($npmCiExit -eq -4048) {
+    Write-Warning "npm ci hit a Windows file lock (EPERM). Trying npm install as a local repair fallback."
+    & npm install --no-audit --fund=false
+    if ($LASTEXITCODE -eq 0) {
+      return
+    }
+    throw "npm install fallback failed (exit=$LASTEXITCODE)"
+  }
+
+  throw "npm ci failed (exit=$npmCiExit)"
+}
+
 try {
   $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
   Set-Location $repoRoot
@@ -98,8 +117,7 @@ try {
   Invoke-Step -Name "Web build (packages/web): npm ci + npm run build" -Script {
     Push-Location (Join-Path $repoRoot "packages/web")
     try {
-      & npm ci --no-audit --fund=false
-      if ($LASTEXITCODE -ne 0) { throw "npm ci failed (exit=$LASTEXITCODE)" }
+      Invoke-NpmCiOrReuseExisting
 
       if ((Test-Path ".\node_modules\.bin\tsc.cmd") -or (Test-Path "./node_modules/.bin/tsc")) {
         & npx --no-install tsc -v | Out-Host

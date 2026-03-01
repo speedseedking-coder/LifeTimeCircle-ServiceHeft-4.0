@@ -35,30 +35,30 @@ _SEED: dict[CmsContentType, tuple[SeedArticle, ...]] = {
             title="Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
             excerpt=(
                 "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, "
-                "sondern durch nachvollziehbare Eintraege, Belege und klare Zuordnung."
+                "sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung."
             ),
             content_md=(
-                "Eine belastbare Fahrzeughistorie beginnt nicht mit einer grossen Behauptung, "
+                "Eine belastbare Fahrzeughistorie beginnt nicht mit einer großen Behauptung, "
                 "sondern mit einem sauberen Eintrag und einem passenden Nachweis.\n\n"
-                "**Was in jeden guten Eintrag gehoert:**\n"
+                "**Was in jeden guten Eintrag gehört:**\n"
                 "- Datum der Arbeit\n"
                 "- Typ des Eintrags\n"
-                "- durchgefuehrt von\n"
+                "- durchgeführt von\n"
                 "- Kilometerstand\n"
                 "- kurze, sachliche Beschreibung\n\n"
                 "**Welche Nachweise den Unterschied machen:**\n"
                 "- Rechnung oder Werkstattbeleg\n"
-                "- Pruefbericht oder Gutachten\n"
+                "- Prüfbericht oder Gutachten\n"
                 "- Foto der Arbeit oder des Bauteils\n"
                 "- Zusatzdokumente nur dann, wenn sie zum Eintrag passen\n\n"
-                "Wenn Eintraege und Nachweise sauber zusammengehoeren, wird Historie nachvollziehbar. "
+                "Wenn Einträge und Nachweise sauber zusammengehören, wird Historie nachvollziehbar. "
                 "Genau darauf baut das Service Heft 4.0 auf."
             ),
             published_at=datetime(2026, 3, 1, 9, 0, tzinfo=timezone.utc),
         ),
         SeedArticle(
             slug="trust-ampel-guide",
-            title="Trust-Ampel richtig lesen: Dokumentationsqualitaet statt Technikurteil",
+            title="Trust-Ampel richtig lesen: Dokumentationsqualität statt Technikurteil",
             excerpt=(
                 "Die Trust-Ampel beschreibt, wie gut Historie und Nachweise dokumentiert sind. "
                 "Sie ist bewusst keine technische Diagnose."
@@ -67,33 +67,33 @@ _SEED: dict[CmsContentType, tuple[SeedArticle, ...]] = {
                 "Die Trust-Ampel zeigt, wie gut eine Fahrzeughistorie dokumentiert und nachweisbar ist. "
                 "Sie bewertet nicht, ob ein Fahrzeug technisch gut oder schlecht ist.\n\n"
                 "**So lesen Sie die Anzeige richtig:**\n"
-                "- GRUEN steht fuer gut belegte und nachvollziehbare Historie\n"
-                "- GELB zeigt, dass Dokumentation vorhanden ist, aber Luecken bleiben\n"
-                "- ORANGE oder ROT weisen auf geringe Nachweisqualitaet oder fehlende Belege hin\n\n"
+                "- GRÜN steht für gut belegte und nachvollziehbare Historie\n"
+                "- GELB zeigt, dass Dokumentation vorhanden ist, aber Lücken bleiben\n"
+                "- ORANGE oder ROT weisen auf geringe Nachweisqualität oder fehlende Belege hin\n\n"
                 "**Was die Bewertung verbessert:**\n"
-                "- Eintraege vollstaendig anlegen\n"
+                "- Einträge vollständig anlegen\n"
                 "- Nachweise direkt am passenden Eintrag hochladen\n"
-                "- Unfall- und Pruefkontexte nicht weglassen\n"
+                "- Unfall- und Prüfkontexte nicht weglassen\n"
                 "- Dokumentation aktuell und plausibel halten\n\n"
-                "Die Trust-Ampel bleibt damit ein Werkzeug fuer Dokumentationsqualitaet. "
-                "Sie ersetzt keine technische Pruefung und kein Gutachten."
+                "Die Trust-Ampel bleibt damit ein Werkzeug für Dokumentationsqualität. "
+                "Sie ersetzt keine technische Prüfung und kein Gutachten."
             ),
             published_at=datetime(2026, 2, 28, 9, 0, tzinfo=timezone.utc),
         ),
         SeedArticle(
             slug="digital-vehicle-passport",
-            title="Serviceeintraege sauber vorbereiten: Welche Angaben wirklich helfen",
+            title="Serviceeinträge sauber vorbereiten: Welche Angaben wirklich helfen",
             excerpt=(
-                "Datum, Typ, durchgefuehrt von, Kilometerstand und passender Nachweis machen "
-                "aus einem Eintrag eine pruefbare Historie."
+                "Datum, Typ, durchgeführt von, Kilometerstand und passender Nachweis machen "
+                "aus einem Eintrag eine prüfbare Historie."
             ),
             content_md=(
-                "Ein Eintrag wird erst dann nuetzlich, wenn er fuer andere lesbar und pruefbar bleibt. "
-                "Dafuer helfen wenige Pflichtangaben mehr als viel Freitext.\n\n"
+                "Ein Eintrag wird erst dann nützlich, wenn er für andere lesbar und prüfbar bleibt. "
+                "Dafür helfen wenige Pflichtangaben mehr als viel Freitext.\n\n"
                 "**Diese Felder sollten sauber gepflegt sein:**\n"
                 "- Datum\n"
                 "- Typ\n"
-                "- durchgefuehrt von\n"
+                "- durchgeführt von\n"
                 "- Kilometerstand\n"
                 "- kurze Bemerkung nur mit relevanten Fakten\n\n"
                 "**Typische Fehler, die Trust kosten:**\n"
@@ -102,7 +102,7 @@ _SEED: dict[CmsContentType, tuple[SeedArticle, ...]] = {
                 "- Beleg ohne Bezug zum Eintrag\n"
                 "- Fotos oder PDFs ohne erkennbaren Kontext\n\n"
                 "Wenn du diese Punkte konsequent pflegst, steigen Nachvollziehbarkeit, Trust-Stufe "
-                "und Qualitaet des gesamten Verlaufs."
+                "und Qualität des gesamten Verlaufs."
             ),
             published_at=datetime(2026, 2, 25, 9, 0, tzinfo=timezone.utc),
         ),
@@ -112,42 +112,42 @@ _SEED: dict[CmsContentType, tuple[SeedArticle, ...]] = {
             slug="eu-digital-vehicle-passport-2027",
             title="Produktstatus: Public-QR bleibt bewusst datenarm",
             excerpt=(
-                "Der oeffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. "
-                "Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst aussen vor."
+                "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. "
+                "Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor."
             ),
             content_md=(
-                "Der Public-QR Mini-Check bleibt bewusst knapp. Er zeigt nur das, was oeffentlich "
+                "Der Public-QR Mini-Check bleibt bewusst knapp. Er zeigt nur das, was öffentlich "
                 "vertretbar und fachlich sinnvoll ist.\n\n"
                 "**Was sichtbar ist:**\n"
-                "- Ampel Rot, Orange, Gelb oder Gruen\n"
-                "- kurze textliche Hinweise zur Dokumentationsqualitaet\n"
+                "- Ampel Rot, Orange, Gelb oder Grün\n"
+                "- kurze textliche Hinweise zur Dokumentationsqualität\n"
                 "- keine Halterdaten und keine Technikdiagnose\n\n"
                 "**Was bewusst nicht sichtbar ist:**\n"
                 "- keine Kennzahlen oder Prozentwerte\n"
                 "- keine Dokumente oder Downloads\n"
                 "- keine internen Freigaben, keine PII und keine Diagnosedaten\n\n"
-                "Damit bleibt der oeffentliche Einstieg nuetzlich, ohne in Detaildaten oder "
+                "Damit bleibt der öffentliche Einstieg nützlich, ohne in Detaildaten oder "
                 "sicherheitskritische Bereiche zu kippen."
             ),
             published_at=datetime(2026, 3, 1, 9, 0, tzinfo=timezone.utc),
         ),
         SeedArticle(
             slug="ltc-expands-to-fleet-management",
-            title="Produktupdate: Uploads starten weiterhin in Quarantaene",
+            title="Produktupdate: Uploads starten weiterhin in Quarantäne",
             excerpt=(
-                "Nachweise werden zuerst geprueft. Erst danach sind sie im vorgesehenen Flow "
-                "nutzbar. Das schuetzt Public- und Kernbereiche vor ungeprueften Dateien."
+                "Nachweise werden zuerst geprüft. Erst danach sind sie im vorgesehenen Flow "
+                "nutzbar. Das schützt Public- und Kernbereiche vor ungeprüften Dateien."
             ),
             content_md=(
-                "Dokumente und Nachweise werden im Produktfluss nicht ungeprueft durchgereicht. "
-                "Uploads starten weiterhin im Pruefpfad.\n\n"
+                "Dokumente und Nachweise werden im Produktfluss nicht ungeprüft durchgereicht. "
+                "Uploads starten weiterhin im Prüfpfad.\n\n"
                 "**Warum dieser Schritt wichtig ist:**\n"
-                "- ungepruefte Dateien landen nicht direkt im vorgesehenen Nutzpfad\n"
+                "- ungeprüfte Dateien landen nicht direkt im vorgesehenen Nutzpfad\n"
                 "- Freigaben bleiben an Scan- und Admin-Status gekoppelt\n"
                 "- Public- und Kernansichten zeigen keine Dokumente ohne vorgesehenen Status\n\n"
-                "**Was das fuer Nutzer bedeutet:**\n"
+                "**Was das für Nutzer bedeutet:**\n"
                 "- Upload zuerst sauber zuordnen\n"
-                "- Status pruefen\n"
+                "- Status prüfen\n"
                 "- bei Bedarf im Admin- oder Dokumenten-Flow nacharbeiten\n\n"
                 "Das ist kein Komfortdetail, sondern Teil der Sicherheits- und Governance-Logik des Produkts."
             ),
@@ -161,16 +161,16 @@ _SEED: dict[CmsContentType, tuple[SeedArticle, ...]] = {
                 "Dokument- oder Admin-Prozesse."
             ),
             content_md=(
-                "Die Rollenlogik bleibt eng und absichtlich unspektakulaer. Moderator ist fuer "
-                "Inhaltsflaechen da, nicht fuer operative Fahrzeug- oder Governance-Aktionen.\n\n"
+                "Die Rollenlogik bleibt eng und absichtlich unspektakulär. Moderator ist für "
+                "Inhaltsflächen da, nicht für operative Fahrzeug- oder Governance-Aktionen.\n\n"
                 "**Das bedeutet konkret:**\n"
-                "- Blog und News bleiben der vorgesehene Bereich fuer Moderation\n"
-                "- Fahrzeuge, Dokumente, Export und Admin bleiben serverseitig geschuetzt\n"
+                "- Blog und News bleiben der vorgesehene Bereich für Moderation\n"
+                "- Fahrzeuge, Dokumente, Export und Admin bleiben serverseitig geschützt\n"
                 "- hohe Rechte und sensible Freigaben bleiben bei Admin oder Superadmin\n\n"
                 "**Warum das wichtig ist:**\n"
-                "- geringere Angriffsflaeche\n"
+                "- geringere Angriffsfläche\n"
                 "- klare Verantwortlichkeiten\n"
-                "- weniger Risiko fuer Fehlbedienung in sensiblen Bereichen\n\n"
+                "- weniger Risiko für Fehlbedienung in sensiblen Bereichen\n\n"
                 "Die Rollenwahrheit ist damit kein Nebensatz in der Doku, sondern fester Teil des Produktverhaltens."
             ),
             published_at=datetime(2026, 2, 20, 9, 0, tzinfo=timezone.utc),

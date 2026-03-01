@@ -498,14 +498,11 @@
   margin: 0 auto;
 }
 
-<<<<<<< HEAD
 .ltc-main--xl {
   max-width: 1440px;
   margin: 0 auto;
 }
 
-=======
->>>>>>> origin/main
 .ltc-main--narrow {
   max-width: 600px;
   margin: 0 auto;
@@ -798,7 +795,6 @@
   gap: var(--ltc-space-2);
 }
 
-<<<<<<< HEAD
 .ltc-page-nav--compact .ltc-list {
   gap: var(--ltc-space-1);
 }
@@ -1035,8 +1031,6 @@
   line-height: 1.45;
 }
 
-=======
->>>>>>> origin/main
 .ltc-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1236,7 +1230,6 @@
   margin-top: var(--ltc-space-3);
 }
 
-<<<<<<< HEAD
 .ltc-admin-list {
   display: grid;
   gap: var(--ltc-space-3);
@@ -1249,13 +1242,10 @@
   align-content: start;
 }
 
-=======
->>>>>>> origin/main
 .ltc-wordbreak {
   word-break: break-all;
 }
 
-<<<<<<< HEAD
 .ltc-design-swatch-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1295,8 +1285,6 @@
   background: var(--ltc-color-trust-yellow);
 }
 
-=======
->>>>>>> origin/main
 
 /* ========== SKELETON ========== */
 .ltc-skeleton {
@@ -1369,25 +1357,19 @@
     margin: 0;
   }
 
-<<<<<<< HEAD
   .ltc-main--xl {
     max-width: 100%;
     margin: 0;
   }
 
-=======
->>>>>>> origin/main
   .ltc-form-grid {
     max-width: 100%;
   }
 
-<<<<<<< HEAD
   .ltc-form-grid--wide {
     grid-template-columns: 1fr;
   }
 
-=======
->>>>>>> origin/main
   .ltc-button-group {
     flex-direction: column;
   }
@@ -1427,14 +1409,11 @@
     grid-template-columns: 1fr;
   }
 
-<<<<<<< HEAD
   .ltc-layout-grid--sidebar,
   .ltc-layout-grid--split {
     grid-template-columns: 1fr;
   }
 
-=======
->>>>>>> origin/main
   .ltc-entry-card__actions,
   .ltc-admin-actions {
     flex-direction: column;
@@ -1456,13 +1435,10 @@
     grid-template-columns: 1fr;
   }
 
-<<<<<<< HEAD
   .ltc-kpi-band {
     grid-template-columns: 1fr;
   }
 
-=======
->>>>>>> origin/main
   h1,
   h2,
   h3 {
@@ -1480,13 +1456,10 @@
     max-width: 100%;
   }
 
-<<<<<<< HEAD
   .ltc-main--xl {
     max-width: 100%;
   }
 
-=======
->>>>>>> origin/main
   .ltc-trust-metadata {
     grid-template-columns: 1fr;
   }
@@ -1498,19 +1471,15 @@
     max-width: 1200px;
   }
 
-<<<<<<< HEAD
   .ltc-main--xl {
     max-width: 1440px;
   }
 
-=======
->>>>>>> origin/main
   .ltc-button-group--row {
     flex-direction: row;
   }
 }
 
-<<<<<<< HEAD
 @media (max-width: 1024px) {
   .ltc-layout-grid--sidebar,
   .ltc-layout-grid--split {
@@ -1549,6 +1518,3 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
-
-=======
->>>>>>> origin/main

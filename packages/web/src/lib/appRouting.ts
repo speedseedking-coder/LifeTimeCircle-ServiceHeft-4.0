@@ -19,6 +19,8 @@ export type Route =
   | { kind: "blogPost"; slug: string }
   | { kind: "newsList" }
   | { kind: "newsPost"; slug: string }
+  | { kind: "cmsBlog" }
+  | { kind: "cmsNews" }
   | { kind: "publicQr"; vehicleId: string }
   | { kind: "auth" }
   | { kind: "consent" }
@@ -90,6 +92,8 @@ export function parseHash(rawHash: string): Route {
     if (parts[0] === "blog" && parts[1]) return { kind: "blogPost", slug: parts[1] };
     if (parts[0] === "news" && parts.length === 1) return { kind: "newsList" };
     if (parts[0] === "news" && parts[1]) return { kind: "newsPost", slug: parts[1] };
+    if (parts[0] === "cms" && parts[1] === "blog" && parts.length === 2) return { kind: "cmsBlog" };
+    if (parts[0] === "cms" && parts[1] === "news" && parts.length === 2) return { kind: "cmsNews" };
   }
 
   if (parts[0] === "auth") return { kind: "auth" };
@@ -135,6 +139,10 @@ export function getBgForRoute(route: Route): BgCfg | null {
       return { url: BG.blog, opacity: 0.22, size: "cover", position: "center" };
     case "newsList":
     case "newsPost":
+      return { url: BG.news, opacity: 0.22, size: "cover", position: "center" };
+    case "cmsBlog":
+      return { url: BG.blog, opacity: 0.22, size: "cover", position: "center" };
+    case "cmsNews":
       return { url: BG.news, opacity: 0.22, size: "cover", position: "center" };
     case "publicQr":
       return { url: BG.serviceheft, opacity: 0.22, size: "cover", position: "center" };
@@ -185,11 +193,7 @@ export function getPageTitle(route: Route): string {
     case "notFound":
       return "404";
     case "entry":
-<<<<<<< HEAD
       return "Einsteigen";
-=======
-      return "Eintritt";
->>>>>>> origin/main
     case "debugPublicSite":
       return "Debug: Public Site (API)";
     case "faq":
@@ -203,11 +207,7 @@ export function getPageTitle(route: Route): string {
     case "datenschutz":
       return "Datenschutz";
     case "contact":
-<<<<<<< HEAD
       return "Kontakt";
-=======
-      return "Contact";
->>>>>>> origin/main
     case "blogList":
       return "Blog";
     case "blogPost":
@@ -216,6 +216,10 @@ export function getPageTitle(route: Route): string {
       return "News";
     case "newsPost":
       return `News: ${route.slug}`;
+    case "cmsBlog":
+      return "CMS Blog";
+    case "cmsNews":
+      return "CMS News";
     case "publicQr":
       return `Public QR: ${route.vehicleId}`;
     case "auth":

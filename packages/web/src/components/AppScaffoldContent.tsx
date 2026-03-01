@@ -3,6 +3,7 @@ import { type Route } from "../lib/appRouting";
 import AuthPage from "../pages/AuthPage";
 import BlogListPage from "../pages/BlogListPage";
 import BlogPostPage from "../pages/BlogPostPage";
+import CmsEditorPage from "../pages/CmsEditorPage";
 import ConsentPage from "../pages/ConsentPage";
 import DebugPublicSitePage from "../pages/DebugPublicSitePage";
 import DocumentsPage from "../pages/DocumentsPage";
@@ -32,6 +33,14 @@ export default function AppScaffoldContent(props: {
       return <BlogPostPage slug={props.route.slug} />;
     case "newsPost":
       return <NewsPostPage slug={props.route.slug} />;
+    case "cmsBlog":
+      return props.gateState === "ready" && props.actorRole && (props.actorRole === "moderator" || props.actorRole === "admin" || props.actorRole === "superadmin") ? (
+        <CmsEditorPage contentType="blog" actorRole={props.actorRole} />
+      ) : null;
+    case "cmsNews":
+      return props.gateState === "ready" && props.actorRole && (props.actorRole === "moderator" || props.actorRole === "admin" || props.actorRole === "superadmin") ? (
+        <CmsEditorPage contentType="news" actorRole={props.actorRole} />
+      ) : null;
     case "publicQr":
       return (
         <div style={{ marginTop: 12 }}>

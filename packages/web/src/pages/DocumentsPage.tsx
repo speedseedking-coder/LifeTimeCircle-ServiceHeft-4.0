@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-=======
-import { FormEvent, useEffect, useMemo, useState } from "react";
->>>>>>> origin/main
 import { Badge, type BadgeVariant } from "../components/ui/Badge";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import { authHeaders, getAuthToken } from "../lib.auth";
@@ -105,7 +101,6 @@ function renderStatBadges(values: Record<string, number>): JSX.Element[] {
     ));
 }
 
-<<<<<<< HEAD
 function DocumentMetaCard(props: {
   title: string;
   doc: DocumentRecord;
@@ -113,9 +108,6 @@ function DocumentMetaCard(props: {
   onRefresh?: (next: DocumentRecord) => void;
   onNotice?: (message: string) => void;
 }) {
-=======
-function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: boolean; onRefresh?: (next: DocumentRecord) => void }) {
->>>>>>> origin/main
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -164,7 +156,6 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
 
       {props.admin ? (
         <div className="ltc-button-group">
-<<<<<<< HEAD
           <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"), `Scan-Status für ${props.doc.filename} auf CLEAN gesetzt.`)} className="ltc-button ltc-button--secondary">
             Scan CLEAN
           </button>
@@ -175,18 +166,6 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
             Approve
           </button>
           <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id), `${props.doc.filename} wurde abgelehnt.`)} className="ltc-button ltc-button--secondary">
-=======
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"))} className="ltc-button ltc-button--secondary">
-            Scan CLEAN
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "INFECTED"))} className="ltc-button ltc-button--secondary">
-            Scan INFECTED
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => approveDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
-            Approve
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
->>>>>>> origin/main
             Reject
           </button>
         </div>
@@ -199,10 +178,7 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
 
 export default function DocumentsPage(): JSX.Element {
   const [error, setError] = useState("");
-<<<<<<< HEAD
   const [notice, setNotice] = useState("");
-=======
->>>>>>> origin/main
   const [errorField, setErrorField] = useState<"upload" | "lookup" | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -213,11 +189,8 @@ export default function DocumentsPage(): JSX.Element {
   const [adminDocs, setAdminDocs] = useState<DocumentRecord[]>([]);
   const [adminVisible, setAdminVisible] = useState(false);
   const [adminForbidden, setAdminForbidden] = useState(false);
-<<<<<<< HEAD
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const lookupInputRef = useRef<HTMLInputElement | null>(null);
-=======
->>>>>>> origin/main
   const docStats = useMemo(
     () =>
       calculateDocumentStats([
@@ -268,20 +241,14 @@ export default function DocumentsPage(): JSX.Element {
     if (!selectedFile) {
       setError("Bitte zuerst eine Datei wählen.");
       setErrorField("upload");
-<<<<<<< HEAD
       setNotice("");
       uploadInputRef.current?.focus();
-=======
->>>>>>> origin/main
       return;
     }
 
     setUploading(true);
     setError("");
-<<<<<<< HEAD
     setNotice("");
-=======
->>>>>>> origin/main
     setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
@@ -304,10 +271,7 @@ export default function DocumentsPage(): JSX.Element {
     setLookupId(res.body.id);
     setSelectedFile(null);
     setErrorField(null);
-<<<<<<< HEAD
     setNotice(`Dokument ${res.body.filename} wurde hochgeladen und in den Arbeitskontext übernommen.`);
-=======
->>>>>>> origin/main
     const input = document.getElementById("documents-upload-input") as HTMLInputElement | null;
     if (input) input.value = "";
 
@@ -322,20 +286,14 @@ export default function DocumentsPage(): JSX.Element {
     if (!id) {
       setError("Bitte eine Dokument-ID eingeben.");
       setErrorField("lookup");
-<<<<<<< HEAD
       setNotice("");
       lookupInputRef.current?.focus();
-=======
->>>>>>> origin/main
       return;
     }
 
     setLookupBusy(true);
     setError("");
-<<<<<<< HEAD
     setNotice("");
-=======
->>>>>>> origin/main
     setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
@@ -358,10 +316,7 @@ export default function DocumentsPage(): JSX.Element {
 
     setLookupDoc(res.body);
     setErrorField(null);
-<<<<<<< HEAD
     setNotice(`Dokument ${res.body.filename} wurde geladen.`);
-=======
->>>>>>> origin/main
   }
 
   function replaceAdminDoc(next: DocumentRecord) {
@@ -371,7 +326,6 @@ export default function DocumentsPage(): JSX.Element {
   }
 
   return (
-<<<<<<< HEAD
     <main className="ltc-main ltc-main--xl" data-testid="documents-page">
       <section className="ltc-page-intro">
         <div className="ltc-page-intro__copy">
@@ -510,141 +464,10 @@ export default function DocumentsPage(): JSX.Element {
         <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--info" role="status" aria-live="polite" data-testid="documents-notice">
           <div className="ltc-state-panel__title">Status</div>
           <p className="ltc-state-panel__copy">{notice}</p>
-=======
-    <main className="ltc-main">
-      <h1>Documents</h1>
-      <p>Live-Anbindung für Upload, Dokument-Abruf, Download und Admin-Quarantäne gemäß Backend-Vertrag.</p>
-
-      <section className="ltc-card ltc-section ltc-section--card">
-        <h2>Upload</h2>
-        <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
-        <form onSubmit={(e) => void onUpload(e)}>
-          <label className="ltc-form-group__label" htmlFor="documents-upload-input">
-            Dokument auswählen
-          </label>
-          <input
-            id="documents-upload-input"
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-            aria-label="Dokument für Upload auswählen"
-            aria-required="true"
-            aria-invalid={errorField === "upload"}
-            aria-describedby={errorField === "upload" ? "documents-upload-error" : undefined}
-            onChange={(e) => setSelectedFile(e.currentTarget.files?.[0] ?? null)}
-          />
-          <div className="ltc-button-group">
-            <button type="submit" disabled={uploading || !selectedFile} className="ltc-button ltc-button--primary">
-              {uploading ? "Lädt hoch..." : "Dokument hochladen"}
-            </button>
-          </div>
-          {errorField === "upload" && error ? (
-            <p id="documents-upload-error" className="ltc-helper-text ltc-helper-text--error">
-              {error}
-            </p>
-          ) : null}
-        </form>
-      </section>
-
-      <section className="ltc-card ltc-section ltc-section--card">
-        <h2>Dokument-ID prüfen</h2>
-        <form onSubmit={(e) => void onLookup(e)}>
-          <label className="ltc-form-group__label" htmlFor="documents-lookup-input">
-            Dokument-ID
-          </label>
-          <input
-            id="documents-lookup-input"
-            className="ltc-form-group__input"
-            value={lookupId}
-            onChange={(e) => setLookupId(e.target.value)}
-            placeholder="Dokument-ID eingeben"
-            autoComplete="off"
-            aria-required="true"
-            aria-invalid={errorField === "lookup"}
-            aria-describedby={errorField === "lookup" ? "documents-lookup-error" : undefined}
-          />
-          <div className="ltc-button-group">
-            <button type="submit" disabled={lookupBusy} className="ltc-button ltc-button--primary">
-              {lookupBusy ? "Prüft..." : "Dokument laden"}
-            </button>
-          </div>
-          {errorField === "lookup" && error ? (
-            <p id="documents-lookup-error" className="ltc-helper-text ltc-helper-text--error">
-              {error}
-            </p>
-          ) : null}
-        </form>
-      </section>
-
-      {docStats.total > 0 ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Dokumentenstatus</h2>
-          <div className="ltc-grid ltc-grid--3">
-            <div>
-              <strong>Gesamt</strong>
-              <p className="ltc-muted">{docStats.total} Dokumente im aktuellen Arbeitskontext</p>
-            </div>
-            <div>
-              <strong>Volumen</strong>
-              <p className="ltc-muted">{formatBytes(docStats.totalSize)} Gesamtdatenmenge</p>
-            </div>
-            <div>
-              <strong>Formate</strong>
-              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byContentType)}</div>
-            </div>
-          </div>
-          <div className="ltc-grid ltc-grid--3 ltc-mt-4">
-            <div>
-              <strong>Freigabe</strong>
-              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byStatus)}</div>
-            </div>
-            <div>
-              <strong>Scan</strong>
-              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byScanStatus)}</div>
-            </div>
-            <div>
-              <strong>PII</strong>
-              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byPiiStatus)}</div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {error ? <InlineErrorBanner message={error} /> : null}
-
-      {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} /> : null}
-
-      {recentDocs.length > 0 ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Kürzlich hochgeladen</h2>
-          <ul className="ltc-list">
-            {recentDocs.map((doc) => (
-              <li key={doc.id} className="ltc-list__item">
-                <a href={`#/documents`} className="ltc-list__link" onClick={() => setLookupDoc(doc)}>
-                  {doc.filename}
-                </a>{" "}
-                <span className="ltc-muted">({doc.status} / {doc.scan_status})</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {adminVisible ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Admin-Quarantäne</h2>
-          {adminDocs.length === 0 ? (
-            <p className="ltc-muted">Keine Dokumente in Quarantäne.</p>
-          ) : (
-            adminDocs.map((doc) => (
-              <DocumentMetaCard key={doc.id} title={`Quarantäne: ${doc.filename}`} doc={doc} admin onRefresh={replaceAdminDoc} />
-            ))
-          )}
->>>>>>> origin/main
         </section>
       ) : null}
       {error && errorField === null ? <InlineErrorBanner message={error} /> : null}
 
-<<<<<<< HEAD
       <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section">
         <div className="ltc-card-stack">
           {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} onNotice={setNotice} /> : null}
@@ -692,15 +515,6 @@ export default function DocumentsPage(): JSX.Element {
         </aside>
       </div>
 
-=======
-      {adminForbidden ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Admin-Quarantäne</h2>
-          <p className="ltc-muted">Admin-Review ist für die aktuelle Rolle nicht sichtbar.</p>
-        </section>
-      ) : null}
-
->>>>>>> origin/main
       <section className="ltc-section">
         <h2>Navigation (Hash)</h2>
         <ul className="ltc-list">
