@@ -37,18 +37,13 @@ function TrustLightBadge({ value }: { value: TrustLight }) {
   const color = value === "GREEN" ? "#16a34a" : value === "YELLOW" ? "#ca8a04" : value === "ORANGE" ? "#ea580c" : "#dc2626";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div className="ltc-trust-badge">
       <span
-        aria-label={`Trust-Ampel: ${value}`}
-        style={{
-          width: 14,
-          height: 14,
-          borderRadius: 999,
-          background: color,
-          display: "inline-block",
-        }}
+        aria-label={`Trust light indicator: ${value}`}
+        className="ltc-trust-badge__light"
+        style={{ background: color }}
       />
-      <strong style={{ letterSpacing: 0.3 }}>{value}</strong>
+      <strong className="ltc-trust-badge__label">{value}</strong>
     </div>
   );
 }
@@ -109,34 +104,19 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
   const trustLight = normalizeTrustLight(data?.trust_light || "YELLOW");
 
   return (
-    <main
-      style={{
-        maxWidth: 860,
-        margin: "0 auto",
-        padding: 16,
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
-      }}
-    >
-      <header style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, opacity: 0.75 }}>LifeTimeCircle</div>
-        <h1 style={{ margin: "6px 0 0", fontSize: 22 }}>Public QR</h1>
+    <main className="ltc-main ltc-public-qr" role="main" aria-label="Public QR Fahrzeugstatus">
+      <header className="ltc-public-qr__header" aria-label="Seiteninformationen">
+        <div className="ltc-public-qr__subtitle">LifeTimeCircle</div>
+        <h1 className="ltc-public-qr__title">Public QR</h1>
       </header>
 
-      <section
-        style={{
-          border: "1px solid rgba(0,0,0,0.12)",
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>Trust-Ampel</h2>
+      <section className="ltc-trust-card" aria-label="Trust-Ampel Bewertung">
+        <div className="ltc-trust-card__header">
+          <h2 className="ltc-trust-card__title">Trust-Ampel</h2>
           <TrustLightBadge value={trustLight} />
         </div>
 
-        <div style={{ marginTop: 12, lineHeight: 1.4 }}>
+        <div className="ltc-trust-card__content" aria-live="polite" aria-atomic="true">
           {loading && <div>laedt ...</div>}
 
           {!loading && error && (
@@ -146,21 +126,29 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
           )}
 
           {!loading && !error && (
-            <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ opacity: 0.9 }}>{data?.hint || "Hinweis nicht verfuegbar."}</div>
-              <div style={{ display: "grid", gap: 6, fontSize: 14, opacity: 0.88 }}>
-                <div>
-                  <strong>Historie:</strong> {data?.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}
-                </div>
-                <div>
-                  <strong>Nachweise:</strong> {data?.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}
-                </div>
-                <div>
-                  <strong>Verifizierung:</strong> {data?.verification_level || "nicht verfuegbar"}
-                </div>
-                <div>
-                  <strong>Unfallstatus:</strong> {data?.accident_status_label || "Unbekannt"}
-                </div>
+            <div
+              className="ltc-trust-metadata"
+              aria-label="Trust-Metadaten"
+              aria-description="Diese Liste beschreibt Hinweis, Historie, Nachweise, Verifizierung und Unfallstatus."
+            >
+              <div className="ltc-trust-metadata__item">
+                <span className="ltc-trust-metadata__value">{data?.hint || "Hinweis nicht verfuegbar."}</span>
+              </div>
+              <div className="ltc-trust-metadata__item">
+                <span className="ltc-trust-metadata__label">Historie:</span>
+                <span className="ltc-trust-metadata__value">{data?.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}</span>
+              </div>
+              <div className="ltc-trust-metadata__item">
+                <span className="ltc-trust-metadata__label">Nachweise:</span>
+                <span className="ltc-trust-metadata__value">{data?.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"}</span>
+              </div>
+              <div className="ltc-trust-metadata__item">
+                <span className="ltc-trust-metadata__label">Verifizierung:</span>
+                <span className="ltc-trust-metadata__value">{data?.verification_level || "nicht verfuegbar"}</span>
+              </div>
+              <div className="ltc-trust-metadata__item">
+                <span className="ltc-trust-metadata__label">Unfallstatus:</span>
+                <span className="ltc-trust-metadata__value">{data?.accident_status_label || "Unbekannt"}</span>
               </div>
             </div>
           )}
@@ -170,7 +158,7 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
       <TrustAmpelDisclaimer />
 
       {/* SoT/Verifier: Pflichttext muss auch in dieser Datei exakt vorhanden sein. */}
-      <span style={{ display: "none" }} data-testid="public-qr-disclaimer">
+      <span className="ltc-hidden-verifier" data-testid="public-qr-disclaimer">
         {PUBLIC_QR_DISCLAIMER_TEXT}
       </span>
     </main>

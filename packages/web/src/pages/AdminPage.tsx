@@ -10,9 +10,11 @@ import {
   fetchRedactedExport,
   listAdminUsers,
   listVipBusinesses,
+  requestAdminStepUpGrant,
   requestFullExportGrant,
   setAdminUserRole,
   type AdminApiResult,
+  type AdminStepUpScope,
   type AdminUser,
   type ExportGrant,
   type ExportTargetKind,
@@ -25,6 +27,7 @@ import { handleUnauthorized } from "../lib/handleUnauthorized";
 type AdminActorRole = "admin" | "superadmin";
 
 const ROLE_OPTIONS = ["public", "user", "vip", "dealer", "moderator", "admin", "superadmin"] as const;
+const ADMIN_STEP_UP_TTL_SECONDS = 600;
 
 function sortUsers(rows: AdminUser[]): AdminUser[] {
   return [...rows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
@@ -37,13 +40,15 @@ function sortBusinesses(rows: VipBusiness[]): VipBusiness[] {
   });
 }
 
-function headers(): { headers: Record<string, string> } {
-  return { headers: authHeaders(getAuthToken()) };
+function headers(extraHeaders?: Record<string, string>): { headers: Record<string, string> } {
+  return { headers: { ...authHeaders(getAuthToken()), ...(extraHeaders ?? {}) } };
 }
 
 function extractErrorMessage(result: { status: number; error: string }): string {
   if (result.status === 0) return "Netzwerkfehler beim Laden der Admin-Daten.";
   if (result.status === 401) return "Session abgelaufen. Bitte erneut anmelden.";
+  if (result.status === 403 && result.error === "admin_step_up_required") return "Für diese Admin-Aktion ist ein Step-up erforderlich.";
+  if (result.status === 403 && result.error === "admin_step_up_invalid") return "Der Step-up ist ungültig oder abgelaufen. Bitte Aktion erneut auslösen.";
   if (result.status === 403 && result.error === "superadmin_required") return "Diese Aktion ist nur für SUPERADMIN erlaubt.";
   if (result.status === 403 && result.error === "forbidden") return "Kein Zugriff auf diese Admin-Aktion.";
   if (result.status === 404 && result.error === "user_not_found") return "User-ID wurde nicht gefunden.";
@@ -69,10 +74,10 @@ function AdminUserCard(props: {
   const roleChanged = props.currentRole !== props.user.role;
 
   return (
-    <article className="ltc-card" style={{ marginTop: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <article className="ltc-card ltc-section ltc-section--card">
+      <div className="ltc-admin-head">
         <div>
-          <div className="ltc-card__title" style={{ marginBottom: 6 }}>
+          <div className="ltc-card__title">
             <code>{props.user.user_id}</code>
           </div>
           <div className="ltc-muted">
@@ -81,13 +86,13 @@ function AdminUserCard(props: {
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 10, marginTop: 14, maxWidth: 520 }}>
+      <div className="ltc-admin-form ltc-admin-form--narrow">
         <label>
           Zielrolle
           <select
             value={props.currentRole}
             onChange={(e) => props.onRoleChange(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+            className="ltc-form-group__select"
           >
             {ROLE_OPTIONS.map((role) => (
               <option key={role} value={role} disabled={role === "superadmin" && superadminOptionLocked}>
@@ -104,12 +109,12 @@ function AdminUserCard(props: {
             onChange={(e) => props.onReasonChange(e.target.value)}
             placeholder="Wird nur als reason_provided auditiert"
             autoComplete="off"
-            style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+            className="ltc-form-group__input"
           />
         </label>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+      <div className="ltc-admin-actions">
         <button type="button" className="ltc-btn ltc-btn--primary" disabled={props.busy || !roleChanged} onClick={props.onSaveRole}>
           Rolle setzen
         </button>
@@ -133,10 +138,10 @@ function VipBusinessCard(props: {
   onAddStaff: () => void;
 }): JSX.Element {
   return (
-    <article className="ltc-card" style={{ marginTop: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <article className="ltc-card ltc-section ltc-section--card">
+      <div className="ltc-admin-head">
         <div>
-          <div className="ltc-card__title" style={{ marginBottom: 6 }}>
+          <div className="ltc-card__title">
             <code>{props.business.business_id}</code>
           </div>
           <div className="ltc-muted">
@@ -156,13 +161,13 @@ function VipBusinessCard(props: {
         ) : null}
       </div>
 
-      <div className="ltc-muted" style={{ marginTop: 8 }}>
+      <div className="ltc-muted ltc-mt-2">
         Staff ({props.business.staff_count}/2):{" "}
         {props.business.staff_user_ids.length > 0 ? props.business.staff_user_ids.map((id) => <code key={id}>{id} </code>) : "noch keiner"}
       </div>
 
       {props.actorRole === "superadmin" ? (
-        <div style={{ display: "grid", gap: 10, marginTop: 14, maxWidth: 560 }}>
+        <div className="ltc-admin-form ltc-admin-form--narrow">
           <label>
             Staff User-ID
             <input
@@ -170,7 +175,7 @@ function VipBusinessCard(props: {
               onChange={(e) => props.onStaffDraftChange(e.target.value)}
               placeholder="bestehende auth_users user_id"
               autoComplete="off"
-              style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+              className="ltc-form-group__input"
             />
           </label>
 
@@ -181,11 +186,11 @@ function VipBusinessCard(props: {
               onChange={(e) => props.onStaffReasonChange(e.target.value)}
               placeholder="Wird nur als reason_provided auditiert"
               autoComplete="off"
-              style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+              className="ltc-form-group__input"
             />
           </label>
 
-          <div>
+          <div className="ltc-admin-actions">
             <button type="button" className="ltc-btn ltc-btn--ghost" disabled={props.busy || props.staffDraft.trim().length < 8} onClick={props.onAddStaff}>
               Staff hinzufügen
             </button>
@@ -263,11 +268,49 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
     void loadAll();
   }, []);
 
-  async function runAction<T>(key: string, action: Promise<AdminApiResult<T>>, onSuccess: (body: T) => void, successMessage: string) {
+  async function runAction<T>(key: string, action: () => Promise<AdminApiResult<T>>, onSuccess: (body: T) => void, successMessage: string) {
     setBusyKey(key);
     setError("");
     setNotice("");
-    const result = await action;
+    const result = await action();
+    setBusyKey("");
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      setError(extractErrorMessage(result));
+      return;
+    }
+
+    onSuccess(result.body);
+    setNotice(successMessage);
+  }
+
+  async function runSensitiveAction<T>(
+    key: string,
+    scope: AdminStepUpScope,
+    action: (init: { headers: Record<string, string> }) => Promise<AdminApiResult<T>>,
+    onSuccess: (body: T) => void,
+    successMessage: string,
+  ) {
+    setBusyKey(key);
+    setError("");
+    setNotice("");
+
+    const grant = await requestAdminStepUpGrant(scope, ADMIN_STEP_UP_TTL_SECONDS, headers());
+    if (!grant.ok) {
+      setBusyKey("");
+      if (grant.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      setError(extractErrorMessage(grant));
+      return;
+    }
+
+    const result = await action(headers({ [grant.body.header]: grant.body.step_up_token }));
     setBusyKey("");
 
     if (!result.ok) {
@@ -297,31 +340,31 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   }
 
   return (
-    <main style={{ padding: 12 }} data-testid="admin-page">
+    <main className="ltc-main ltc-main--wide" data-testid="admin-page">
       <h1>Admin</h1>
       <p>Rollen, Moderator-Akkreditierung, VIP-Business-Freigaben und Export-Step-up auf den produktiven Server-Contracts.</p>
 
       {error ? <InlineErrorBanner message={error} /> : null}
       {notice ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section ltc-section--card">
           <div className="ltc-muted">{notice}</div>
         </section>
       ) : null}
 
       {loading ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-section ltc-section--card">
           <div className="ltc-muted">Admin-Daten werden geladen...</div>
         </section>
       ) : null}
 
       {!loading ? (
         <>
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
             <div className="ltc-card__title">Rollen & Moderator</div>
             <div className="ltc-muted">
-              Der Server auditiert nur ID-bezogene Metadaten und `reason_provided`, keine Freitext-Begründungen.
+              Der Server auditiert nur ID-bezogene Metadaten und `reason_provided`, keine Freitext-Begründungen. Sensible Aktionen holen automatisch einen One-time Step-up.
             </div>
-            {visibleUsers.length === 0 ? <p className="ltc-muted" style={{ marginTop: 12 }}>Keine Nutzer gefunden.</p> : null}
+            {visibleUsers.length === 0 ? <p className="ltc-muted ltc-mt-4">Keine Nutzer gefunden.</p> : null}
             {visibleUsers.map((user) => (
               <AdminUserCard
                 key={user.user_id}
@@ -333,17 +376,19 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 onRoleChange={(role) => setRoleDrafts((prev) => ({ ...prev, [user.user_id]: role }))}
                 onReasonChange={(reason) => setReasonDrafts((prev) => ({ ...prev, [user.user_id]: reason }))}
                 onSaveRole={() =>
-                  void runAction(
+                  void runSensitiveAction(
                     `role:${user.user_id}`,
-                    setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", headers()),
+                    "role_grant",
+                    (init) => setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", init),
                     (body) => updateUserRole(user.user_id, body.new_role),
                     `Rolle für ${user.user_id} wurde auf ${roleDrafts[user.user_id] ?? user.role} gesetzt.`,
                   )
                 }
                 onAccreditModerator={() =>
-                  void runAction(
+                  void runSensitiveAction(
                     `moderator:${user.user_id}`,
-                    accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", headers()),
+                    "moderator_accredit",
+                    (init) => accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", init),
                     (body) => updateUserRole(user.user_id, body.new_role),
                     `Moderator-Akkreditierung für ${user.user_id} abgeschlossen.`,
                   )
@@ -352,14 +397,14 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             ))}
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
             <div className="ltc-card__title">VIP-Businesses</div>
             <div className="ltc-muted">
-              Admin kann Requests anlegen. Freigabe und Staff-Zuordnung bleiben serverseitig auf SUPERADMIN begrenzt.
+              Admin kann Requests anlegen. Freigabe und Staff-Zuordnung bleiben serverseitig auf SUPERADMIN begrenzt und erfordern pro Aktion einen frischen Step-up.
             </div>
 
             <form
-              style={{ display: "grid", gap: 10, maxWidth: 620, marginTop: 14 }}
+              className="ltc-admin-form"
               onSubmit={(e: FormEvent) => {
                 e.preventDefault();
                 const ownerUserId = businessOwnerUserId.trim();
@@ -369,14 +414,15 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 }
                 void runAction(
                   "business:create",
-                  createVipBusiness(
-                    {
-                      owner_user_id: ownerUserId,
-                      business_id: businessId.trim() || undefined,
-                      reason: businessReason.trim() || undefined,
-                    },
-                    headers(),
-                  ),
+                  () =>
+                    createVipBusiness(
+                      {
+                        owner_user_id: ownerUserId,
+                        business_id: businessId.trim() || undefined,
+                        reason: businessReason.trim() || undefined,
+                      },
+                      headers(),
+                    ),
                   (body) => {
                     upsertVipBusiness(body);
                     setBusinessOwnerUserId("");
@@ -395,7 +441,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onChange={(e) => setBusinessOwnerUserId(e.target.value)}
                   placeholder="bestehende auth_users user_id"
                   autoComplete="off"
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
 
@@ -406,7 +452,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onChange={(e) => setBusinessId(e.target.value)}
                   placeholder="externes Business-Kürzel oder leer für UUID"
                   autoComplete="off"
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
 
@@ -417,18 +463,18 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onChange={(e) => setBusinessReason(e.target.value)}
                   placeholder="Wird nur als reason_provided auditiert"
                   autoComplete="off"
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
 
-              <div>
+              <div className="ltc-admin-actions">
                 <button type="submit" className="ltc-btn ltc-btn--primary" disabled={busyKey === "business:create"}>
                   VIP-Business anlegen
                 </button>
               </div>
             </form>
 
-            {visibleBusinesses.length === 0 ? <p className="ltc-muted" style={{ marginTop: 12 }}>Noch keine VIP-Businesses vorhanden.</p> : null}
+            {visibleBusinesses.length === 0 ? <p className="ltc-muted ltc-mt-4">Noch keine VIP-Businesses vorhanden.</p> : null}
             {visibleBusinesses.map((business) => (
               <VipBusinessCard
                 key={business.business_id}
@@ -440,9 +486,10 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 onStaffDraftChange={(value) => setStaffDrafts((prev) => ({ ...prev, [business.business_id]: value }))}
                 onStaffReasonChange={(value) => setStaffReasonDrafts((prev) => ({ ...prev, [business.business_id]: value }))}
                 onApprove={() =>
-                  void runAction(
+                  void runSensitiveAction(
                     `business:approve:${business.business_id}`,
-                    approveVipBusiness(business.business_id, headers()),
+                    "vip_business_approve",
+                    (init) => approveVipBusiness(business.business_id, init),
                     () => {
                       void loadAll();
                     },
@@ -450,14 +497,16 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   )
                 }
                 onAddStaff={() =>
-                  void runAction(
+                  void runSensitiveAction(
                     `business:staff:${business.business_id}`,
-                    addVipBusinessStaff(
-                      business.business_id,
-                      staffDrafts[business.business_id] ?? "",
-                      staffReasonDrafts[business.business_id] ?? "",
-                      headers(),
-                    ),
+                    "vip_business_staff",
+                    (init) =>
+                      addVipBusinessStaff(
+                        business.business_id,
+                        staffDrafts[business.business_id] ?? "",
+                        staffReasonDrafts[business.business_id] ?? "",
+                        init,
+                      ),
                     () => {
                       setStaffDrafts((prev) => ({ ...prev, [business.business_id]: "" }));
                       setStaffReasonDrafts((prev) => ({ ...prev, [business.business_id]: "" }));
@@ -470,19 +519,19 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             ))}
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
             <div className="ltc-card__title">Export-Step-up</div>
             <div className="ltc-muted">
               Redacted Exports sind für Admin und SUPERADMIN nutzbar. One-time Full Exports mit `X-Export-Token` bleiben strikt SUPERADMIN-only.
             </div>
 
             <form
-              style={{ display: "grid", gap: 10, maxWidth: 620, marginTop: 14 }}
+              className="ltc-admin-form"
               onSubmit={(e) => e.preventDefault()}
             >
               <label>
                 Zieltyp
-                <select value={exportKind} onChange={(e) => setExportKind(e.target.value as ExportTargetKind)} style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}>
+                <select value={exportKind} onChange={(e) => setExportKind(e.target.value as ExportTargetKind)} className="ltc-form-group__select">
                   <option value="vehicle">vehicle</option>
                   <option value="user">user</option>
                   <option value="servicebook">servicebook</option>
@@ -496,7 +545,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onChange={(e) => setExportTargetId(e.target.value)}
                   placeholder="vehicle_id / user_id / servicebook_id"
                   autoComplete="off"
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
 
@@ -507,11 +556,11 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onChange={(e) => setExportTtlSeconds(e.target.value)}
                   inputMode="numeric"
                   autoComplete="off"
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div className="ltc-admin-actions">
                 <button
                   type="button"
                   className="ltc-btn ltc-btn--primary"
@@ -519,7 +568,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   onClick={() =>
                     void runAction(
                       "export:redacted",
-                      fetchRedactedExport(exportKind, exportTargetId.trim(), headers()),
+                      () => fetchRedactedExport(exportKind, exportTargetId.trim(), headers()),
                       (body) => {
                         setRedactedExportBody(body);
                         setFullExportBody(null);
@@ -544,7 +593,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                       }
                       void runAction(
                         "export:grant",
-                        requestFullExportGrant(exportKind, exportTargetId.trim(), ttl, headers()),
+                        () => requestFullExportGrant(exportKind, exportTargetId.trim(), ttl, headers()),
                         (body) => {
                           setExportGrant(body);
                           setFullExportBody(null);
@@ -565,7 +614,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                     onClick={() =>
                       void runAction(
                         "export:full",
-                        fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant?.export_token ?? "", headers()),
+                        () => fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant?.export_token ?? "", headers()),
                         (body) => setFullExportBody(body),
                         `Voll-Export für ${exportKind}:${exportTargetId.trim()} geladen und Token verbraucht.`,
                       )
@@ -578,13 +627,13 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             </form>
 
             {exportGrant ? (
-              <div className="ltc-quote ltc-quote--gold" style={{ marginTop: 14 }}>
+              <div className="ltc-quote ltc-quote--gold ltc-mt-4">
                 <div className="ltc-quote__t">Aktiver Full-Grant</div>
                 <div className="ltc-muted">
                   Header: <code>{exportGrant.header}</code> · Ablauf: {new Date(exportGrant.expires_at).toLocaleString("de-DE")} · TTL:{" "}
                   {exportGrant.ttl_seconds}s
                 </div>
-                <div className="ltc-meta" style={{ wordBreak: "break-all" }}>
+                <div className="ltc-meta ltc-wordbreak">
                   Token: <code>{exportGrant.export_token}</code>
                 </div>
               </div>
@@ -593,7 +642,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             {redactedExportBody ? (
               <details className="ltc-details" open>
                 <summary>Redacted Payload</summary>
-                <pre className="ltc-pre" style={{ marginTop: 10 }}>
+                <pre className="ltc-pre ltc-mt-4">
                   {prettyBody(redactedExportBody)}
                 </pre>
               </details>
@@ -602,7 +651,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             {fullExportBody ? (
               <details className="ltc-details" open>
                 <summary>Full Export Ciphertext</summary>
-                <pre className="ltc-pre" style={{ marginTop: 10 }}>
+                <pre className="ltc-pre ltc-mt-4">
                   {prettyBody(fullExportBody)}
                 </pre>
               </details>

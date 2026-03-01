@@ -1,0 +1,350 @@
+/**
+ * Layout Styles
+ * PublicLayout, AppLayout, Navigation, etc.
+ */
+
+/* ========== LAYOUT CONTAINERS ========== */
+
+.ltc-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--ltc-color-bg-primary);
+  color: var(--ltc-color-text-primary);
+}
+
+.ltc-app--plain {
+  /* neutral variant */
+}
+
+.ltc-app--hero {
+  /* hero variant mit größerer padding-oben */
+}
+
+.ltc-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--ltc-space-4);
+  width: 100%;
+}
+
+.ltc-container-small {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--ltc-space-4);
+  width: 100%;
+}
+
+/* ========== HEADER ========== */
+
+.ltc-header {
+  background: var(--ltc-color-bg-secondary);
+  border-bottom: 1px solid var(--ltc-color-border);
+  padding: var(--ltc-space-4) 0;
+  position: sticky;
+  top: 0;
+  z-index: var(--ltc-z-sticky);
+  box-shadow: var(--ltc-shadow-sm);
+}
+
+.ltc-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ltc-space-4);
+}
+
+.ltc-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--ltc-space-2);
+  font-size: var(--ltc-text-xl);
+  font-weight: 700;
+  color: var(--ltc-color-brand);
+  text-decoration: none;
+}
+
+.ltc-logo:hover {
+  color: var(--ltc-color-brand-hover);
+}
+
+/* ========== NAVIGATION ========== */
+
+.ltc-nav {
+  display: flex;
+  gap: var(--ltc-space-6);
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ltc-nav a {
+  font-size: var(--ltc-text-base);
+  color: var(--ltc-color-text-primary);
+  text-decoration: none;
+  transition: color var(--ltc-transition-fast);
+  padding: var(--ltc-space-2) var(--ltc-space-3);
+  border-radius: var(--ltc-radius-base);
+}
+
+.ltc-nav a:hover {
+  color: var(--ltc-color-brand);
+  background: rgba(122, 162, 247, 0.1);
+  text-decoration: none;
+}
+
+.ltc-nav a.active {
+  color: var(--ltc-color-brand);
+  font-weight: 600;
+}
+
+/* Mobile menu toggle (if needed) */
+.ltc-nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--ltc-color-text-primary);
+  font-size: var(--ltc-text-xl);
+  cursor: pointer;
+  padding: var(--ltc-space-2);
+}
+
+@media (max-width: 768px) {
+  .ltc-nav-toggle {
+    display: flex;
+  }
+
+  .ltc-nav {
+    flex-direction: column;
+    gap: var(--ltc-space-3);
+  }
+}
+
+/* ========== MAIN CONTENT ========== */
+
+.ltc-main {
+  flex: 1;
+  width: 100%;
+  padding: var(--ltc-space-8) 0;
+}
+
+.ltc-main--hero {
+  padding: var(--ltc-space-12) 0;
+}
+
+/* ========== SIDEBAR (if needed) ========== */
+
+.ltc-sidebar {
+  display: flex;
+  gap: var(--ltc-space-8);
+  width: 100%;
+}
+
+.ltc-sidebar-nav {
+  flex: 0 0 250px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ltc-space-2);
+}
+
+.ltc-sidebar-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .ltc-sidebar {
+    flex-direction: column;
+  }
+
+  .ltc-sidebar-nav {
+    flex: 1;
+    flex-direction: row;
+    gap: var(--ltc-space-4);
+    overflow-x: auto;
+  }
+}
+
+/* ========== LANDING PAGE HERO & FEATURES ========== */
+.ltc-hero{
+  padding: 22px 0 0 0;
+}
+.ltc-hero__copy{
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+.ltc-hero__h1{
+  margin:0;
+  font-size: clamp(38px, 4vw, 56px);
+  letter-spacing:-0.9px;
+  line-height:1.1;
+  font-weight:950;
+  color: var(--ltc-color-text-primary);
+}
+.ltc-hero__sub{
+  margin-top:10px;
+  font-size:18px;
+  opacity:.86;
+  line-height:1.4;
+}
+.ltc-hero__cta{
+  margin-top: var(--ltc-space-6);
+}
+
+.ltc-features{
+  padding: var(--ltc-space-12) 0;
+  background: var(--ltc-color-bg-secondary);
+}
+.ltc-features__grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+  gap: var(--ltc-space-6);
+}
+.ltc-features__card{
+  text-align: center;
+  padding: var(--ltc-space-6);
+}
+
+/* ========== FOOTER ========== */
+
+.ltc-footer {
+  background: var(--ltc-color-bg-secondary);
+  border-top: 1px solid var(--ltc-color-border);
+  padding: var(--ltc-space-8) 0;
+  margin-top: auto;
+}
+
+.ltc-footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ltc-space-8);
+  margin-bottom: var(--ltc-space-8);
+}
+
+.ltc-footer-section h3 {
+  font-size: var(--ltc-text-base);
+  margin-bottom: var(--ltc-space-4);
+}
+
+.ltc-footer-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ltc-space-3);
+}
+
+.ltc-footer-section a {
+  font-size: var(--ltc-text-sm);
+}
+
+.ltc-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--ltc-space-4);
+  border-top: 1px solid var(--ltc-color-border);
+  font-size: var(--ltc-text-sm);
+  color: var(--ltc-color-text-secondary);
+}
+
+@media (max-width: 600px) {
+  .ltc-footer-bottom {
+    flex-direction: column;
+    gap: var(--ltc-space-3);
+    text-align: center;
+  }
+}
+
+/* ========== GRID & FLEX ========== */
+
+.ltc-grid {
+  display: grid;
+  gap: var(--ltc-space-4);
+}
+
+.ltc-grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.ltc-grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.ltc-flex {
+  display: flex;
+  gap: var(--ltc-space-4);
+}
+
+.ltc-flex--col {
+  flex-direction: column;
+}
+
+.ltc-flex--wrap {
+  flex-wrap: wrap;
+}
+
+/* ========== SPACING UTILITIES ========== */
+
+.ltc-mt-2 {
+  margin-top: var(--ltc-space-2);
+}
+
+.ltc-mt-4 {
+  margin-top: var(--ltc-space-4);
+}
+
+.ltc-mt-6 {
+  margin-top: var(--ltc-space-6);
+}
+
+.ltc-mt-8 {
+  margin-top: var(--ltc-space-8);
+}
+
+.ltc-mb-2 {
+  margin-bottom: var(--ltc-space-2);
+}
+
+.ltc-mb-4 {
+  margin-bottom: var(--ltc-space-4);
+}
+
+.ltc-mb-6 {
+  margin-bottom: var(--ltc-space-6);
+}
+
+.ltc-mb-8 {
+  margin-bottom: var(--ltc-space-8);
+}
+
+.ltc-p-4 {
+  padding: var(--ltc-space-4);
+}
+
+.ltc-p-6 {
+  padding: var(--ltc-space-6);
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .ltc-container {
+    padding: 0 var(--ltc-space-3);
+  }
+
+  .ltc-main {
+    padding: var(--ltc-space-6) 0;
+  }
+
+  .ltc-grid--2 {
+    grid-template-columns: 1fr;
+  }
+
+  .ltc-grid--3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}

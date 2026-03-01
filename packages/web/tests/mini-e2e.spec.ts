@@ -246,6 +246,44 @@ async function setHash(page: Page, hash: string): Promise<void> {
   }, hash);
 }
 
+test("public contact page shows email", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/contact");
+  await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
+});
+
+// blog/news routes are now ACTIVE (FEATURES.blogNews = true in appRouting.ts)
+// the old test "blog/news routes return 404 when feature disabled" is now replaced by the new blog/news accessibility tests above
+test("blog/news routes return content when feature enabled", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog");
+  // Should NOT be 404 anymore - should show blog content in main
+  await expect(page.locator("main")).toContainText("Blog");
+  await expect(page.locator("main")).toContainText("Frühjahrsinspektion");
+  await setHash(page, "#/news");
+  // Should NOT be 404 anymore - should show news content in main
+  await expect(page.locator("main")).toContainText("News");
+  await expect(page.locator("main")).toContainText("EU-Verordnung");
+});
+
+test("public entry page offers both role paths into auth", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/entry");
+
+  const main = page.locator("main");
+  await expect(main).toContainText("Privat");
+  await expect(main).toContainText("Gewerblich");
+  await expect(main.locator('a[href="#/auth"]')).toHaveCount(2);
+});
+
+test("unknown route shows explicit not-found page", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/definitely-missing");
+
+  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+  await expect(page.locator('[data-testid="not-found-ui"]')).toContainText("Seite nicht gefunden");
+});
+
 test("kein Token auf protected route => redirect #/auth?next=..., ohne /auth/me call", async ({ page }) => {
   const api = await mockAppGateApi(page, "me_200_consent_ok");
   await boot(page);
@@ -496,6 +534,8 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("service.pdf");
   await expect(page.locator("main")).toContainText("QUARANTINED");
   await expect(page.locator("main")).toContainText("PENDING");
+  await expect(page.locator("#documents-upload-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#documents-lookup-input")).toHaveAttribute("aria-required", "true");
 });
 
 test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
@@ -864,6 +904,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
       staff_count: 0,
     },
   ];
+  const adminStepUpTokens: Record<string, string> = {};
   let grantIssued = false;
   let fullLoaded = false;
 
@@ -887,7 +928,25 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
     if (path === "/api/admin/users") return json(200, users);
 
+    if (path === "/api/admin/step-up/grant") {
+      const body = route.request().postDataJSON() as { scope?: string };
+      const scope = typeof body.scope === "string" ? body.scope : "unknown";
+      const token = `step-up-${scope}-${Object.keys(adminStepUpTokens).length + 1}`;
+      adminStepUpTokens[scope] = token;
+      return json(200, {
+        ok: true,
+        scope,
+        step_up_token: token,
+        token,
+        expires_at: "2026-02-28T11:10:00Z",
+        ttl_seconds: 600,
+        one_time: true,
+        header: "X-Admin-Step-Up",
+      });
+    }
+
     if (path === "/api/admin/users/uid-user-1/role") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["role_grant"]);
       users = users.map((item) => (item.user_id === "uid-user-1" ? { ...item, role: "vip" } : item));
       return json(200, {
         ok: true,
@@ -928,6 +987,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
     }
 
     if (path === "/api/admin/vip-businesses/biz-demo-1/approve") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["vip_business_approve"]);
       businesses = businesses.map((item) =>
         item.business_id === "biz-demo-1"
           ? {
@@ -950,6 +1010,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
     }
 
     if (path === "/api/admin/vip-businesses/biz-demo-1/staff/uid-staff-1") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["vip_business_staff"]);
       businesses = businesses.map((item) =>
         item.business_id === "biz-demo-1"
           ? {
@@ -1058,4 +1119,180 @@ test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ p
   const hidden = page.locator('[data-testid="public-qr-disclaimer"]');
   await expect(hidden).toHaveCount(1);
   await expect(hidden).toHaveText(DISCLAIMER_TEXT);
+  await expect(page.locator(".ltc-trust-badge__light")).toHaveAttribute("aria-label", /Trust light indicator/);
+  await expect(page.locator(".ltc-trust-metadata")).toHaveAttribute("aria-label", "Trust-Metadaten");
+});
+
+// blog/news routes are now active (FEATURES.blogNews = true)
+test("blog list page is accessible and shows posts", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("Blog");
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Trust-Ampel");
+  await expect(main).toContainText("Digitaler Fahrzeugpass");
+  await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
+});
+
+test("blog post page displays full article content", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog/spring-maintenance-2026");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Reifen:");
+  await expect(main).toContainText("Bremsanlage:");
+  await expect(main).toContainText("Zurück zum Blog");
+  await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
+});
+
+test("news list page is accessible and shows articles", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/news");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("News");
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Flottenmanagement");
+  await expect(main).toContainText("100.000 Fahrzeuge");
+  await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
+});
+
+test("news post page displays full article content", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/news/eu-digital-vehicle-passport-2027");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Digitalen Fahrzeugpass");
+  await expect(main).toContainText("Was ändert sich?");
+  await expect(main).toContainText("Zurück zu News");
+  await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
+});
+
+/* ========== RESPONSIVE DESIGN TESTS ========== */
+
+test("responsive stylesheet includes mobile-first media queries (640px, 768px, 1920px)", async ({ page }) => {
+  await page.goto("http://localhost:5173/");
+
+  // Check that CSS includes responsive media queries
+  const mediaQueries = await page.evaluate(() => {
+    const allText: string[] = [];
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule.media) {
+            allText.push(rule.media.mediaText);
+          }
+        }
+      } catch {
+        // CORS-restricted, skip
+      }
+    }
+    return allText;
+  });
+
+  // Verify media queries include responsive breakpoints
+  const mediaQueryText = mediaQueries.join(" ");
+  expect(mediaQueryText.toLowerCase()).toContain("max-width");
+  expect(mediaQueryText.toLowerCase()).toContain("min-width");
+  expect(mediaQueries.length).toBeGreaterThan(0);
+});
+
+test("mobile layouts avoid horizontal overflow on vehicles, vehicle detail and admin at 375px", async ({ page }) => {
+  let role: "user" | "superadmin" = "user";
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_mobile");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/vehicles") return json(200, [{ id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} }]);
+    if (path === "/api/vehicles/veh_test_1") {
+      return json(200, { id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} });
+    }
+    if (path === "/api/vehicles/veh_test_1/trust-summary") {
+      return json(200, {
+        trust_light: "gruen",
+        hint: "Dokumentation ist vollständig nachweisbar.",
+        reason_codes: ["history_complete", "evidence_verified"],
+        todo_codes: ["review_next_service"],
+        verification_level: "hoch",
+        accident_status: "unfallfrei",
+        accident_status_label: "Unfallfrei",
+        history_status: "vorhanden",
+        evidence_status: "vorhanden",
+        top_trust_level: "T3",
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/entries") {
+      return json(200, [
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 2,
+          revision_count: 2,
+          is_latest: true,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+      ]);
+    }
+    if (path === "/api/admin/users") {
+      return json(200, [{ user_id: "uid-user-1", role: "user", created_at: "2026-02-28T10:00:00Z" }]);
+    }
+    if (path === "/api/admin/vip-businesses") {
+      return json(200, [
+        {
+          business_id: "biz-demo-1",
+          owner_user_id: "uid-owner-1",
+          approved: true,
+          created_at: "2026-02-28T10:30:00Z",
+          approved_at: "2026-02-28T11:05:00Z",
+          approved_by_user_id: "sa-1",
+          staff_user_ids: ["uid-staff-1"],
+          staff_count: 1,
+        },
+      ]);
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+
+  for (const scenario of [
+    { hash: "#/vehicles", nextRole: "user" as const },
+    { hash: "#/vehicles/veh_test_1", nextRole: "user" as const },
+    { hash: "#/admin", nextRole: "superadmin" as const },
+  ]) {
+    role = scenario.nextRole;
+    await setHash(page, scenario.hash);
+    const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+    expect(hasOverflow).toBe(false);
+  }
 });

@@ -1,0 +1,221 @@
+/**
+ * LifeTimeCircle – Service Heft 4.0
+ * Design System / Tokens (CSS Custom Properties)
+ * 
+ * Alle visuellen Konstanten zentral definiert.
+ * Pages sollten NO "Magic Numbers" verwenden - nur Tokens.
+ */
+
+:root {
+  /* ========== TYPO ========== */
+  --ltc-font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --ltc-line-height-tight: 1.2;
+  --ltc-line-height-normal: 1.4;
+  --ltc-line-height-relaxed: 1.6;
+
+  /* Font Sizes (rem-based) */
+  --ltc-text-xs: 0.75rem; /* 12px */
+  --ltc-text-sm: 0.875rem; /* 14px */
+  --ltc-text-base: 1rem; /* 16px */
+  --ltc-text-lg: 1.125rem; /* 18px */
+  --ltc-text-xl: 1.25rem; /* 20px */
+  --ltc-text-2xl: 1.5rem; /* 24px */
+  --ltc-text-3xl: 1.875rem; /* 30px */
+  --ltc-text-4xl: 2.25rem; /* 36px */
+
+  /* Headings */
+  --ltc-h1-size: var(--ltc-text-4xl);
+  --ltc-h1-weight: 700;
+  --ltc-h1-line-height: var(--ltc-line-height-tight);
+
+  --ltc-h2-size: var(--ltc-text-3xl);
+  --ltc-h2-weight: 700;
+  --ltc-h2-line-height: var(--ltc-line-height-tight);
+
+  --ltc-h3-size: var(--ltc-text-2xl);
+  --ltc-h3-weight: 600;
+  --ltc-h3-line-height: var(--ltc-line-height-tight);
+
+  --ltc-h4-size: var(--ltc-text-xl);
+  --ltc-h4-weight: 600;
+  --ltc-h4-line-height: var(--ltc-line-height-normal);
+
+  --ltc-body-size: var(--ltc-text-base);
+  --ltc-body-weight: 400;
+  --ltc-body-line-height: var(--ltc-line-height-normal);
+
+  --ltc-caption-size: var(--ltc-text-xs);
+  --ltc-caption-weight: 400;
+  --ltc-caption-line-height: var(--ltc-line-height-normal);
+
+  /* ========== SPACING ========== */
+  --ltc-space-0: 0;
+  --ltc-space-1: 0.25rem; /* 4px */
+  --ltc-space-2: 0.5rem; /* 8px */
+  --ltc-space-3: 0.75rem; /* 12px */
+  --ltc-space-4: 1rem; /* 16px */
+  --ltc-space-6: 1.5rem; /* 24px */
+  --ltc-space-8: 2rem; /* 32px */
+  --ltc-space-10: 2.5rem; /* 40px */
+  --ltc-space-12: 3rem; /* 48px */
+  --ltc-space-16: 4rem; /* 64px */
+
+  /* ========== BORDER RADIUS ========== */
+  --ltc-radius-none: 0;
+  --ltc-radius-sm: 4px;
+  --ltc-radius-base: 8px;
+  --ltc-radius-md: 12px;
+  --ltc-radius-lg: 16px;
+  --ltc-radius-full: 9999px;
+
+  /* ========== SHADOW ========== */
+  --ltc-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ltc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --ltc-shadow-base: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --ltc-shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --ltc-shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --ltc-shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+
+  /* ========== COLORS ========== */
+
+  /* Neutral (Dark Theme) */
+  --ltc-color-bg-primary: #0b0f14; /* Darkest bg */
+  --ltc-color-bg-secondary: #1a1f28; /* Secondary bg */
+  --ltc-color-bg-tertiary: #27303a; /* Tertiary/hover bg */
+  --ltc-color-border: rgba(255, 255, 255, 0.08);
+  --ltc-color-border-light: rgba(255, 255, 255, 0.04);
+  --ltc-color-text-primary: #e6edf3; /* Main text */
+  --ltc-color-text-secondary: rgba(230, 237, 243, 0.7); /* Muted text */
+  --ltc-color-text-tertiary: rgba(230, 237, 243, 0.5); /* Faintest text */
+
+  /* Brand / Interactive */
+  --ltc-color-brand: #7aa2f7; /* Link/brand blue */
+  --ltc-color-brand-hover: #8fb5f9; /* Brand lighter */
+  --ltc-color-brand-dark: #5a7ccb; /* Brand darker */
+
+  /* Toast/Alert States */
+  --ltc-color-success: #34d399; /* Green */
+  --ltc-color-success-bg: rgba(52, 211, 153, 0.1);
+  --ltc-color-success-border: rgba(52, 211, 153, 0.3);
+
+  --ltc-color-warning: #fbbf24; /* Amber */
+  --ltc-color-warning-bg: rgba(251, 191, 36, 0.1);
+  --ltc-color-warning-border: rgba(251, 191, 36, 0.3);
+
+  --ltc-color-error: #f87171; /* Red */
+  --ltc-color-error-bg: rgba(248, 113, 113, 0.1);
+  --ltc-color-error-border: rgba(248, 113, 113, 0.3);
+
+  --ltc-color-info: #7aa2f7; /* Blue (same as brand) */
+  --ltc-color-info-bg: rgba(122, 162, 247, 0.1);
+  --ltc-color-info-border: rgba(122, 162, 247, 0.3);
+
+  /* Trust Ampel (Status) */
+  --ltc-color-trust-green: #34d399; /* Grün - all good */
+  --ltc-color-trust-yellow: #fbbf24; /* Gelb - attention needed */
+  --ltc-color-trust-red: #f87171; /* Rot - problem */
+  --ltc-color-trust-gray: #9ca3af; /* Grau - unknown */
+
+  /* ========== TRANSITIONS ========== */
+  --ltc-transition-fast: 150ms ease-in-out;
+  --ltc-transition-base: 300ms ease-in-out;
+  --ltc-transition-slow: 500ms ease-in-out;
+
+  /* ========== Z-INDEX ========== */
+  --ltc-z-dropdown: 1000;
+  --ltc-z-sticky: 1010;
+  --ltc-z-modal: 1020;
+  --ltc-z-modal-backdrop: 1019;
+  --ltc-z-toast: 1030;
+}
+
+/* ========== RESET ========== */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ltc-color-bg-primary);
+  color: var(--ltc-color-text-primary);
+  font-family: var(--ltc-font-family);
+  font-size: var(--ltc-body-size);
+  font-weight: var(--ltc-body-weight);
+  line-height: var(--ltc-body-line-height);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== TYPOGRAPHY UTILITIES ========== */
+
+h1,
+.ltc-h1 {
+  font-size: var(--ltc-h1-size);
+  font-weight: var(--ltc-h1-weight);
+  line-height: var(--ltc-h1-line-height);
+  margin: 0 0 var(--ltc-space-4) 0;
+}
+
+h2,
+.ltc-h2 {
+  font-size: var(--ltc-h2-size);
+  font-weight: var(--ltc-h2-weight);
+  line-height: var(--ltc-h2-line-height);
+  margin: 0 0 var(--ltc-space-3) 0;
+}
+
+h3,
+.ltc-h3 {
+  font-size: var(--ltc-h3-size);
+  font-weight: var(--ltc-h3-weight);
+  line-height: var(--ltc-h3-line-height);
+  margin: 0 0 var(--ltc-space-3) 0;
+}
+
+h4,
+.ltc-h4 {
+  font-size: var(--ltc-h4-size);
+  font-weight: var(--ltc-h4-weight);
+  line-height: var(--ltc-h4-line-height);
+  margin: 0 0 var(--ltc-space-2) 0;
+}
+
+a {
+  color: var(--ltc-color-brand);
+  text-decoration: none;
+  transition: color var(--ltc-transition-fast);
+}
+
+a:hover {
+  color: var(--ltc-color-brand-hover);
+  text-decoration: underline;
+}
+
+/* ========== UTILITY CLASSES ========== */
+
+.ltc-text-muted {
+  color: var(--ltc-color-text-secondary);
+}
+
+.ltc-text-faint {
+  color: var(--ltc-color-text-tertiary);
+}
+
+.ltc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

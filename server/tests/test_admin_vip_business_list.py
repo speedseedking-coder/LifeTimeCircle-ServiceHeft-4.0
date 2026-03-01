@@ -35,14 +35,20 @@ def test_admin_can_list_vip_businesses_with_staff(client: TestClient, tmp_path, 
 
     approve_res = client.post(
         "/admin/vip-businesses/biz-demo-1/approve",
-        headers={"Authorization": f"Bearer {super_token}"},
+        headers={
+            "Authorization": f"Bearer {super_token}",
+            **h._grant_step_up(client, super_token, "vip_business_approve"),
+        },
     )
     assert approve_res.status_code == 200, approve_res.text
 
     for staff_id in (staff1, staff2):
         staff_res = client.post(
             f"/admin/vip-businesses/biz-demo-1/staff/{staff_id}",
-            headers={"Authorization": f"Bearer {super_token}"},
+            headers={
+                "Authorization": f"Bearer {super_token}",
+                **h._grant_step_up(client, super_token, "vip_business_staff"),
+            },
             json={"reason": "seed"},
         )
         assert staff_res.status_code == 200, staff_res.text

@@ -123,6 +123,85 @@ function trustLevelMeaning(value: VehicleEntry["trust_level"] | null): string {
   return "Nicht klassifiziert";
 }
 
+/* ========== VEHICLE ENRICHMENT STATISTICS ========== */
+
+function trustLightColor(light: VehicleTrustSummary["trust_light"]): string {
+  if (light === "gruen") return "#10b981"; // green
+  if (light === "gelb") return "#fbbf24"; // amber
+  if (light === "orange") return "#f97316"; // orange
+  if (light === "rot") return "#ef4444"; // red
+  return "#9ca3af"; // gray
+}
+
+type EntryStats = {
+  totalEntries: number;
+  totalCost: number;
+  totalKmTraveled: number;
+  firstEntryDate: string | null;
+  lastEntryDate: string | null;
+  minKm: number;
+  maxKm: number;
+  typeBreakdown: Record<string, number>;
+  trustLevelBreakdown: Record<string, number>;
+  avgIntervalDays: number;
+};
+
+function calculateEntryStats(entries: VehicleEntry[]): EntryStats {
+  if (entries.length === 0) {
+    return {
+      totalEntries: 0,
+      totalCost: 0,
+      totalKmTraveled: 0,
+      firstEntryDate: null,
+      lastEntryDate: null,
+      minKm: 0,
+      maxKm: 0,
+      typeBreakdown: {},
+      trustLevelBreakdown: {},
+      avgIntervalDays: 0,
+    };
+  }
+
+  const sorted = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const firstEntry = sorted[0];
+  const lastEntry = sorted[sorted.length - 1];
+
+  const typeBreakdown: Record<string, number> = {};
+  const trustLevelBreakdown: Record<string, number> = {};
+  let totalCost = 0;
+  let minKm = firstEntry.km;
+  let maxKm = firstEntry.km;
+
+  for (const entry of entries) {
+    typeBreakdown[entry.type] = (typeBreakdown[entry.type] ?? 0) + 1;
+    const trustKey = entry.trust_level ?? "keine";
+    trustLevelBreakdown[trustKey] = (trustLevelBreakdown[trustKey] ?? 0) + 1;
+
+    if (entry.cost_amount !== null) totalCost += entry.cost_amount;
+    minKm = Math.min(minKm, entry.km);
+    maxKm = Math.max(maxKm, entry.km);
+  }
+
+  const firstDate = new Date(firstEntry.date);
+  const lastDate = new Date(lastEntry.date);
+  const diffTime = Math.abs(lastDate.getTime() - firstDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const avgIntervalDays = entries.length > 1 ? Math.floor(diffDays / (entries.length - 1)) : 0;
+
+  return {
+    totalEntries: entries.length,
+    totalCost,
+    totalKmTraveled: maxKm - minKm,
+    firstEntryDate: firstEntry.date,
+    lastEntryDate: lastEntry.date,
+    minKm,
+    maxKm,
+    typeBreakdown,
+    trustLevelBreakdown,
+    avgIntervalDays,
+  };
+}
+
 export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Element {
   const vehicleId = props.vehicleId;
   const [viewState, setViewState] = useState<ViewState>("loading");
@@ -198,6 +277,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
 
   const timelineEmpty = entries.length === 0;
   const optionalHint = useMemo(() => "Datenpflege = bessere Trust-Stufe & Verkaufswert", []);
+  const entryStats = useMemo(() => calculateEntryStats(entries), [entries]);
 
   async function refreshEntries(): Promise<void> {
     const token = getAuthToken();
@@ -290,7 +370,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
+    <main className="ltc-main ltc-main--wide">
       <h1>Vehicle Detail</h1>
 
       {error ? <InlineErrorBanner message={error} /> : null}
@@ -301,20 +381,94 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
         <>
           <p>Fahrzeugprofil mit Timeline, Entry-Pflichtfeldern und Versionshistorie.</p>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
-            <h2>Stammdaten</h2>
-            <p>
-              <strong>ID:</strong> <code>{vehicle.id}</code>
-            </p>
-            <p>
-              <strong>VIN:</strong> <code>{vehicle.vin_masked}</code>
-            </p>
-            <p>
-              <strong>Nickname:</strong> {vehicle.nickname?.trim() || "nicht gesetzt"}
-            </p>
+          {/* QUICK STATS DASHBOARD */}
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h3 className="ltc-helper-text">
+              📊 Fahrzeug-Übersicht
+            </h3>
+            <div className="ltc-stats-grid">
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Einträge gesamt</div>
+                <div className="ltc-stat-card__value">{entryStats.totalEntries}</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Km gefahren</div>
+                <div className="ltc-stat-card__value">{entryStats.totalKmTraveled.toLocaleString()}</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Kosten gesamt</div>
+                <div className="ltc-stat-card__value">{entryStats.totalCost.toFixed(0)} €</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Ø Intervall</div>
+                <div className="ltc-stat-card__value">{entryStats.avgIntervalDays} Tage</div>
+              </div>
+            </div>
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h2>Stammdaten & Kennwerte</h2>
+            <div className="ltc-two-col-grid">
+              <div>
+                <p>
+                  <strong>ID:</strong> <code>{vehicle.id}</code>
+                </p>
+                <p>
+                  <strong>VIN:</strong> <code>{vehicle.vin_masked}</code>
+                </p>
+                <p>
+                  <strong>Nickname:</strong> {vehicle.nickname?.trim() || "nicht gesetzt"}
+                </p>
+              </div>
+              <div>
+                {entryStats.totalEntries > 0 && (
+                  <>
+                    <p>
+                      <strong>Erste Eintrag:</strong> {entryStats.firstEntryDate} ({entryStats.minKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Letzte Eintrag:</strong> {entryStats.lastEntryDate} ({entryStats.maxKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Zeitspanne:</strong> ~{Math.floor((new Date(entryStats.lastEntryDate!).getTime() - new Date(entryStats.firstEntryDate!).getTime()) / (1000 * 60 * 60 * 24))} Tage
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Entry Types Breakdown */}
+            {Object.keys(entryStats.typeBreakdown).length > 0 && (
+              <div className="ltc-section">
+                <strong>Eintragstypen:</strong>
+                <div className="ltc-token-row">
+                  {Object.entries(entryStats.typeBreakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, count]) => (
+                      <div key={type} className="ltc-token ltc-token--neutral">
+                        <strong>{type}:</strong> {count}x
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trust Levels Breakdown */}
+            {Object.keys(entryStats.trustLevelBreakdown).length > 0 && (
+              <div className="ltc-section">
+                <strong>T-Level Verteilung:</strong>
+                <div className="ltc-token-row">
+                  {Object.entries(entryStats.trustLevelBreakdown).map(([level, count]) => (
+                    <div key={level} className="ltc-token ltc-token--warning">
+                      <strong>{level === "keine" ? "keine" : level}:</strong> {count}x
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="ltc-card ltc-section ltc-section--card">
             <h2>Timeline</h2>
             <p className="ltc-muted">
               Pflichtfelder: Datum, Typ, durchgeführt von und Kilometerstand. Optionalfelder bleiben wertsteigernd.
@@ -323,11 +477,11 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
             {timelineEmpty ? <p className="ltc-muted">Noch keine Einträge vorhanden.</p> : null}
 
             {!timelineEmpty ? (
-              <ul style={{ display: "grid", gap: 12, paddingLeft: 18 }}>
+              <ul className="ltc-entry-list">
                 {entries.map((entry) => (
                   <li key={entry.id}>
-                    <div className="ltc-card">
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div className="ltc-card ltc-entry-card">
+                      <div className="ltc-entry-card__header">
                         <div>
                           <strong>{entry.type}</strong> · <code>{entry.date}</code> · {entry.performed_by}
                         </div>
@@ -335,25 +489,25 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                           {revisionLabel(entry)} · {entry.km} km {entry.trust_level ? `· ${entry.trust_level}` : ""}
                         </div>
                       </div>
-                      <p className="ltc-muted" style={{ marginTop: 8 }}>
+                      <p className="ltc-muted ltc-mt-2">
                         {trustLevelMeaning(entry.trust_level)}
                       </p>
-                      {entry.note ? <p style={{ marginTop: 10 }}>{entry.note}</p> : null}
+                      {entry.note ? <p className="ltc-mt-2">{entry.note}</p> : null}
                       {entry.cost_amount != null ? <p className="ltc-muted">Kosten: {entry.cost_amount.toFixed(2)} EUR</p> : null}
 
-                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-                        <button type="button" onClick={() => startRevision(entry)}>
+                      <div className="ltc-entry-card__actions">
+                        <button type="button" className="ltc-btn ltc-btn--soft" onClick={() => startRevision(entry)}>
                           Neue Version anlegen
                         </button>
-                        <button type="button" onClick={() => void loadHistory(entry)}>
+                        <button type="button" className="ltc-btn ltc-btn--ghost" onClick={() => void loadHistory(entry)}>
                           Versionshistorie laden
                         </button>
                       </div>
 
                       {historyByEntryId[entry.id] ? (
-                        <div style={{ marginTop: 12 }}>
+                        <div className="ltc-entry-card__history">
                           <strong>Versionen</strong>
-                          <ul style={{ marginTop: 8 }}>
+                          <ul className="ltc-entry-card__history-list">
                             {historyByEntryId[entry.id].map((version) => (
                               <li key={version.id}>
                                 <code>v{version.version}</code> · {version.date} · {version.km} km · {version.performed_by}
@@ -370,24 +524,90 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
             ) : null}
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
-            <h2>Trust-Zusammenfassung</h2>
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h2>🚦 Trust-Ampel & Bewertung</h2>
             <p className="ltc-muted">T1 = kein physisches Serviceheft, T2 = physisches Serviceheft vorhanden, T3 = Dokument vorhanden.</p>
             {trustSummary ? (
-              <div style={{ display: "grid", gap: 8 }}>
-                <p>
-                  <strong>Ampel:</strong> {trustLightLabel(trustSummary.trust_light)} · <strong>Verifizierung:</strong>{" "}
-                  {trustSummary.verification_level} · <strong>Oberstes T-Level:</strong> {trustSummary.top_trust_level ?? "nicht gesetzt"}
+              <div className="ltc-trust-panel">
+                {/* Visual Trust Light Indicator */}
+                <div className="ltc-trust-panel__hero">
+                  <div className="ltc-trust-panel__light" style={{
+                     width: 60,
+                     height: 60,
+                     backgroundColor: trustLightColor(trustSummary.trust_light),
+                     boxShadow: `0 4px 6px rgba(0, 0, 0, 0.1)`
+                   }}>
+                     {trustSummary.trust_light === "gruen" ? "✓" : trustSummary.trust_light === "gelb" ? "⚠" : "!"}
+                  </div>
+                  <div>
+                    <div className="ltc-trust-panel__hero-value">
+                      {trustLightLabel(trustSummary.trust_light)}
+                    </div>
+                    <div className="ltc-trust-panel__hero-meta">
+                      Verifikation: <strong>{trustSummary.verification_level}</strong>
+                    </div>
+                    <div className="ltc-trust-panel__hero-meta">
+                      Oberstes T-Level: <strong>{trustSummary.top_trust_level ?? "–"}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Grid */}
+                <div className="ltc-status-grid">
+                  <div className={`ltc-status-card ${trustSummary.history_status === "vorhanden" ? "ltc-status-card--success" : "ltc-status-card--error"}`}>
+                    <div><strong>Historie</strong></div>
+                    <div className="ltc-muted">
+                      {trustSummary.history_status === "vorhanden" ? "✓ Vorhanden" : "✗ Keine"}
+                    </div>
+                  </div>
+                  <div className={`ltc-status-card ${trustSummary.evidence_status === "vorhanden" ? "ltc-status-card--success" : "ltc-status-card--error"}`}>
+                    <div><strong>Nachweise</strong></div>
+                    <div className="ltc-muted">
+                      {trustSummary.evidence_status === "vorhanden" ? "✓ Vorhanden" : "✗ Keine"}
+                    </div>
+                  </div>
+                  <div className={`ltc-status-card ${trustSummary.accident_status === "unfallfrei" ? "ltc-status-card--success" : trustSummary.accident_status === "nicht_unfallfrei" ? "ltc-status-card--error" : "ltc-status-card--neutral"}`}>
+                    <div><strong>Unfallstatus</strong></div>
+                    <div className="ltc-muted">
+                      {trustSummary.accident_status_label}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hint */}
+                <p className="ltc-inline-note ltc-inline-note--info">
+                  💡 {trustSummary.hint}
                 </p>
-                <p>
-                  <strong>Historie:</strong> {trustSummary.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
-                  <strong>Nachweise:</strong> {trustSummary.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
-                  <strong>Unfallstatus:</strong> {trustSummary.accident_status_label}
-                </p>
-                <p className="ltc-muted">{trustSummary.hint}</p>
+
+                {/* Reason Codes */}
+                {trustSummary.reason_codes.length > 0 ? (
+                  <div>
+                    <strong className="ltc-helper-text">
+                      Bewertungsfaktoren
+                    </strong>
+                    <div className="ltc-token-row">
+                      {trustSummary.reason_codes.map((code) => (
+                        <div key={code} className="ltc-token ltc-token--neutral">
+                          {code}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* To-Do Codes */}
                 {trustSummary.todo_codes.length > 0 ? (
-                  <div className="ltc-muted">
-                    <strong>Priorisierte To-dos:</strong> {trustSummary.todo_codes.join(", ")}
+                  <div className="ltc-inline-note ltc-inline-note--warning">
+                    <strong className="ltc-helper-text">
+                      Priorisierte To-dos
+                    </strong>
+                    <div className="ltc-token-row">
+                      {trustSummary.todo_codes.map((code) => (
+                        <div key={code} className="ltc-token ltc-token--warning">
+                          {code}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -396,7 +616,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
             )}
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
             <h2>{revisionTarget ? "Entry-Version aktualisieren" : "Neuen Entry anlegen"}</h2>
             <p className="ltc-muted">{optionalHint}</p>
             <p className="ltc-muted">T1/T2/T3 bitte nur entsprechend der Nachweislage setzen.</p>
@@ -407,14 +627,14 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
               </p>
             ) : null}
 
-            <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+            <div className="ltc-stack">
               <label>
                 Datum
                 <input
                   type="date"
                   value={entryDraft.date}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, date: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
               <label>
@@ -423,7 +643,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   type="text"
                   value={entryDraft.type}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, type: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
               <label>
@@ -432,7 +652,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   type="text"
                   value={entryDraft.performed_by}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, performed_by: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
               <label>
@@ -442,7 +662,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   min={0}
                   value={entryDraft.km}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, km: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
               <label>
@@ -450,7 +670,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                 <textarea
                   value={entryDraft.note}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, note: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10, minHeight: 96 }}
+                  className="ltc-form-group__textarea"
                 />
               </label>
               <label>
@@ -461,7 +681,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   step="0.01"
                   value={entryDraft.cost_amount}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, cost_amount: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__input"
                 />
               </label>
               <label>
@@ -469,7 +689,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                 <select
                   value={entryDraft.trust_level}
                   onChange={(e) => setEntryDraft((prev) => ({ ...prev, trust_level: e.target.value as EntryDraft["trust_level"] }))}
-                  style={{ display: "block", width: "100%", marginTop: 8, padding: 10 }}
+                  className="ltc-form-group__select"
                 >
                   <option value="">Nicht gesetzt</option>
                   <option value="T1">T1</option>
@@ -479,19 +699,19 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
               </label>
             </div>
 
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-              <button type="button" disabled={busy === "entry"} onClick={() => void onSubmitEntry()}>
+            <div className="ltc-entry-card__actions">
+              <button type="button" className="ltc-btn ltc-btn--primary" disabled={busy === "entry"} onClick={() => void onSubmitEntry()}>
                 {busy === "entry" ? "Speichert..." : revisionTarget ? "Version speichern" : "Entry speichern"}
               </button>
               {revisionTarget ? (
-                <button type="button" disabled={busy === "entry"} onClick={cancelRevision}>
+                <button type="button" className="ltc-btn ltc-btn--ghost" disabled={busy === "entry"} onClick={cancelRevision}>
                   Revision abbrechen
                 </button>
               ) : null}
             </div>
           </section>
 
-          <section className="ltc-card" style={{ marginTop: 16 }}>
+          <section className="ltc-card ltc-section ltc-section--card">
             <h2>Trust-Modul</h2>
             <p>
               Für dieses Fahrzeug können Trust-Folders add-on-gated und consent-gated geöffnet werden. Der Link übergibt den
@@ -500,17 +720,17 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
             <a href={trustFoldersHref(vehicle.id)}>Trust Folders für dieses Vehicle öffnen</a>
           </section>
 
-          <section style={{ marginTop: 16 }}>
+          <section className="ltc-page-nav">
             <h2>Navigation</h2>
-            <ul>
-              <li>
-                <a href="#/vehicles">Zurück zur Vehicles-Liste</a>
+            <ul className="ltc-list">
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href="#/vehicles">Zurück zur Vehicles-Liste</a>
               </li>
-              <li>
-                <a href="#/documents">Zu Documents</a>
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href="#/documents">Zu Documents</a>
               </li>
-              <li>
-                <a href={trustFoldersHref(vehicle.id)}>Zu Trust Folders</a>
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href={trustFoldersHref(vehicle.id)}>Zu Trust Folders</a>
               </li>
             </ul>
           </section>

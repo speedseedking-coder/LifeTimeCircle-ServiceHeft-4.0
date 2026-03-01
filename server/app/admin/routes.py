@@ -3,14 +3,16 @@ from __future__ import annotations
 from app.guards import forbid_moderator
 
 import json
+import secrets
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from pydantic import BaseModel, Field
 
+from app.auth.crypto import token_hash
 from app.auth.rbac import AuthContext, require_roles
 from app.auth.settings import load_settings
 
@@ -19,6 +21,16 @@ router = APIRouter(dependencies=[Depends(forbid_moderator)], prefix="/admin", ta
 
 # Wichtig: SUPERADMIN existiert als Rolle (für High-Risk-Gates)
 ALLOWED_ROLES = {"public", "user", "vip", "dealer", "moderator", "admin", "superadmin"}
+ADMIN_STEP_UP_HEADER = "X-Admin-Step-Up"
+ADMIN_STEP_UP_SCOPES = {
+    "role_grant",
+    "moderator_accredit",
+    "vip_business_approve",
+    "vip_business_staff",
+}
+ADMIN_STEP_UP_TTL_DEFAULT_SECONDS = 10 * 60
+ADMIN_STEP_UP_TTL_MIN_SECONDS = 60
+ADMIN_STEP_UP_TTL_MAX_SECONDS = 10 * 60
 
 
 def _utc_now_iso() -> str:
@@ -58,6 +70,45 @@ def _ensure_auth_audit_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_auth_audit_target ON auth_audit_events(target_user_id);"
     )
+
+
+def _ensure_admin_step_up_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admin_step_up_grants (
+            grant_id TEXT PRIMARY KEY,
+            actor_user_id TEXT NOT NULL,
+            scope TEXT NOT NULL,
+            token_hash TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_step_up_token_hash ON admin_step_up_grants(token_hash);"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_step_up_actor_scope ON admin_step_up_grants(actor_user_id, scope);"
+    )
+
+
+def _parse_iso_datetime(raw_value: Any) -> Optional[datetime]:
+    if not isinstance(raw_value, str) or not raw_value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw_value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _normalize_admin_step_up_ttl(ttl_seconds: int) -> int:
+    ttl = int(ttl_seconds)
+    return max(ADMIN_STEP_UP_TTL_MIN_SECONDS, min(ttl, ADMIN_STEP_UP_TTL_MAX_SECONDS))
 
 
 def _best_effort_insert_into_audit_events(conn: sqlite3.Connection, payload: Dict[str, Any]) -> None:
@@ -179,6 +230,109 @@ def _audit(
         pass
 
 
+def _issue_admin_step_up_grant(
+    conn: sqlite3.Connection,
+    *,
+    actor: AuthContext,
+    scope: str,
+    ttl_seconds: int,
+    secret_key: str,
+) -> Dict[str, Any]:
+    if scope not in ADMIN_STEP_UP_SCOPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_step_up_scope")
+
+    _ensure_admin_step_up_table(conn)
+
+    ttl = _normalize_admin_step_up_ttl(ttl_seconds)
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(seconds=ttl)
+    raw_token = secrets.token_urlsafe(32)
+
+    conn.execute(
+        """
+        INSERT INTO admin_step_up_grants(grant_id, actor_user_id, scope, token_hash, expires_at, used, created_at)
+        VALUES(?, ?, ?, ?, ?, 0, ?);
+        """,
+        (
+            str(uuid.uuid4()),
+            actor.user_id,
+            scope,
+            token_hash(secret_key, raw_token),
+            expires_at.isoformat(),
+            now.isoformat(),
+        ),
+    )
+
+    _audit(
+        conn,
+        action="ADMIN_STEP_UP_GRANTED",
+        actor_user_id=actor.user_id,
+        target_user_id=actor.user_id,
+        details={"scope": scope, "ttl_seconds": ttl},
+    )
+
+    return {
+        "ok": True,
+        "scope": scope,
+        "step_up_token": raw_token,
+        "token": raw_token,
+        "expires_at": expires_at.isoformat(),
+        "ttl_seconds": ttl,
+        "one_time": True,
+        "header": ADMIN_STEP_UP_HEADER,
+    }
+
+
+def _require_admin_step_up(
+    conn: sqlite3.Connection,
+    *,
+    actor: AuthContext,
+    scope: str,
+    raw_token: Optional[str],
+    secret_key: str,
+) -> None:
+    if scope not in ADMIN_STEP_UP_SCOPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_step_up_scope")
+    if not raw_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin_step_up_required")
+
+    _ensure_admin_step_up_table(conn)
+    row = conn.execute(
+        """
+        SELECT grant_id, actor_user_id, scope, expires_at, used
+        FROM admin_step_up_grants
+        WHERE token_hash=?
+        LIMIT 1;
+        """,
+        (token_hash(secret_key, raw_token),),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin_step_up_invalid")
+
+    expires_at = _parse_iso_datetime(row["expires_at"])
+    used_int = int(row["used"] or 0)
+    if (
+        row["actor_user_id"] != actor.user_id
+        or row["scope"] != scope
+        or expires_at is None
+        or datetime.now(timezone.utc) > expires_at
+        or used_int != 0
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin_step_up_invalid")
+
+    conn.execute(
+        "UPDATE admin_step_up_grants SET used=1 WHERE grant_id=?;",
+        (row["grant_id"],),
+    )
+    _audit(
+        conn,
+        action="ADMIN_STEP_UP_CONSUMED",
+        actor_user_id=actor.user_id,
+        target_user_id=actor.user_id,
+        details={"scope": scope},
+    )
+
+
 def _ensure_vip_business_tables(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -241,6 +395,22 @@ class VipBusinessStaffAddResponse(BaseModel):
     business_id: str
     user_id: str
     at: str
+
+
+class AdminStepUpGrantRequest(BaseModel):
+    scope: str = Field(..., min_length=1, max_length=64)
+    ttl_seconds: int = Field(default=ADMIN_STEP_UP_TTL_DEFAULT_SECONDS, ge=ADMIN_STEP_UP_TTL_MIN_SECONDS, le=ADMIN_STEP_UP_TTL_MAX_SECONDS)
+
+
+class AdminStepUpGrantResponse(BaseModel):
+    ok: bool
+    scope: str
+    step_up_token: str
+    token: str
+    expires_at: str
+    ttl_seconds: int
+    one_time: bool
+    header: str
 
 
 class VipBusinessListRow(BaseModel):
@@ -395,10 +565,28 @@ def admin_list_vip_businesses(_: AuthContext = Depends(require_roles("admin", "s
         return _list_vip_businesses(conn)
 
 
+@router.post("/step-up/grant", response_model=AdminStepUpGrantResponse)
+def admin_grant_step_up(
+    body: AdminStepUpGrantRequest,
+    actor: AuthContext = Depends(require_roles("admin", "superadmin")),
+):
+    settings = load_settings()
+    with _connect(settings.db_path) as conn:
+        payload = _issue_admin_step_up_grant(
+            conn,
+            actor=actor,
+            scope=(body.scope or "").strip().lower(),
+            ttl_seconds=body.ttl_seconds,
+            secret_key=settings.secret_key,
+        )
+        return AdminStepUpGrantResponse(**payload)
+
+
 @router.post("/users/{user_id}/role", response_model=RoleSetResponse)
 def admin_set_user_role(
     user_id: str,
     body: RoleSetRequest,
+    x_admin_step_up: Optional[str] = Header(default=None, convert_underscores=False, alias=ADMIN_STEP_UP_HEADER),
     actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     new_role = (body.role or "").strip().lower()
@@ -411,6 +599,13 @@ def admin_set_user_role(
 
     settings = load_settings()
     with _connect(settings.db_path) as conn:
+        _require_admin_step_up(
+            conn,
+            actor=actor,
+            scope="role_grant",
+            raw_token=x_admin_step_up,
+            secret_key=settings.secret_key,
+        )
         return _apply_role_change(
             conn=conn,
             user_id=user_id,
@@ -425,6 +620,7 @@ def admin_set_user_role(
 def admin_accredit_moderator(
     user_id: str,
     body: ModeratorAccreditRequest,
+    x_admin_step_up: Optional[str] = Header(default=None, convert_underscores=False, alias=ADMIN_STEP_UP_HEADER),
     actor: AuthContext = Depends(require_roles("admin", "superadmin")),
 ):
     """
@@ -435,6 +631,13 @@ def admin_accredit_moderator(
     """
     settings = load_settings()
     with _connect(settings.db_path) as conn:
+        _require_admin_step_up(
+            conn,
+            actor=actor,
+            scope="moderator_accredit",
+            raw_token=x_admin_step_up,
+            secret_key=settings.secret_key,
+        )
         return _apply_role_change(
             conn=conn,
             user_id=user_id,
@@ -508,6 +711,7 @@ def admin_create_vip_business(
 @router.post("/vip-businesses/{business_id}/approve", response_model=VipBusinessResponse)
 def superadmin_approve_vip_business(
     business_id: str,
+    x_admin_step_up: Optional[str] = Header(default=None, convert_underscores=False, alias=ADMIN_STEP_UP_HEADER),
     actor: AuthContext = Depends(require_roles("superadmin")),
 ):
     """
@@ -518,6 +722,13 @@ def superadmin_approve_vip_business(
 
     with _connect(settings.db_path) as conn:
         _ensure_vip_business_tables(conn)
+        _require_admin_step_up(
+            conn,
+            actor=actor,
+            scope="vip_business_approve",
+            raw_token=x_admin_step_up,
+            secret_key=settings.secret_key,
+        )
 
         row = conn.execute(
             "SELECT business_id, owner_user_id, created_at, approved_at, approved_by_user_id FROM vip_businesses WHERE business_id=? LIMIT 1;",
@@ -559,6 +770,7 @@ def superadmin_add_vip_business_staff(
     business_id: str,
     user_id: str,
     body: VipBusinessStaffAddRequest,
+    x_admin_step_up: Optional[str] = Header(default=None, convert_underscores=False, alias=ADMIN_STEP_UP_HEADER),
     actor: AuthContext = Depends(require_roles("superadmin")),
 ):
     """
@@ -572,6 +784,13 @@ def superadmin_add_vip_business_staff(
 
     with _connect(settings.db_path) as conn:
         _ensure_vip_business_tables(conn)
+        _require_admin_step_up(
+            conn,
+            actor=actor,
+            scope="vip_business_staff",
+            raw_token=x_admin_step_up,
+            secret_key=settings.secret_key,
+        )
 
         biz = conn.execute(
             "SELECT business_id, owner_user_id, approved_at FROM vip_businesses WHERE business_id=? LIMIT 1;",
