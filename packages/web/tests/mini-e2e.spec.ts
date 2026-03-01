@@ -591,9 +591,11 @@ test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", 
   await boot(page);
   await setHash(page, "#/onboarding");
 
+  await expect(page.locator("#vin-input")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("VIN").fill("WAUZZZ1JZXW999999");
   await page.getByRole("button", { name: "Weiter" }).click();
   await page.getByRole("button", { name: "Fahrzeug speichern" }).click();
+  await expect(page.locator("#entry-km")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("Kilometerstand").fill("120000");
   await page.getByRole("button", { name: "Entry speichern" }).click();
 
@@ -714,6 +716,7 @@ test("Auth page goes directly to target when consent is already complete", async
 
   await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/vehicles");
   await expect(page.locator("main h1")).toContainText("Vehicles");
+  await expect(page.locator("#vehicles-vin-input")).toHaveAttribute("aria-required", "true");
 });
 
 test("Consent page accepts required versions and continues to target route", async ({ page }) => {
@@ -1074,6 +1077,8 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
   await expect(page.locator("main h1")).toContainText("Admin");
   await expect(page.locator('[data-testid="admin-page"]')).toContainText("uid-user-1");
+  await expect(page.locator("#admin-business-owner-id")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#admin-export-target-id")).toHaveAttribute("aria-required", "true");
 
   const userCard = page.locator("article").filter({ hasText: "uid-user-1" }).first();
   await userCard.getByLabel("Zielrolle").selectOption("vip");

@@ -44,6 +44,7 @@ export default function VehiclesPage(): JSX.Element {
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"vin" | null>(null);
   const [vin, setVin] = useState("");
   const [nickname, setNickname] = useState("");
   const [accidentStatus, setAccidentStatus] = useState<"unknown" | "accident_free" | "not_free">("unknown");
@@ -86,11 +87,13 @@ export default function VehiclesPage(): JSX.Element {
     const normalizedVin = vin.trim().toUpperCase().replace(/\s+/g, "");
     if (!VIN_PATTERN.test(normalizedVin)) {
       setError("Die VIN muss 11 bis 17 Zeichen haben und darf I, O, Q nicht enthalten.");
+      setErrorField("vin");
       return;
     }
 
     setCreating(true);
     setError("");
+    setErrorField(null);
 
     const token = getAuthToken();
     const headers = authHeaders(token);
@@ -110,6 +113,7 @@ export default function VehiclesPage(): JSX.Element {
         return;
       }
       setError(toErrorMessage(res));
+      setErrorField(null);
       return;
     }
 
@@ -130,21 +134,34 @@ export default function VehiclesPage(): JSX.Element {
         <form onSubmit={(e) => void onCreate(e)}>
           <div className="ltc-form-grid">
             <div className="ltc-form-group">
-              <label className="ltc-form-group__label">
+              <label className="ltc-form-group__label" htmlFor="vehicles-vin-input">
                 VIN
                 <input
+                  id="vehicles-vin-input"
                   className="ltc-form-group__input"
                   value={vin}
                   onChange={(e) => setVin(e.target.value)}
                   placeholder="z. B. WAUZZZ..."
                   autoComplete="off"
+                  aria-required="true"
+                  aria-invalid={errorField === "vin"}
+                  aria-describedby={errorField === "vin" ? "vehicles-vin-error vehicles-vin-hint" : "vehicles-vin-hint"}
                 />
               </label>
+              <p id="vehicles-vin-hint" className="ltc-helper-text">
+                11 bis 17 Zeichen, ohne I, O und Q.
+              </p>
+              {errorField === "vin" && error ? (
+                <p id="vehicles-vin-error" className="ltc-helper-text ltc-helper-text--error">
+                  {error}
+                </p>
+              ) : null}
             </div>
             <div className="ltc-form-group">
-              <label className="ltc-form-group__label">
+              <label className="ltc-form-group__label" htmlFor="vehicles-nickname-input">
                 Nickname (optional)
                 <input
+                  id="vehicles-nickname-input"
                   className="ltc-form-group__input"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
@@ -154,12 +171,14 @@ export default function VehiclesPage(): JSX.Element {
               </label>
             </div>
             <div className="ltc-form-group">
-              <label className="ltc-form-group__label">
+              <label className="ltc-form-group__label" htmlFor="vehicles-accident-status">
                 Unfallstatus
                 <select
+                  id="vehicles-accident-status"
                   className="ltc-form-group__select"
                   value={accidentStatus}
                   onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
+                  aria-required="true"
                 >
                   <option value="unknown">Unbekannt</option>
                   <option value="accident_free">Unfallfrei</option>

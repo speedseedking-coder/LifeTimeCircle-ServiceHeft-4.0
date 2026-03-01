@@ -90,9 +90,11 @@ function AdminUserCard(props: {
         <label>
           Zielrolle
           <select
+            id={`admin-role-${props.user.user_id}`}
             value={props.currentRole}
             onChange={(e) => props.onRoleChange(e.target.value)}
             className="ltc-form-group__select"
+            aria-required="true"
           >
             {ROLE_OPTIONS.map((role) => (
               <option key={role} value={role} disabled={role === "superadmin" && superadminOptionLocked}>
@@ -105,6 +107,7 @@ function AdminUserCard(props: {
         <label>
           Grund (optional)
           <input
+            id={`admin-reason-${props.user.user_id}`}
             value={props.currentReason}
             onChange={(e) => props.onReasonChange(e.target.value)}
             placeholder="Wird nur als reason_provided auditiert"
@@ -137,6 +140,8 @@ function VipBusinessCard(props: {
   onApprove: () => void;
   onAddStaff: () => void;
 }): JSX.Element {
+  const staffInvalid = props.staffDraft.trim().length > 0 && props.staffDraft.trim().length < 8;
+
   return (
     <article className="ltc-card ltc-section ltc-section--card">
       <div className="ltc-admin-head">
@@ -171,13 +176,22 @@ function VipBusinessCard(props: {
           <label>
             Staff User-ID
             <input
+              id={`admin-staff-${props.business.business_id}`}
               value={props.staffDraft}
               onChange={(e) => props.onStaffDraftChange(e.target.value)}
               placeholder="bestehende auth_users user_id"
               autoComplete="off"
               className="ltc-form-group__input"
+              aria-required="true"
+              aria-invalid={staffInvalid}
+              aria-describedby={staffInvalid ? `admin-staff-error-${props.business.business_id}` : undefined}
             />
           </label>
+          {staffInvalid ? (
+            <p id={`admin-staff-error-${props.business.business_id}`} className="ltc-helper-text ltc-helper-text--error">
+              Staff User-ID muss mindestens 8 Zeichen lang sein.
+            </p>
+          ) : null}
 
           <label>
             Grund (optional)
@@ -225,6 +239,8 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   const isSuperadmin = props.actorRole === "superadmin";
   const visibleUsers = useMemo(() => sortUsers(users), [users]);
   const visibleBusinesses = useMemo(() => sortBusinesses(vipBusinesses), [vipBusinesses]);
+  const ownerUserIdInvalid = businessOwnerUserId.trim().length > 0 && businessOwnerUserId.trim().length < 8;
+  const exportTtlInvalid = exportTtlSeconds.trim().length > 0 && !Number.isFinite(Number.parseInt(exportTtlSeconds, 10));
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -437,17 +453,27 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Owner User-ID
                 <input
+                  id="admin-business-owner-id"
                   value={businessOwnerUserId}
                   onChange={(e) => setBusinessOwnerUserId(e.target.value)}
                   placeholder="bestehende auth_users user_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={ownerUserIdInvalid}
+                  aria-describedby={ownerUserIdInvalid ? "admin-business-owner-error" : undefined}
                 />
               </label>
+              {ownerUserIdInvalid ? (
+                <p id="admin-business-owner-error" className="ltc-helper-text ltc-helper-text--error">
+                  Owner User-ID muss mindestens 8 Zeichen lang sein.
+                </p>
+              ) : null}
 
               <label>
                 Business-ID (optional)
                 <input
+                  id="admin-business-id"
                   value={businessId}
                   onChange={(e) => setBusinessId(e.target.value)}
                   placeholder="externes Business-Kürzel oder leer für UUID"
@@ -459,6 +485,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Grund (optional)
                 <input
+                  id="admin-business-reason"
                   value={businessReason}
                   onChange={(e) => setBusinessReason(e.target.value)}
                   placeholder="Wird nur als reason_provided auditiert"
@@ -541,24 +568,35 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Ziel-ID
                 <input
+                  id="admin-export-target-id"
                   value={exportTargetId}
                   onChange={(e) => setExportTargetId(e.target.value)}
                   placeholder="vehicle_id / user_id / servicebook_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
                 />
               </label>
 
               <label>
                 TTL Sekunden (für Full Grant)
                 <input
+                  id="admin-export-ttl"
                   value={exportTtlSeconds}
                   onChange={(e) => setExportTtlSeconds(e.target.value)}
                   inputMode="numeric"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={exportTtlInvalid}
+                  aria-describedby={exportTtlInvalid ? "admin-export-ttl-error" : undefined}
                 />
               </label>
+              {exportTtlInvalid ? (
+                <p id="admin-export-ttl-error" className="ltc-helper-text ltc-helper-text--error">
+                  TTL muss numerisch sein.
+                </p>
+              ) : null}
 
               <div className="ltc-admin-actions">
                 <button
