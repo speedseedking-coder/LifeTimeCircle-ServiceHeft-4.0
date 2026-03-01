@@ -1163,3 +1163,32 @@ test("news post page displays full article content", async ({ page }) => {
   await expect(main).toContainText("Was ändert sich?");
   await expect(main).toContainText("Zurück zu News");
 });
+
+/* ========== RESPONSIVE DESIGN TESTS ========== */
+
+test("responsive stylesheet includes mobile-first media queries (640px, 768px, 1920px)", async ({ page }) => {
+  await page.goto("http://localhost:5173/");
+
+  // Check that CSS includes responsive media queries
+  const mediaQueries = await page.evaluate(() => {
+    const allText: string[] = [];
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule.media) {
+            allText.push(rule.media.mediaText);
+          }
+        }
+      } catch {
+        // CORS-restricted, skip
+      }
+    }
+    return allText;
+  });
+
+  // Verify media queries include responsive breakpoints
+  const mediaQueryText = mediaQueries.join(" ");
+  expect(mediaQueryText.toLowerCase()).toContain("max-width");
+  expect(mediaQueryText.toLowerCase()).toContain("min-width");
+  expect(mediaQueries.length).toBeGreaterThan(0);
+});

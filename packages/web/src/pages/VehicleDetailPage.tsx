@@ -123,6 +123,85 @@ function trustLevelMeaning(value: VehicleEntry["trust_level"] | null): string {
   return "Nicht klassifiziert";
 }
 
+/* ========== VEHICLE ENRICHMENT STATISTICS ========== */
+
+function trustLightColor(light: VehicleTrustSummary["trust_light"]): string {
+  if (light === "gruen") return "#10b981"; // green
+  if (light === "gelb") return "#fbbf24"; // amber
+  if (light === "orange") return "#f97316"; // orange
+  if (light === "rot") return "#ef4444"; // red
+  return "#9ca3af"; // gray
+}
+
+type EntryStats = {
+  totalEntries: number;
+  totalCost: number;
+  totalKmTraveled: number;
+  firstEntryDate: string | null;
+  lastEntryDate: string | null;
+  minKm: number;
+  maxKm: number;
+  typeBreakdown: Record<string, number>;
+  trustLevelBreakdown: Record<string, number>;
+  avgIntervalDays: number;
+};
+
+function calculateEntryStats(entries: VehicleEntry[]): EntryStats {
+  if (entries.length === 0) {
+    return {
+      totalEntries: 0,
+      totalCost: 0,
+      totalKmTraveled: 0,
+      firstEntryDate: null,
+      lastEntryDate: null,
+      minKm: 0,
+      maxKm: 0,
+      typeBreakdown: {},
+      trustLevelBreakdown: {},
+      avgIntervalDays: 0,
+    };
+  }
+
+  const sorted = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const firstEntry = sorted[0];
+  const lastEntry = sorted[sorted.length - 1];
+
+  const typeBreakdown: Record<string, number> = {};
+  const trustLevelBreakdown: Record<string, number> = {};
+  let totalCost = 0;
+  let minKm = firstEntry.km;
+  let maxKm = firstEntry.km;
+
+  for (const entry of entries) {
+    typeBreakdown[entry.type] = (typeBreakdown[entry.type] ?? 0) + 1;
+    const trustKey = entry.trust_level ?? "keine";
+    trustLevelBreakdown[trustKey] = (trustLevelBreakdown[trustKey] ?? 0) + 1;
+
+    if (entry.cost_amount !== null) totalCost += entry.cost_amount;
+    minKm = Math.min(minKm, entry.km);
+    maxKm = Math.max(maxKm, entry.km);
+  }
+
+  const firstDate = new Date(firstEntry.date);
+  const lastDate = new Date(lastEntry.date);
+  const diffTime = Math.abs(lastDate.getTime() - firstDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const avgIntervalDays = entries.length > 1 ? Math.floor(diffDays / (entries.length - 1)) : 0;
+
+  return {
+    totalEntries: entries.length,
+    totalCost,
+    totalKmTraveled: maxKm - minKm,
+    firstEntryDate: firstEntry.date,
+    lastEntryDate: lastEntry.date,
+    minKm,
+    maxKm,
+    typeBreakdown,
+    trustLevelBreakdown,
+    avgIntervalDays,
+  };
+}
+
 export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Element {
   const vehicleId = props.vehicleId;
   const [viewState, setViewState] = useState<ViewState>("loading");
@@ -198,6 +277,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
 
   const timelineEmpty = entries.length === 0;
   const optionalHint = useMemo(() => "Datenpflege = bessere Trust-Stufe & Verkaufswert", []);
+  const entryStats = useMemo(() => calculateEntryStats(entries), [entries]);
 
   async function refreshEntries(): Promise<void> {
     const token = getAuthToken();
@@ -301,17 +381,91 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
         <>
           <p>Fahrzeugprofil mit Timeline, Entry-Pflichtfeldern und Versionshistorie.</p>
 
+          {/* QUICK STATS DASHBOARD */}
+          <section className="ltc-card" style={{ marginTop: 16, backgroundColor: "#f9fafb" }}>
+            <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 14, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" }}>
+              📊 Fahrzeug-Übersicht
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+              <div style={{ padding: 12, backgroundColor: "white", borderRadius: 6, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#6b7280", marginBottom: 4 }}>Einträge gesamt</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1f2937" }}>{entryStats.totalEntries}</div>
+              </div>
+              <div style={{ padding: 12, backgroundColor: "white", borderRadius: 6, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#6b7280", marginBottom: 4 }}>Km gefahren</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1f2937" }}>{entryStats.totalKmTraveled.toLocaleString()}</div>
+              </div>
+              <div style={{ padding: 12, backgroundColor: "white", borderRadius: 6, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#6b7280", marginBottom: 4 }}>Kosten gesamt</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1f2937" }}>{entryStats.totalCost.toFixed(0)} €</div>
+              </div>
+              <div style={{ padding: 12, backgroundColor: "white", borderRadius: 6, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#6b7280", marginBottom: 4 }}>Ø Intervall</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1f2937" }}>{entryStats.avgIntervalDays} Tage</div>
+              </div>
+            </div>
+          </section>
+
           <section className="ltc-card" style={{ marginTop: 16 }}>
-            <h2>Stammdaten</h2>
-            <p>
-              <strong>ID:</strong> <code>{vehicle.id}</code>
-            </p>
-            <p>
-              <strong>VIN:</strong> <code>{vehicle.vin_masked}</code>
-            </p>
-            <p>
-              <strong>Nickname:</strong> {vehicle.nickname?.trim() || "nicht gesetzt"}
-            </p>
+            <h2>Stammdaten & Kennwerte</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <p>
+                  <strong>ID:</strong> <code>{vehicle.id}</code>
+                </p>
+                <p>
+                  <strong>VIN:</strong> <code>{vehicle.vin_masked}</code>
+                </p>
+                <p>
+                  <strong>Nickname:</strong> {vehicle.nickname?.trim() || "nicht gesetzt"}
+                </p>
+              </div>
+              <div>
+                {entryStats.totalEntries > 0 && (
+                  <>
+                    <p>
+                      <strong>Erste Eintrag:</strong> {entryStats.firstEntryDate} ({entryStats.minKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Letzte Eintrag:</strong> {entryStats.lastEntryDate} ({entryStats.maxKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Zeitspanne:</strong> ~{Math.floor((new Date(entryStats.lastEntryDate!).getTime() - new Date(entryStats.firstEntryDate!).getTime()) / (1000 * 60 * 60 * 24))} Tage
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Entry Types Breakdown */}
+            {Object.keys(entryStats.typeBreakdown).length > 0 && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
+                <strong>Eintragstypen:</strong>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+                  {Object.entries(entryStats.typeBreakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, count]) => (
+                      <div key={type} style={{ padding: "6px 12px", backgroundColor: "#f3f4f6", borderRadius: 4, fontSize: 12 }}>
+                        <strong>{type}:</strong> {count}x
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trust Levels Breakdown */}
+            {Object.keys(entryStats.trustLevelBreakdown).length > 0 && (
+              <div style={{ marginTop: 12, paddingTop: 12 }}>
+                <strong>T-Level Verteilung:</strong>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+                  {Object.entries(entryStats.trustLevelBreakdown).map(([level, count]) => (
+                    <div key={level} style={{ padding: "6px 12px", backgroundColor: "#fef3c7", borderRadius: 4, fontSize: 12 }}>
+                      <strong>{level === "keine" ? "keine" : level}:</strong> {count}x
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="ltc-card" style={{ marginTop: 16 }}>
@@ -371,23 +525,96 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           </section>
 
           <section className="ltc-card" style={{ marginTop: 16 }}>
-            <h2>Trust-Zusammenfassung</h2>
+            <h2>🚦 Trust-Ampel & Bewertung</h2>
             <p className="ltc-muted">T1 = kein physisches Serviceheft, T2 = physisches Serviceheft vorhanden, T3 = Dokument vorhanden.</p>
             {trustSummary ? (
-              <div style={{ display: "grid", gap: 8 }}>
-                <p>
-                  <strong>Ampel:</strong> {trustLightLabel(trustSummary.trust_light)} · <strong>Verifizierung:</strong>{" "}
-                  {trustSummary.verification_level} · <strong>Oberstes T-Level:</strong> {trustSummary.top_trust_level ?? "nicht gesetzt"}
+              <div style={{ display: "grid", gap: 16 }}>
+                {/* Visual Trust Light Indicator */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: "50%",
+                    backgroundColor: trustLightColor(trustSummary.trust_light),
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: 24,
+                    boxShadow: `0 4px 6px rgba(0, 0, 0, 0.1)`
+                  }}>
+                    {trustSummary.trust_light === "gruen" ? "✓" : trustSummary.trust_light === "gelb" ? "⚠" : "!"}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#1f2937" }}>
+                      {trustLightLabel(trustSummary.trust_light)}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+                      Verifikation: <strong>{trustSummary.verification_level}</strong>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>
+                      Oberstes T-Level: <strong>{trustSummary.top_trust_level ?? "–"}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
+                  <div style={{ padding: 10, backgroundColor: trustSummary.history_status === "vorhanden" ? "#dcfce7" : "#fee2e2", borderRadius: 6, fontSize: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Historie</div>
+                    <div style={{ color: "#4b5563" }}>
+                      {trustSummary.history_status === "vorhanden" ? "✓ Vorhanden" : "✗ Keine"}
+                    </div>
+                  </div>
+                  <div style={{ padding: 10, backgroundColor: trustSummary.evidence_status === "vorhanden" ? "#dcfce7" : "#fee2e2", borderRadius: 6, fontSize: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Nachweise</div>
+                    <div style={{ color: "#4b5563" }}>
+                      {trustSummary.evidence_status === "vorhanden" ? "✓ Vorhanden" : "✗ Keine"}
+                    </div>
+                  </div>
+                  <div style={{ padding: 10, backgroundColor: trustSummary.accident_status === "unfallfrei" ? "#dcfce7" : trustSummary.accident_status === "nicht_unfallfrei" ? "#fee2e2" : "#f3f4f6", borderRadius: 6, fontSize: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Unfallstatus</div>
+                    <div style={{ color: "#4b5563", fontSize: 11 }}>
+                      {trustSummary.accident_status_label}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hint */}
+                <p style={{ padding: 12, backgroundColor: "#f0f9ff", borderRadius: 6, borderLeft: "4px solid #0284c7", fontSize: 13, margin: 0 }}>
+                  💡 {trustSummary.hint}
                 </p>
-                <p>
-                  <strong>Historie:</strong> {trustSummary.history_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
-                  <strong>Nachweise:</strong> {trustSummary.evidence_status === "vorhanden" ? "vorhanden" : "nicht vorhanden"} ·{" "}
-                  <strong>Unfallstatus:</strong> {trustSummary.accident_status_label}
-                </p>
-                <p className="ltc-muted">{trustSummary.hint}</p>
+
+                {/* Reason Codes */}
+                {trustSummary.reason_codes.length > 0 ? (
+                  <div>
+                    <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" }}>
+                      Bewertungsfaktoren
+                    </strong>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                      {trustSummary.reason_codes.map((code) => (
+                        <div key={code} style={{ fontSize: 11, padding: "4px 8px", backgroundColor: "#dbeafe", color: "#0c4a6e", borderRadius: 4 }}>
+                          {code}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* To-Do Codes */}
                 {trustSummary.todo_codes.length > 0 ? (
-                  <div className="ltc-muted">
-                    <strong>Priorisierte To-dos:</strong> {trustSummary.todo_codes.join(", ")}
+                  <div style={{ padding: 12, backgroundColor: "#fef3c7", borderRadius: 6, borderLeft: "4px solid #f59e0b" }}>
+                    <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", color: "#92400e" }}>
+                      Priorisierte To-dos
+                    </strong>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                      {trustSummary.todo_codes.map((code) => (
+                        <div key={code} style={{ fontSize: 11, padding: "4px 8px", backgroundColor: "#fed7aa", color: "#7c2d12", borderRadius: 4 }}>
+                          {code}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
               </div>
