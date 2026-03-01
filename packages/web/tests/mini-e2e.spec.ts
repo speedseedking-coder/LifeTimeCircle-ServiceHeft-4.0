@@ -246,6 +246,30 @@ async function setHash(page: Page, hash: string): Promise<void> {
   }, hash);
 }
 
+test("public contact page shows email", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/contact");
+  await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
+});
+
+test("public entry page offers both role paths into auth", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/entry");
+
+  const main = page.locator("main");
+  await expect(main).toContainText("Privat");
+  await expect(main).toContainText("Gewerblich");
+  await expect(main.locator('a[href="#/auth"]')).toHaveCount(2);
+});
+
+test("unknown route shows explicit not-found page", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/definitely-missing");
+
+  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+  await expect(page.locator('[data-testid="not-found-ui"]')).toContainText("Seite nicht gefunden");
+});
+
 test("kein Token auf protected route => redirect #/auth?next=..., ohne /auth/me call", async ({ page }) => {
   const api = await mockAppGateApi(page, "me_200_consent_ok");
   await boot(page);
@@ -864,6 +888,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
       staff_count: 0,
     },
   ];
+  const adminStepUpTokens: Record<string, string> = {};
   let grantIssued = false;
   let fullLoaded = false;
 
@@ -887,7 +912,25 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
     if (path === "/api/admin/users") return json(200, users);
 
+    if (path === "/api/admin/step-up/grant") {
+      const body = route.request().postDataJSON() as { scope?: string };
+      const scope = typeof body.scope === "string" ? body.scope : "unknown";
+      const token = `step-up-${scope}-${Object.keys(adminStepUpTokens).length + 1}`;
+      adminStepUpTokens[scope] = token;
+      return json(200, {
+        ok: true,
+        scope,
+        step_up_token: token,
+        token,
+        expires_at: "2026-02-28T11:10:00Z",
+        ttl_seconds: 600,
+        one_time: true,
+        header: "X-Admin-Step-Up",
+      });
+    }
+
     if (path === "/api/admin/users/uid-user-1/role") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["role_grant"]);
       users = users.map((item) => (item.user_id === "uid-user-1" ? { ...item, role: "vip" } : item));
       return json(200, {
         ok: true,
@@ -928,6 +971,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
     }
 
     if (path === "/api/admin/vip-businesses/biz-demo-1/approve") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["vip_business_approve"]);
       businesses = businesses.map((item) =>
         item.business_id === "biz-demo-1"
           ? {
@@ -950,6 +994,7 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
     }
 
     if (path === "/api/admin/vip-businesses/biz-demo-1/staff/uid-staff-1") {
+      expect(route.request().headers()["x-admin-step-up"]).toBe(adminStepUpTokens["vip_business_staff"]);
       businesses = businesses.map((item) =>
         item.business_id === "biz-demo-1"
           ? {

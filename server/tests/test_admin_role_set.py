@@ -110,11 +110,35 @@ def _has_auth_audit(db_path: str, target_user_id: str) -> bool:
         conn.close()
 
 
+def _grant_step_up(client: TestClient, token: str, scope: str, ttl_seconds: int = 600) -> dict[str, str]:
+    resp = client.post(
+        "/admin/step-up/grant",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"scope": scope, "ttl_seconds": ttl_seconds},
+    )
+    assert resp.status_code == 200, resp.text
+    payload = resp.json()
+    return {payload["header"]: payload["step_up_token"]}
+
+
+def test_non_admin_cannot_grant_admin_step_up(client: TestClient, tmp_path, monkeypatch: pytest.MonkeyPatch):
+    db_path = _ensure_env(monkeypatch, tmp_path)
+    user_token = _mk_token(db_path, "user")
+
+    resp = client.post(
+        "/admin/step-up/grant",
+        headers={"Authorization": f"Bearer {user_token}"},
+        json={"scope": "role_grant", "ttl_seconds": 600},
+    )
+    assert resp.status_code == 403, resp.text
+
+
 def test_admin_can_set_role_and_audit(client: TestClient, tmp_path, monkeypatch: pytest.MonkeyPatch):
     db_path = _ensure_env(monkeypatch, tmp_path)
 
     admin_token = _mk_token(db_path, "admin")
     target_user_id = _mk_user(db_path, "user")
+    step_up_header = _grant_step_up(client, admin_token, "role_grant")
 
     resp = client.post(
         f"/admin/users/{target_user_id}/role",
@@ -122,6 +146,7 @@ def test_admin_can_set_role_and_audit(client: TestClient, tmp_path, monkeypatch:
             "Authorization": f"Bearer {admin_token}",
             "Idempotency-Key": uuid.uuid4().hex,
             "X-Idempotency-Key": uuid.uuid4().hex,
+            **step_up_header,
         },
         json={"role": "vip", "reason": "test"},
     )
@@ -147,3 +172,48 @@ def test_non_admin_cannot_set_role(client: TestClient, tmp_path, monkeypatch: py
         json={"role": "vip", "reason": "test"},
     )
     assert resp.status_code == 403, resp.text
+
+
+def test_admin_role_change_requires_step_up(client: TestClient, tmp_path, monkeypatch: pytest.MonkeyPatch):
+    db_path = _ensure_env(monkeypatch, tmp_path)
+
+    admin_token = _mk_token(db_path, "admin")
+    target_user_id = _mk_user(db_path, "user")
+
+    resp = client.post(
+        f"/admin/users/{target_user_id}/role",
+        headers={
+            "Authorization": f"Bearer {admin_token}",
+            "Idempotency-Key": uuid.uuid4().hex,
+            "X-Idempotency-Key": uuid.uuid4().hex,
+        },
+        json={"role": "vip", "reason": "test"},
+    )
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["detail"] == "admin_step_up_required"
+
+
+def test_admin_step_up_token_is_one_time_for_role_change(
+    client: TestClient, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    db_path = _ensure_env(monkeypatch, tmp_path)
+
+    admin_token = _mk_token(db_path, "admin")
+    first_target_user_id = _mk_user(db_path, "user")
+    second_target_user_id = _mk_user(db_path, "user")
+    step_up_header = _grant_step_up(client, admin_token, "role_grant")
+
+    first_resp = client.post(
+        f"/admin/users/{first_target_user_id}/role",
+        headers={"Authorization": f"Bearer {admin_token}", **step_up_header},
+        json={"role": "vip"},
+    )
+    assert first_resp.status_code == 200, first_resp.text
+
+    second_resp = client.post(
+        f"/admin/users/{second_target_user_id}/role",
+        headers={"Authorization": f"Bearer {admin_token}", **step_up_header},
+        json={"role": "vip"},
+    )
+    assert second_resp.status_code == 403, second_resp.text
+    assert second_resp.json()["detail"] == "admin_step_up_invalid"

@@ -24,6 +24,7 @@ def test_admin_can_accredit_moderator_endpoint(
 
     admin_token = h._mk_token(db_path, "admin")
     target_user_id = h._mk_user(db_path, "user")
+    step_up_header = h._grant_step_up(client, admin_token, "moderator_accredit")
 
     resp = client.post(
         f"/admin/users/{target_user_id}/moderator",
@@ -31,6 +32,7 @@ def test_admin_can_accredit_moderator_endpoint(
             "Authorization": f"Bearer {admin_token}",
             "Idempotency-Key": uuid.uuid4().hex,
             "X-Idempotency-Key": uuid.uuid4().hex,
+            **step_up_header,
         },
         json={"reason": "accredit moderator"},
     )
@@ -79,3 +81,25 @@ def test_unauthenticated_cannot_accredit_moderator_endpoint(
         json={"reason": "accredit moderator"},
     )
     assert resp.status_code == 401, resp.text
+
+
+def test_admin_moderator_accreditation_requires_matching_step_up(
+    client: TestClient, tmp_path, monkeypatch: pytest.MonkeyPatch
+):
+    h = _helpers()
+    db_path = h._ensure_env(monkeypatch, tmp_path)
+
+    admin_token = h._mk_token(db_path, "admin")
+    target_user_id = h._mk_user(db_path, "user")
+    wrong_scope_header = h._grant_step_up(client, admin_token, "role_grant")
+
+    resp = client.post(
+        f"/admin/users/{target_user_id}/moderator",
+        headers={
+            "Authorization": f"Bearer {admin_token}",
+            **wrong_scope_header,
+        },
+        json={"reason": "accredit moderator"},
+    )
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["detail"] == "admin_step_up_invalid"

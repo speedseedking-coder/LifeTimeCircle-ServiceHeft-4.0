@@ -31,6 +31,7 @@ def test_admin_can_accredit_moderator_via_role_endpoint(
 
     admin_token = helpers._mk_token(db_path, "admin")
     target_user_id = helpers._mk_user(db_path, "user")
+    step_up_header = helpers._grant_step_up(client, admin_token, "role_grant")
 
     resp = client.post(
         f"/admin/users/{target_user_id}/role",
@@ -38,6 +39,7 @@ def test_admin_can_accredit_moderator_via_role_endpoint(
             "Authorization": f"Bearer {admin_token}",
             "Idempotency-Key": uuid.uuid4().hex,
             "X-Idempotency-Key": uuid.uuid4().hex,
+            **step_up_header,
         },
         json={"role": "moderator", "reason": "accredit moderator"},
     )

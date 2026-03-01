@@ -35,6 +35,18 @@ export type VipBusinessCreatePayload = {
   reason?: string | null;
 };
 
+export type AdminStepUpScope = "role_grant" | "moderator_accredit" | "vip_business_approve" | "vip_business_staff";
+
+export type AdminStepUpGrant = {
+  scope: AdminStepUpScope;
+  step_up_token: string;
+  token: string;
+  expires_at: string;
+  ttl_seconds: number;
+  one_time: boolean;
+  header: string;
+};
+
 export type ExportTargetKind = "vehicle" | "user" | "servicebook";
 
 export type ExportGrant = {
@@ -132,6 +144,38 @@ function mapExportGrant(body: unknown): ExportGrant | null {
   };
 }
 
+function mapAdminStepUpGrant(body: unknown): AdminStepUpGrant | null {
+  if (!isRecord(body)) return null;
+  if (
+    typeof body.scope !== "string" ||
+    typeof body.step_up_token !== "string" ||
+    typeof body.token !== "string" ||
+    typeof body.expires_at !== "string" ||
+    typeof body.ttl_seconds !== "number" ||
+    typeof body.one_time !== "boolean" ||
+    typeof body.header !== "string"
+  ) {
+    return null;
+  }
+  if (
+    body.scope !== "role_grant" &&
+    body.scope !== "moderator_accredit" &&
+    body.scope !== "vip_business_approve" &&
+    body.scope !== "vip_business_staff"
+  ) {
+    return null;
+  }
+  return {
+    scope: body.scope,
+    step_up_token: body.step_up_token,
+    token: body.token,
+    expires_at: body.expires_at,
+    ttl_seconds: body.ttl_seconds,
+    one_time: body.one_time,
+    header: body.header,
+  };
+}
+
 function mapFullExportCiphertext(body: unknown): FullExportCiphertext | null {
   if (!isRecord(body)) return null;
   if (typeof body.ciphertext !== "string" || typeof body.alg !== "string" || typeof body.one_time !== "boolean") return null;
@@ -176,6 +220,15 @@ export async function accreditModerator(userId: string, reason: string, init?: R
 export async function listVipBusinesses(init?: RequestInit): Promise<AdminApiResult<VipBusiness[]>> {
   const res = await apiGet("/admin/vip-businesses", init);
   return normalizeResult(res, mapVipBusinessList);
+}
+
+export async function requestAdminStepUpGrant(
+  scope: AdminStepUpScope,
+  ttlSeconds: number,
+  init?: RequestInit,
+): Promise<AdminApiResult<AdminStepUpGrant>> {
+  const res = await apiPost("/admin/step-up/grant", { scope, ttl_seconds: ttlSeconds }, init);
+  return normalizeResult(res, mapAdminStepUpGrant);
 }
 
 export async function createVipBusiness(payload: VipBusinessCreatePayload, init?: RequestInit): Promise<AdminApiResult<VipBusiness>> {
