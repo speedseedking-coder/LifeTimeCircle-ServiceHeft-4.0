@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, type BadgeVariant } from "../components/ui/Badge";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import { authHeaders, getAuthToken } from "../lib.auth";
@@ -37,6 +37,7 @@ function extractCode(body: unknown): string {
 
 function toErrorMessage(result: { status: number; body?: unknown; error: string }): string {
   const code = extractCode(result.body);
+  if (result.status === 0) return "Netzwerkfehler. Bitte Verbindung und Backend prüfen.";
   if (result.status === 413 && code === "too_large") return "Datei zu groß. Uploads sind serverseitig auf 10 MB begrenzt.";
   if (result.status === 415 && code === "ext_not_allowed") return "Dateiendung nicht erlaubt. Zulässig sind PDF, PNG, JPG und JPEG.";
   if (result.status === 415 && code === "mime_not_allowed") return "MIME-Type nicht erlaubt.";
@@ -100,11 +101,20 @@ function renderStatBadges(values: Record<string, number>): JSX.Element[] {
     ));
 }
 
-function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: boolean; onRefresh?: (next: DocumentRecord) => void }) {
+function DocumentMetaCard(props: {
+  title: string;
+  doc: DocumentRecord;
+  admin?: boolean;
+  onRefresh?: (next: DocumentRecord) => void;
+  onNotice?: (message: string) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function runAdminAction(fn: () => Promise<{ ok: true; body: DocumentRecord } | { ok: false; status: number; body?: unknown; error: string }>) {
+  async function runAdminAction(
+    fn: () => Promise<{ ok: true; body: DocumentRecord } | { ok: false; status: number; body?: unknown; error: string }>,
+    successMessage: string,
+  ) {
     setBusy(true);
     setError("");
     const result = await fn();
@@ -118,6 +128,7 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
       return;
     }
     props.onRefresh?.(result.body);
+    props.onNotice?.(successMessage);
   }
 
   return (
@@ -145,16 +156,16 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
 
       {props.admin ? (
         <div className="ltc-button-group">
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"))} className="ltc-button ltc-button--secondary">
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "CLEAN"), `Scan-Status für ${props.doc.filename} auf CLEAN gesetzt.`)} className="ltc-button ltc-button--secondary">
             Scan CLEAN
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "INFECTED"))} className="ltc-button ltc-button--secondary">
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => setDocumentScanStatus(props.doc.id, "INFECTED"), `Scan-Status für ${props.doc.filename} auf INFECTED gesetzt.`)} className="ltc-button ltc-button--secondary">
             Scan INFECTED
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => approveDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => approveDocument(props.doc.id), `${props.doc.filename} wurde freigegeben.`)} className="ltc-button ltc-button--secondary">
             Approve
           </button>
-          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id))} className="ltc-button ltc-button--secondary">
+          <button type="button" disabled={busy} onClick={() => void runAdminAction(() => rejectDocument(props.doc.id), `${props.doc.filename} wurde abgelehnt.`)} className="ltc-button ltc-button--secondary">
             Reject
           </button>
         </div>
@@ -167,6 +178,7 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
 
 export default function DocumentsPage(): JSX.Element {
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [errorField, setErrorField] = useState<"upload" | "lookup" | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -177,6 +189,8 @@ export default function DocumentsPage(): JSX.Element {
   const [adminDocs, setAdminDocs] = useState<DocumentRecord[]>([]);
   const [adminVisible, setAdminVisible] = useState(false);
   const [adminForbidden, setAdminForbidden] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const lookupInputRef = useRef<HTMLInputElement | null>(null);
   const docStats = useMemo(
     () =>
       calculateDocumentStats([
@@ -207,6 +221,7 @@ export default function DocumentsPage(): JSX.Element {
           return;
         }
         setError(toErrorMessage(res));
+        setNotice("");
         return;
       }
 
@@ -226,11 +241,14 @@ export default function DocumentsPage(): JSX.Element {
     if (!selectedFile) {
       setError("Bitte zuerst eine Datei wählen.");
       setErrorField("upload");
+      setNotice("");
+      uploadInputRef.current?.focus();
       return;
     }
 
     setUploading(true);
     setError("");
+    setNotice("");
     setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
@@ -244,6 +262,7 @@ export default function DocumentsPage(): JSX.Element {
       }
       setErrorField("upload");
       setError(toErrorMessage(res));
+      uploadInputRef.current?.focus();
       return;
     }
 
@@ -252,6 +271,7 @@ export default function DocumentsPage(): JSX.Element {
     setLookupId(res.body.id);
     setSelectedFile(null);
     setErrorField(null);
+    setNotice(`Dokument ${res.body.filename} wurde hochgeladen und in den Arbeitskontext übernommen.`);
     const input = document.getElementById("documents-upload-input") as HTMLInputElement | null;
     if (input) input.value = "";
 
@@ -266,11 +286,14 @@ export default function DocumentsPage(): JSX.Element {
     if (!id) {
       setError("Bitte eine Dokument-ID eingeben.");
       setErrorField("lookup");
+      setNotice("");
+      lookupInputRef.current?.focus();
       return;
     }
 
     setLookupBusy(true);
     setError("");
+    setNotice("");
     setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
@@ -287,11 +310,13 @@ export default function DocumentsPage(): JSX.Element {
       }
       setErrorField("lookup");
       setError(toErrorMessage(res));
+      lookupInputRef.current?.focus();
       return;
     }
 
     setLookupDoc(res.body);
     setErrorField(null);
+    setNotice(`Dokument ${res.body.filename} wurde geladen.`);
   }
 
   function replaceAdminDoc(next: DocumentRecord) {
@@ -318,67 +343,87 @@ export default function DocumentsPage(): JSX.Element {
       </section>
 
       <div className="ltc-layout-grid ltc-layout-grid--split ltc-section" data-testid="documents-desktop-grid">
-      <section className="ltc-card ltc-section ltc-section--card ltc-card--subtle">
-        <span className="ltc-card__eyebrow">Upload</span>
-        <h2>Upload</h2>
-        <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
-        <form onSubmit={(e) => void onUpload(e)}>
-          <label className="ltc-form-group__label" htmlFor="documents-upload-input">
-            Dokument auswählen
-          </label>
-          <input
-            id="documents-upload-input"
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-            aria-label="Dokument für Upload auswählen"
-            aria-required="true"
-            aria-invalid={errorField === "upload"}
-            aria-describedby={errorField === "upload" ? "documents-upload-error" : undefined}
-            onChange={(e) => setSelectedFile(e.currentTarget.files?.[0] ?? null)}
-          />
-          <div className="ltc-button-group">
-            <button type="submit" disabled={uploading || !selectedFile} className="ltc-button ltc-button--primary">
-              {uploading ? "Lädt hoch..." : "Dokument hochladen"}
-            </button>
-          </div>
-          {errorField === "upload" && error ? (
-            <p id="documents-upload-error" className="ltc-helper-text ltc-helper-text--error">
-              {error}
+        <section className="ltc-card ltc-section ltc-section--card ltc-card--subtle">
+          <span className="ltc-card__eyebrow">Upload</span>
+          <h2>Upload</h2>
+          <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
+          <form onSubmit={(e) => void onUpload(e)}>
+            <label className="ltc-form-group__label" htmlFor="documents-upload-input">
+              Dokument auswählen
+            </label>
+            <input
+              ref={uploadInputRef}
+              id="documents-upload-input"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              aria-label="Dokument für Upload auswählen"
+              aria-required="true"
+              aria-invalid={errorField === "upload"}
+              aria-describedby={errorField === "upload" ? "documents-upload-error documents-upload-hint" : "documents-upload-hint"}
+              onChange={(e) => {
+                setSelectedFile(e.currentTarget.files?.[0] ?? null);
+                if (errorField === "upload") {
+                  setErrorField(null);
+                  setError("");
+                }
+              }}
+            />
+            <p id="documents-upload-hint" className="ltc-helper-text">
+              Für Release-Pfade sind vor allem PDF- und Bildnachweise vorgesehen. Die serverseitige Obergrenze liegt bei 10 MB.
             </p>
-          ) : null}
-        </form>
-      </section>
+            <div className="ltc-button-group">
+              <button type="submit" disabled={uploading || !selectedFile} className="ltc-button ltc-button--primary">
+                {uploading ? "Lädt hoch..." : "Dokument hochladen"}
+              </button>
+            </div>
+            {errorField === "upload" && error ? (
+              <p id="documents-upload-error" className="ltc-helper-text ltc-helper-text--error">
+                {error}
+              </p>
+            ) : null}
+          </form>
+        </section>
 
-      <section className="ltc-card ltc-section ltc-section--card">
-        <span className="ltc-card__eyebrow">Lookup</span>
-        <h2>Dokument-ID prüfen</h2>
-        <form onSubmit={(e) => void onLookup(e)}>
-          <label className="ltc-form-group__label" htmlFor="documents-lookup-input">
-            Dokument-ID
-          </label>
-          <input
-            id="documents-lookup-input"
-            className="ltc-form-group__input"
-            value={lookupId}
-            onChange={(e) => setLookupId(e.target.value)}
-            placeholder="Dokument-ID eingeben"
-            autoComplete="off"
-            aria-required="true"
-            aria-invalid={errorField === "lookup"}
-            aria-describedby={errorField === "lookup" ? "documents-lookup-error" : undefined}
-          />
-          <div className="ltc-button-group">
-            <button type="submit" disabled={lookupBusy} className="ltc-button ltc-button--primary">
-              {lookupBusy ? "Prüft..." : "Dokument laden"}
-            </button>
-          </div>
-          {errorField === "lookup" && error ? (
-            <p id="documents-lookup-error" className="ltc-helper-text ltc-helper-text--error">
-              {error}
+        <section className="ltc-card ltc-section ltc-section--card">
+          <span className="ltc-card__eyebrow">Lookup</span>
+          <h2>Dokument-ID prüfen</h2>
+          <form onSubmit={(e) => void onLookup(e)}>
+            <label className="ltc-form-group__label" htmlFor="documents-lookup-input">
+              Dokument-ID
+            </label>
+            <input
+              ref={lookupInputRef}
+              id="documents-lookup-input"
+              className="ltc-form-group__input"
+              value={lookupId}
+              onChange={(e) => {
+                setLookupId(e.target.value);
+                if (errorField === "lookup") {
+                  setErrorField(null);
+                  setError("");
+                }
+              }}
+              placeholder="Dokument-ID eingeben"
+              autoComplete="off"
+              aria-required="true"
+              aria-invalid={errorField === "lookup"}
+              aria-describedby={errorField === "lookup" ? "documents-lookup-error documents-lookup-hint" : "documents-lookup-hint"}
+            />
+            <p id="documents-lookup-hint" className="ltc-helper-text">
+              Nutze die exakte Dokument-ID aus Upload-, Admin- oder Download-Kontext.
             </p>
-          ) : null}
-        </form>
-      </section>
+            <div className="ltc-button-group">
+              <button type="submit" disabled={lookupBusy} className="ltc-button ltc-button--primary">
+                {lookupBusy ? "Prüft..." : "Dokument laden"}
+              </button>
+            </div>
+            {errorField === "lookup" && error ? (
+              <p id="documents-lookup-error" className="ltc-helper-text ltc-helper-text--error">
+                {error}
+              </p>
+            ) : null}
+          </form>
+        </section>
       </div>
 
       {docStats.total > 0 ? (
@@ -415,11 +460,17 @@ export default function DocumentsPage(): JSX.Element {
         </section>
       ) : null}
 
-      {error ? <InlineErrorBanner message={error} /> : null}
+      {notice ? (
+        <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--info" role="status" aria-live="polite" data-testid="documents-notice">
+          <div className="ltc-state-panel__title">Status</div>
+          <p className="ltc-state-panel__copy">{notice}</p>
+        </section>
+      ) : null}
+      {error && errorField === null ? <InlineErrorBanner message={error} /> : null}
 
       <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section">
         <div className="ltc-card-stack">
-          {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} /> : null}
+          {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} onNotice={setNotice} /> : null}
 
           {adminVisible ? (
             <section className="ltc-card ltc-section ltc-section--card">
@@ -429,7 +480,7 @@ export default function DocumentsPage(): JSX.Element {
                 <p className="ltc-muted">Keine Dokumente in Quarantäne.</p>
               ) : (
                 adminDocs.map((doc) => (
-                  <DocumentMetaCard key={doc.id} title={`Quarantäne: ${doc.filename}`} doc={doc} admin onRefresh={replaceAdminDoc} />
+                  <DocumentMetaCard key={doc.id} title={`Quarantäne: ${doc.filename}`} doc={doc} admin onRefresh={replaceAdminDoc} onNotice={setNotice} />
                 ))
               )}
             </section>

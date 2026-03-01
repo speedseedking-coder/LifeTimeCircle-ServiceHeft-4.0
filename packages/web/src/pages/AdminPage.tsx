@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { prettyBody } from "../api";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import {
@@ -53,9 +53,14 @@ function extractErrorMessage(result: { status: number; error: string }): string 
   if (result.status === 403 && result.error === "forbidden") return "Kein Zugriff auf diese Admin-Aktion.";
   if (result.status === 404 && result.error === "user_not_found") return "User-ID wurde nicht gefunden.";
   if (result.status === 404 && result.error === "business_not_found") return "Business-ID wurde nicht gefunden.";
+  if (result.status === 404 && result.error === "not_found") return "Zieldatensatz wurde nicht gefunden.";
   if (result.status === 409 && result.error === "staff_limit_reached") return "Für dieses VIP-Business sind keine weiteren Staff-Slots frei.";
   if (result.status === 400 && result.error === "business_not_approved") return "Staff kann erst nach SUPERADMIN-Freigabe hinzugefügt werden.";
   if (result.status === 400 && result.error === "invalid_role") return "Die Zielrolle ist ungültig.";
+  if (result.status === 400 && result.error === "missing_export_token") return "Für den Voll-Export fehlt ein gültiger Export-Grant.";
+  if (result.status === 403 && result.error === "invalid_export_token") return "Der Export-Grant ist ungültig oder bereits verbraucht.";
+  if (result.status === 403 && result.error === "expired_export_token") return "Der Export-Grant ist abgelaufen. Bitte neuen Grant anfordern.";
+  if (result.status === 500 && result.error === "invalid_body") return "Serverantwort hatte ein unerwartetes Format. Bitte Backend prüfen.";
   return "Die Admin-Aktion konnte nicht ausgeführt werden.";
 }
 
@@ -219,6 +224,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [vipBusinesses, setVipBusinesses] = useState<VipBusiness[]>([]);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"businessOwner" | "exportTarget" | "exportTtl" | null>(null);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState("");
@@ -235,6 +241,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   const [exportGrant, setExportGrant] = useState<ExportGrant | null>(null);
   const [redactedExportBody, setRedactedExportBody] = useState<unknown>(null);
   const [fullExportBody, setFullExportBody] = useState<FullExportCiphertext | null>(null);
+  const businessOwnerRef = useRef<HTMLInputElement | null>(null);
+  const exportTargetRef = useRef<HTMLInputElement | null>(null);
+  const exportTtlRef = useRef<HTMLInputElement | null>(null);
 
   const isSuperadmin = props.actorRole === "superadmin";
   const visibleUsers = useMemo(() => sortUsers(users), [users]);
@@ -255,6 +264,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   async function loadAll() {
     setLoading(true);
     setError("");
+    setErrorField(null);
     const [usersRes, businessesRes] = await Promise.all([listAdminUsers(headers()), listVipBusinesses(headers())]);
     setLoading(false);
 
@@ -287,6 +297,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   async function runAction<T>(key: string, action: () => Promise<AdminApiResult<T>>, onSuccess: (body: T) => void, successMessage: string) {
     setBusyKey(key);
     setError("");
+    setErrorField(null);
     setNotice("");
     const result = await action();
     setBusyKey("");
@@ -313,6 +324,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   ) {
     setBusyKey(key);
     setError("");
+    setErrorField(null);
     setNotice("");
 
     const grant = await requestAdminStepUpGrant(scope, ADMIN_STEP_UP_TTL_SECONDS, headers());
@@ -374,8 +386,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
 
       {error ? <InlineErrorBanner message={error} /> : null}
       {notice ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <div className="ltc-muted">{notice}</div>
+        <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--info" role="status" aria-live="polite" data-testid="admin-notice">
+          <div className="ltc-state-panel__title">Status</div>
+          <p className="ltc-state-panel__copy">{notice}</p>
         </section>
       ) : null}
 
@@ -466,6 +479,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 const ownerUserId = businessOwnerUserId.trim();
                 if (ownerUserId.length < 8) {
                   setError("Owner User-ID ist zu kurz.");
+                  setErrorField("businessOwner");
+                  setNotice("");
+                  businessOwnerRef.current?.focus();
                   return;
                 }
                 void runAction(
@@ -493,18 +509,22 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Owner User-ID
                 <input
+                  ref={businessOwnerRef}
                   id="admin-business-owner-id"
                   value={businessOwnerUserId}
-                  onChange={(e) => setBusinessOwnerUserId(e.target.value)}
+                  onChange={(e) => {
+                    setBusinessOwnerUserId(e.target.value);
+                    if (errorField === "businessOwner") setErrorField(null);
+                  }}
                   placeholder="bestehende auth_users user_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
                   aria-required="true"
                   aria-invalid={ownerUserIdInvalid}
-                  aria-describedby={ownerUserIdInvalid ? "admin-business-owner-error" : undefined}
+                  aria-describedby={ownerUserIdInvalid || errorField === "businessOwner" ? "admin-business-owner-error" : undefined}
                 />
               </label>
-              {ownerUserIdInvalid ? (
+              {ownerUserIdInvalid || errorField === "businessOwner" ? (
                 <p id="admin-business-owner-error" className="ltc-helper-text ltc-helper-text--error">
                   Owner User-ID muss mindestens 8 Zeichen lang sein.
                 </p>
@@ -611,30 +631,45 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 Ziel-ID
                 <input
                   id="admin-export-target-id"
+                  ref={exportTargetRef}
                   value={exportTargetId}
-                  onChange={(e) => setExportTargetId(e.target.value)}
+                  onChange={(e) => {
+                    setExportTargetId(e.target.value);
+                    if (errorField === "exportTarget") setErrorField(null);
+                  }}
                   placeholder="vehicle_id / user_id / servicebook_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
                   aria-required="true"
+                  aria-invalid={errorField === "exportTarget"}
+                  aria-describedby={errorField === "exportTarget" ? "admin-export-target-error" : undefined}
                 />
               </label>
+              {errorField === "exportTarget" ? (
+                <p id="admin-export-target-error" className="ltc-helper-text ltc-helper-text--error">
+                  Ziel-ID ist erforderlich.
+                </p>
+              ) : null}
 
               <label>
                 TTL Sekunden (für Full Grant)
                 <input
                   id="admin-export-ttl"
+                  ref={exportTtlRef}
                   value={exportTtlSeconds}
-                  onChange={(e) => setExportTtlSeconds(e.target.value)}
+                  onChange={(e) => {
+                    setExportTtlSeconds(e.target.value);
+                    if (errorField === "exportTtl") setErrorField(null);
+                  }}
                   inputMode="numeric"
                   autoComplete="off"
                   className="ltc-form-group__input"
                   aria-required="true"
                   aria-invalid={exportTtlInvalid}
-                  aria-describedby={exportTtlInvalid ? "admin-export-ttl-error" : undefined}
+                  aria-describedby={exportTtlInvalid || errorField === "exportTtl" ? "admin-export-ttl-error" : undefined}
                 />
               </label>
-              {exportTtlInvalid ? (
+              {exportTtlInvalid || errorField === "exportTtl" ? (
                 <p id="admin-export-ttl-error" className="ltc-helper-text ltc-helper-text--error">
                   TTL muss numerisch sein.
                 </p>
@@ -644,8 +679,15 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 <button
                   type="button"
                   className="ltc-btn ltc-btn--primary"
-                  disabled={busyKey === "export:redacted" || exportTargetId.trim().length === 0}
-                  onClick={() =>
+                  disabled={busyKey === "export:redacted"}
+                  onClick={() => {
+                    if (exportTargetId.trim().length === 0) {
+                      setError("Ziel-ID ist erforderlich.");
+                      setErrorField("exportTarget");
+                      setNotice("");
+                      exportTargetRef.current?.focus();
+                      return;
+                    }
                     void runAction(
                       "export:redacted",
                       () => fetchRedactedExport(exportKind, exportTargetId.trim(), headers()),
@@ -654,8 +696,8 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                         setFullExportBody(null);
                       },
                       `Redacted Export für ${exportKind}:${exportTargetId.trim()} geladen.`,
-                    )
-                  }
+                    );
+                  }}
                 >
                   Redacted laden
                 </button>
@@ -664,11 +706,21 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   <button
                     type="button"
                     className="ltc-btn ltc-btn--ghost"
-                    disabled={busyKey === "export:grant" || exportTargetId.trim().length === 0}
+                    disabled={busyKey === "export:grant"}
                     onClick={() => {
+                      if (exportTargetId.trim().length === 0) {
+                        setError("Ziel-ID ist erforderlich.");
+                        setErrorField("exportTarget");
+                        setNotice("");
+                        exportTargetRef.current?.focus();
+                        return;
+                      }
                       const ttl = Number.parseInt(exportTtlSeconds, 10);
                       if (!Number.isFinite(ttl)) {
                         setError("TTL muss numerisch sein.");
+                        setErrorField("exportTtl");
+                        setNotice("");
+                        exportTtlRef.current?.focus();
                         return;
                       }
                       void runAction(
@@ -690,21 +742,37 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   <button
                     type="button"
                     className="ltc-btn ltc-btn--soft"
-                    disabled={busyKey === "export:full" || !exportGrant || exportTargetId.trim().length === 0}
-                    onClick={() =>
+                    disabled={busyKey === "export:full" || !exportGrant}
+                    onClick={() => {
+                      if (exportTargetId.trim().length === 0) {
+                        setError("Ziel-ID ist erforderlich.");
+                        setErrorField("exportTarget");
+                        setNotice("");
+                        exportTargetRef.current?.focus();
+                        return;
+                      }
+                      if (!exportGrant) {
+                        setError("Bitte zuerst einen Full Grant anfordern.");
+                        setNotice("");
+                        return;
+                      }
                       void runAction(
                         "export:full",
-                        () => fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant?.export_token ?? "", headers()),
+                        () => fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant.export_token, headers()),
                         (body) => setFullExportBody(body),
                         `Voll-Export für ${exportKind}:${exportTargetId.trim()} geladen und Token verbraucht.`,
-                      )
-                    }
+                      );
+                    }}
                   >
                     Voll-Export laden
                   </button>
                 ) : null}
               </div>
             </form>
+
+            {!exportGrant && isSuperadmin ? (
+              <p className="ltc-helper-text ltc-mt-4">Für den Voll-Export zuerst einen frischen Full Grant anfordern. Das Token ist one-time und nur kurz gültig.</p>
+            ) : null}
 
             {exportGrant ? (
               <div className="ltc-quote ltc-quote--gold ltc-mt-4">

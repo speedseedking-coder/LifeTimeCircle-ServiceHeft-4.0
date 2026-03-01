@@ -536,6 +536,22 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("PENDING");
   await expect(page.locator("#documents-upload-input")).toHaveAttribute("aria-required", "true");
   await expect(page.locator("#documents-lookup-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator('[data-testid="documents-notice"]')).toContainText("service.pdf");
+});
+
+test("Documents lookup validates empty input and keeps focus on lookup field", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await mockAppGateApi(page, "me_200_consent_ok");
+  await boot(page);
+  await setHash(page, "#/documents");
+
+  await page.getByRole("button", { name: "Dokument laden" }).click();
+
+  await expect(page.locator("#documents-lookup-error")).toContainText("Bitte eine Dokument-ID eingeben.");
+  await expect(page.locator("#documents-lookup-input")).toBeFocused();
 });
 
 test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
@@ -899,6 +915,35 @@ test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
   await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
 });
 
+test("Trust Folders route shows addon required panel on addon gate", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "vip" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/trust/folders") return json(403, { detail: "addon_required" });
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect(page.locator('[data-testid="addon-required-panel"]')).toContainText("Add-on erforderlich");
+});
+
 test("Trust Folder detail exposes accessible rename and delete controls", async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
@@ -1147,11 +1192,44 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
   await page.getByRole("button", { name: "Full Grant anfordern" }).click();
   await expect.poll(() => grantIssued).toBe(true);
+  await expect(page.locator('[data-testid="admin-notice"]')).toContainText("One-time Export-Grant");
   await expect(page.locator("main")).toContainText("grant-token-1");
 
   await page.getByRole("button", { name: "Voll-Export laden" }).click();
   await expect.poll(() => fullLoaded).toBe(true);
   await expect(page.locator("main")).toContainText("ciphertext-demo-1");
+});
+
+test("Admin export validates missing target before request", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_admin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/admin/users") return json(200, []);
+    if (path === "/api/admin/vip-businesses") return json(200, []);
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/admin");
+
+  await page.getByRole("button", { name: "Redacted laden" }).click();
+  await expect(page.locator("#admin-export-target-error")).toContainText("Ziel-ID ist erforderlich.");
+  await expect(page.locator("#admin-export-target-id")).toBeFocused();
 });
 
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {

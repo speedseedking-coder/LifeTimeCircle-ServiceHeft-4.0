@@ -902,6 +902,49 @@
   padding: var(--ltc-space-4);
 }
 
+.ltc-state-panel {
+  border-left: 4px solid transparent;
+}
+
+.ltc-state-panel--info {
+  border-left-color: var(--ltc-color-info);
+  background:
+    linear-gradient(180deg, rgba(122, 162, 247, 0.08), rgba(122, 162, 247, 0.02)),
+    var(--ltc-color-bg-secondary);
+}
+
+.ltc-state-panel--warning {
+  border-left-color: var(--ltc-color-warning);
+  background:
+    linear-gradient(180deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.02)),
+    var(--ltc-color-bg-secondary);
+}
+
+.ltc-state-panel--error {
+  border-left-color: var(--ltc-color-error);
+  background:
+    linear-gradient(180deg, rgba(248, 113, 113, 0.09), rgba(248, 113, 113, 0.03)),
+    var(--ltc-color-bg-secondary);
+}
+
+.ltc-state-panel__title {
+  font-weight: 700;
+  color: var(--ltc-color-text-primary);
+}
+
+.ltc-state-panel__copy {
+  margin: var(--ltc-space-2) 0 0;
+  color: var(--ltc-color-text-secondary);
+  line-height: 1.5;
+}
+
+.ltc-state-panel__actions {
+  display: flex;
+  gap: var(--ltc-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--ltc-space-4);
+}
+
 .ltc-card__eyebrow {
   display: block;
   margin-bottom: var(--ltc-space-2);
@@ -1201,6 +1244,45 @@
 
 .ltc-wordbreak {
   word-break: break-all;
+}
+
+.ltc-design-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ltc-space-4);
+}
+
+.ltc-design-swatch {
+  padding: var(--ltc-space-4);
+  border-radius: var(--ltc-radius-base);
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.ltc-design-swatch--brand {
+  background: var(--ltc-color-brand);
+  color: var(--ltc-color-bg-primary);
+}
+
+.ltc-design-swatch--success {
+  background: var(--ltc-color-success);
+}
+
+.ltc-design-swatch--warning {
+  background: var(--ltc-color-warning);
+}
+
+.ltc-design-swatch--error {
+  background: var(--ltc-color-error);
+  color: var(--ltc-color-bg-primary);
+}
+
+.ltc-design-swatch--trust-green {
+  background: var(--ltc-color-trust-green);
+}
+
+.ltc-design-swatch--trust-yellow {
+  background: var(--ltc-color-trust-yellow);
 }
 
 

@@ -74,9 +74,17 @@ Der Workspace gilt als belastbar, wenn diese Gates grün sind und der Working Tr
 
 ### Qualitätsstand Web
 - Kernseiten auf Accessibility-Basis gehärtet.
+- Fokusführung und feldnahe Validierung auf Auth, Consent, Trust, Admin und Documents sind produktiv abgesichert.
 - Mobile-Layouts für 375px abgesichert.
 - Desktop-/1920px-Layouts für Core-Workspaces abgesichert.
 - Playwright-Mini-E2E deckt die produktiven Kernpfade ab.
+
+### Release-Readiness Kernpfade
+- Auth -> Consent -> Vehicles ist technisch verifiziert.
+- Vehicle Detail inkl. Revisionen und Trust-Kontext ist technisch verifiziert.
+- Documents inkl. Upload, Lookup und Admin-Quarantäne ist technisch verifiziert.
+- Trust Folders inkl. Forbidden-/Addon-Gates ist technisch verifiziert.
+- Admin inkl. Step-up, VIP-Business und Export-Grant ist technisch verifiziert.
 
 ---
 
@@ -97,7 +105,7 @@ Die verbleibenden Themen liegen aktuell nicht im Fundament, sondern in Produktre
 
 - Masterplan-Dokumente enthalten teils veraltete Termin- und Planungsannahmen.
 - Release-/Deployment-Entscheidungen sind noch nicht als finaler Live-Betrieb dokumentiert.
-- Rest-A11y auf letzte Spezialfälle kann weiter verfeinert werden, blockiert aber den aktuellen Kernstand nicht.
+- Rest-Polish auf Dev-/Referenzflächen und zukünftige Spezialwidgets kann weiter verfeinert werden, blockiert aber den aktuellen Kernstand nicht.
 
 ---
 
