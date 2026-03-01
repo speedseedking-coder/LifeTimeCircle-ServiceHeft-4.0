@@ -35,3 +35,7 @@ def require_moderator(user: AuthContext = Depends(get_current_user)) -> AuthCont
 
 def require_admin(user: AuthContext = Depends(get_current_user)) -> AuthContext:
     return require_roles("admin", "superadmin")(user=user)  # type: ignore[arg-type]  # type: ignore[arg-type]
+
+
+def require_superadmin(user: AuthContext = Depends(get_current_user)) -> AuthContext:
+    return require_roles("superadmin")(user=user)  # type: ignore[arg-type]

@@ -14,6 +14,7 @@ AUTH_GATES: Set[str] = {
     "get_actor",
     "require_roles",
     "require_role",
+    "require_moderator",
     "forbid_moderator",
     # fallback (falls im Projekt vorhanden)
     "require_admin",
@@ -60,13 +61,17 @@ def _is_public_path(path: str) -> bool:
 def _is_moderator_allowed_path(path: str) -> bool:
     """
     MODERATOR-Allowlist (SoT):
-    /auth/*, /blog/*, /news/*
+    /auth/*, /blog/*, /news/*, /cms/blog/*, /cms/news/*
     """
     if path == "/auth" or path.startswith("/auth/"):
         return True
     if path == "/blog" or path.startswith("/blog/"):
         return True
     if path == "/news" or path.startswith("/news/"):
+        return True
+    if path == "/cms/blog" or path.startswith("/cms/blog/"):
+        return True
+    if path == "/cms/news" or path.startswith("/cms/news/"):
         return True
     # docs/openapi sind ohnehin public
     if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:

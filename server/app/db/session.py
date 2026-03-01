@@ -103,6 +103,7 @@ def init_db() -> None:
     _try_import("app.models.masterclipboard")
     _try_import("app.models.vehicle")
     _try_import("app.models.vehicle_entry")
+    _try_import("app.models.cms")
 
     # Optional model modules (may or may not exist in a given repo state)
     _try_import("app.models.entitlements")
