@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.admin.routes import router as admin_router
 from app.auth.routes import router as auth_router
+from app.cms.routes import router as cms_router
 from app.core.config import get_settings
 from app.db.session import init_db
 from app.guards import forbid_moderator
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
 
     # Feature routers
     app.include_router(admin_router)
+    app.include_router(cms_router)
     app.include_router(public_router)
 
     app.include_router(export_vehicle_router)

@@ -69,6 +69,7 @@ export default function OnboardingWizardPage(): JSX.Element {
   const [wizard, setWizard] = useState<WizardState>(initialState);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<"vin" | "km" | null>(null);
   const [done, setDone] = useState(false);
 
   // restore draft
@@ -165,11 +166,13 @@ export default function OnboardingWizardPage(): JSX.Element {
   async function onCreateVehicle() {
     if (vinValidation) {
       setError(vinValidation);
+      setErrorField("vin");
       return;
     }
 
     setSubmitting(true);
     setError(null);
+    setErrorField(null);
 
     const res = await createVehicleApi(
       {
@@ -190,6 +193,7 @@ export default function OnboardingWizardPage(): JSX.Element {
         return;
       }
       setError(toApiErrorMessage(res));
+      setErrorField(null);
       setSubmitting(false);
       return;
     }
@@ -212,11 +216,13 @@ export default function OnboardingWizardPage(): JSX.Element {
     }
     if (kmValidation) {
       setError(kmValidation);
+      setErrorField("km");
       return;
     }
 
     setSubmitting(true);
     setError(null);
+    setErrorField(null);
 
     const res = await createVehicleEntry(
       wizard.vehicleId,
@@ -240,6 +246,7 @@ export default function OnboardingWizardPage(): JSX.Element {
         return;
       }
       setError(toApiErrorMessage(res));
+      setErrorField(null);
       setSubmitting(false);
       return;
     }
@@ -253,6 +260,7 @@ export default function OnboardingWizardPage(): JSX.Element {
     localStorage.removeItem(STORAGE_KEY);
     setDone(false);
     setError(null);
+    setErrorField(null);
     setWizard({ ...initialState, entryDraft: { ...initialState.entryDraft, date: today } });
   }
 
@@ -329,11 +337,14 @@ export default function OnboardingWizardPage(): JSX.Element {
             onChange={(e) => setWizard((prev) => ({ ...prev, vin: e.target.value }))}
             placeholder="z. B. WAUZZZ..."
             autoComplete="off"
+            aria-required="true"
+            aria-invalid={errorField === "vin" || Boolean(vinValidation)}
+            aria-describedby={vinValidation ? "onboarding-vin-hint onboarding-vin-error" : "onboarding-vin-hint"}
           />
-          <p className="ltc-helper-text">
+          <p id="onboarding-vin-hint" className="ltc-helper-text">
             Warum VIN? Wir nutzen die VIN nur zur eindeutigen Zuordnung. Public wird sie maskiert angezeigt.
           </p>
-          {vinValidation ? <p className="ltc-error-message">{vinValidation}</p> : null}
+          {vinValidation ? <p id="onboarding-vin-error" className="ltc-error-message">{vinValidation}</p> : null}
           <button
             type="button"
             onClick={() => setWizard((prev) => ({ ...prev, step: 2, vin: normalizeVin(prev.vin) }))}
@@ -364,6 +375,7 @@ export default function OnboardingWizardPage(): JSX.Element {
                   accidentStatus: e.target.value as WizardState["accidentStatus"],
                 }))
               }
+              aria-required="true"
             >
               <option value="unknown">Unbekannt</option>
               <option value="accident_free">Unfallfrei</option>
@@ -394,6 +406,7 @@ export default function OnboardingWizardPage(): JSX.Element {
                 type="date"
                 value={wizard.entryDraft.date}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, date: e.target.value } }))}
+                aria-required="true"
               />
             </div>
             <div className="ltc-form-group">
@@ -406,6 +419,7 @@ export default function OnboardingWizardPage(): JSX.Element {
                 type="text"
                 value={wizard.entryDraft.type}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, type: e.target.value } }))}
+                aria-required="true"
               />
             </div>
             <div className="ltc-form-group">
@@ -420,6 +434,7 @@ export default function OnboardingWizardPage(): JSX.Element {
                 onChange={(e) =>
                   setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, performedBy: e.target.value } }))
                 }
+                aria-required="true"
               />
             </div>
             <div className="ltc-form-group">
@@ -433,11 +448,14 @@ export default function OnboardingWizardPage(): JSX.Element {
                 min={0}
                 value={wizard.entryDraft.km}
                 onChange={(e) => setWizard((prev) => ({ ...prev, entryDraft: { ...prev.entryDraft, km: e.target.value } }))}
+                aria-required="true"
+                aria-invalid={errorField === "km" || Boolean(kmValidation)}
+                aria-describedby={kmValidation ? "onboarding-km-error" : undefined}
               />
             </div>
           </div>
 
-          {kmValidation ? <p className="ltc-error-message">{kmValidation}</p> : null}
+          {kmValidation ? <p id="onboarding-km-error" className="ltc-error-message">{kmValidation}</p> : null}
 
           <div className="ltc-button-group ltc-button-group--row">
             <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 2 }))} disabled={submitting} className="ltc-button ltc-button--secondary">

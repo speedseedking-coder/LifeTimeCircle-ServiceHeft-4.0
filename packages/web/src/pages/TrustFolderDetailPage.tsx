@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
 import { deleteTrustFolder, getTrustFolder, renameTrustFolder, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
@@ -16,6 +16,8 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
   const [folder, setFolder] = useState<TrustFolder | null>(null);
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"title" | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   const hash = useHash();
   const context = useMemo(() => readTrustFolderContextFromHash(hash), [hash]);
@@ -26,6 +28,12 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
   }, [props.folderId]);
   const resolvedVehicleId = folder?.vehicle_id ?? context.vehicleId;
   const resolvedAddonKey = folder?.addon_key ?? context.addonKey;
+
+  useEffect(() => {
+    if (viewState === "ready" && folder) {
+      titleInputRef.current?.focus();
+    }
+  }, [viewState, folder]);
 
   useEffect(() => {
     let alive = true;
@@ -71,10 +79,13 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
     const nextTitle = title.trim();
     if (nextTitle.length < 1 || nextTitle.length > MAX_NAME_LENGTH) {
       setError(`Name muss zwischen 1 und ${MAX_NAME_LENGTH} Zeichen liegen.`);
+      setErrorField("title");
+      titleInputRef.current?.focus();
       return;
     }
 
     setError("");
+    setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
 
@@ -110,11 +121,11 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
 
   if (!resolvedVehicleId && viewState !== "loading") {
     return (
-      <main style={{ padding: 12 }}>
+      <main className="ltc-main ltc-main--narrow">
         <div className="ltc-card" role="status">
           <div className="ltc-card__title">Bitte Vehicle wählen</div>
           <div className="ltc-muted">Für Trust-Folder-Details wird ein Vehicle-Kontext benötigt.</div>
-          <div style={{ marginTop: 10 }}>
+          <div className="ltc-mt-4">
             <a className="ltc-link" href="#/vehicles">
               Zu Vehicles
             </a>
@@ -125,7 +136,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
   }
 
   return (
-    <main style={{ padding: 12 }}>
+    <main className="ltc-main ltc-main--narrow" data-testid="trust-folder-detail-page">
       {resolvedVehicleId ? (
         <a
           className="ltc-link"
@@ -137,25 +148,44 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
         </a>
       ) : null}
 
-      {error && <InlineErrorBanner message={error} />}
-      {viewState === "loading" && <div className="ltc-card">Lädt…</div>}
+      {error && errorField === null ? <InlineErrorBanner message={error} /> : null}
+      {viewState === "loading" && <div className="ltc-card ltc-section">Lädt…</div>}
       {viewState === "forbidden" && <ForbiddenPanel />}
       {viewState === "addon" && <AddonRequiredPanel />}
 
       {viewState === "ready" && folder && (
-        <section className="ltc-card" style={{ marginTop: 12 }}>
+        <section className="ltc-card ltc-card--compact ltc-section">
+          <span className="ltc-card__eyebrow">Detail</span>
           <h1>{folder.title}</h1>
 
           <form onSubmit={(e) => void onRename(e)}>
-            <label htmlFor="trust-folder-title">Name</label>
-            <input
-              id="trust-folder-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={MAX_NAME_LENGTH}
-              style={{ width: "100%", marginTop: 8, padding: 10 }}
-            />
-            <button type="submit" style={{ marginTop: 10, padding: "8px 12px" }}>
+            <div className="ltc-form-grid ltc-form-grid--single">
+              <div className="ltc-form-group">
+                <label className="ltc-form-group__label" htmlFor="trust-folder-detail-title">
+                  Name
+                  <input
+                    ref={titleInputRef}
+                    id="trust-folder-detail-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    maxLength={MAX_NAME_LENGTH}
+                    className="ltc-form-group__input"
+                    aria-required="true"
+                    aria-invalid={errorField === "title"}
+                    aria-describedby={errorField === "title" ? "trust-folder-detail-error trust-folder-detail-hint" : "trust-folder-detail-hint"}
+                  />
+                </label>
+                <p id="trust-folder-detail-hint" className="ltc-helper-text">
+                  Name zwischen 1 und {MAX_NAME_LENGTH} Zeichen.
+                </p>
+                {errorField === "title" && error ? (
+                  <p id="trust-folder-detail-error" className="ltc-helper-text ltc-helper-text--error">
+                    {error}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <button type="submit" className="ltc-button ltc-button--primary">
               Speichern
             </button>
           </form>
@@ -163,7 +193,8 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
           <button
             type="button"
             onClick={() => void onDelete()}
-            style={{ marginTop: 10, padding: "8px 12px", borderColor: "rgba(255,120,120,0.6)" }}
+            className="ltc-button ltc-button--secondary ltc-mt-4"
+            aria-label={`Trust-Folder ${folder.title} löschen`}
           >
             Löschen
           </button>

@@ -6,8 +6,8 @@
 - ✅ All `<main>` landmarks present
 - ✅ Navigation via hash routes
 - ✅ Form labels properly associated
-- [ ] Add ARIA labels to icon buttons
-- [ ] Add ARIA descriptions for complex components
+- [ ] Add ARIA labels to icon-only buttons where introduced later
+- [x] Add ARIA descriptions for complex components
 
 ### ARIA Enhancements Todo
 1. **Public QR Page:**
@@ -23,9 +23,14 @@
    - [x] Add `aria-invalid` to error fields
    - [x] Add `aria-describedby` linking errors to fields
 
-4. **Buttons:**
-   - Add `aria-label` to all icon-only buttons
-   - Add `aria-pressed` to toggle buttons
+4. **Auth, Consent, Trust Folders:**
+   - [x] Add `aria-required` and field-level error descriptions on OTP and trust-folder forms
+   - [x] Group consent checkboxes semantically via `fieldset` and `legend`
+   - [x] Add descriptive associations on cookie settings toggles and trust disclaimers
+
+5. **Buttons:**
+   - [ ] Add `aria-label` to future icon-only buttons if they are introduced
+   - [ ] Add `aria-pressed` to true toggle buttons if they are introduced
 
 ### Color Contrast Check
 - Review: All text meets WCAG AA (4.5:1) contrast ratio
@@ -33,6 +38,7 @@
 
 ### Keyboard Navigation
 - Tab order logical across all pages
+- [x] Initial focus and focus handoff covered on Auth, Consent, Trust Folders
 - Enter/Space activate buttons
 - Escape closes modals (if any)
 
@@ -41,23 +47,23 @@
 ### Breakpoints (CSS)
 - [x] 375px (iPhone SE) – lowest
 - [x] 768px (iPad) – mid
-- [ ] 1920px (Desktop) – high
+- [x] 1920px (Desktop) – high
 
 ### Tests Needed
 - [x] Form layouts responsive (stack on mobile)
 - [x] Button groups wrap properly
-- Lists have adequate spacing
-- Text readable without zoom
+- [x] Lists have adequate spacing
+- [x] Text readable without zoom
 - Touch targets >= 44x44px
 
 ### CSS Updates
-- Add media queries for forms on small screens
-- Ensure padding/margin scales
-- Check font sizes on 375px
+- [x] Add media queries for forms on small screens
+- [x] Ensure padding/margin scales
+- [x] Check font sizes on 375px
+- [x] Add desktop grid/layout rules for 1440px+ and 1920px
 
 ## Implementation Order
-1. Add ARIA labels to existing components
-2. Run accessibility audit (Playwright + accessibility APIs)
-3. Mobile responsive testing on 375px
-4. Fix any contrast issues
-5. Verify keyboard navigation
+1. Run accessibility audit (Playwright + accessibility APIs) on newly added routes/components
+2. Fix any contrast issues
+3. Extend keyboard-navigation checks when new complex widgets enter the UI
+4. Add ARIA semantics again when new icon/toggle controls enter the UI

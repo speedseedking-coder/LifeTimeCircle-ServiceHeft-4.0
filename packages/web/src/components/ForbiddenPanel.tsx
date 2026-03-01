@@ -1,8 +1,20 @@
-export default function ForbiddenPanel(): JSX.Element {
+export default function ForbiddenPanel(props: {
+  title?: string;
+  message?: string;
+  actionHref?: string;
+  actionLabel?: string;
+}): JSX.Element {
   return (
-    <div className="ltc-card" role="status" style={{ marginTop: 12 }}>
-      <div className="ltc-card__title">Kein Zugriff</div>
-      <div className="ltc-muted">Du hast keine Berechtigung für diese Aktion.</div>
-    </div>
+    <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--error" role="status" data-testid="forbidden-panel">
+      <div className="ltc-state-panel__title">{props.title ?? "Kein Zugriff"}</div>
+      <p className="ltc-state-panel__copy">{props.message ?? "Du hast keine Berechtigung für diese Aktion."}</p>
+      {props.actionHref && props.actionLabel ? (
+        <div className="ltc-state-panel__actions">
+          <a className="ltc-link" href={props.actionHref}>
+            {props.actionLabel}
+          </a>
+        </div>
+      ) : null}
+    </section>
   );
 }

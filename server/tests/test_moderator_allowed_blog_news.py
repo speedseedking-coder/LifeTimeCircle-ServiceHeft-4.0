@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Iterable, Tuple
 
 import pytest
+from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
@@ -20,9 +21,8 @@ ACTOR_DEP_NAMES = {
     "require_session_actor",
 }
 
-# SoT: Moderator darf nur Blog/News.
-# Aktuell sind im App-Routing aber noch keine /news oder /blog Endpoints vorhanden.
-ALLOWED_PREFIXES = ("/news", "/blog")
+# SoT: Moderator darf nur Blog/News inkl. redaktioneller CMS-Pfade.
+ALLOWED_PREFIXES = ("/news", "/blog", "/cms/blog", "/cms/news")
 
 
 def _make_app():
@@ -70,13 +70,25 @@ def _request_follow_redirects(client: TestClient, method: str, path: str):
     return res
 
 
+def _walk_dependant(dep: Dependant) -> Iterable[Dependant]:
+    yield dep
+    for child in getattr(dep, "dependencies", []) or []:
+        yield from _walk_dependant(child)
+
+
 def _override_actor_deps_everywhere(app, actor) -> None:
+    seen = set()
+
     for r in _apiroutes(app):
         for dep in r.dependant.dependencies:
-            call = dep.call
-            name = getattr(call, "__name__", "")
-            if name in ACTOR_DEP_NAMES:
-                app.dependency_overrides[call] = (lambda a=actor: a)
+            for node in _walk_dependant(dep):
+                call = getattr(node, "call", None)
+                if call is None or call in seen:
+                    continue
+                seen.add(call)
+                name = getattr(call, "__name__", "")
+                if name in ACTOR_DEP_NAMES:
+                    app.dependency_overrides[call] = (lambda a=actor: a)
 
 
 def test_moderator_can_access_blog_or_news() -> None:

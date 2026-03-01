@@ -1,0 +1,22 @@
+Recent commits (top 20):
+
+3912844 fix(admin): align export errors with current server contracts
+389c9a4 docs(web): add release candidate handoff and align public info pages
+b7d5620 feat(web): align public content with copy source of truth
+2e83596 feat(web): polish edge states and release readiness
+35d33fc feat(web): improve focus flows and refresh runbooks
+5ce2826 feat(web): complete accessibility pass on auth and trust flows
+4969a44 docs(masterplan): simplify live planning artifacts
+4523e02 docs(masterplan): align index and reading order to live state
+2ebb1ba docs(sot): simplify checkpoint and add copy context
+899f802 feat(web): tune desktop layouts for core workspaces
+5f7281c feat(web): align form accessibility across core flows
+0ab5416 feat(web): harden mobile layouts for core app pages
+99344e5 feat(web): harden accessibility on content and documents pages
+ffdeb3f fix(repo): restore green verification gates
+e82a016 feat(vehicles): enrich vehicle detail with stats & visual indicators
+61f79d2 style(a11y): add accessibility labels and mobile responsive design
+e82ec3e feat(blog-news): activate feature flag & implement editorial content
+f1d8e24 docs(masterplan): update checklist – design system adoption 100% complete
+89a2cef refactor(web): finalize PublicQrPage inline styles to design-system 100% complete
+98e7845 docs(masterplan): update daily checklist with 2026-03-01 inline-styles

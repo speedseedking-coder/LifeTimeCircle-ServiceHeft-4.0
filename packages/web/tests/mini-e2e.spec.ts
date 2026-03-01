@@ -235,6 +235,80 @@ async function mockAppGateApi(page: Page, mode: GateMode) {
   };
 }
 
+async function mockPublicEditorialApi(page: Page): Promise<void> {
+  const blogList = [
+    {
+      slug: "spring-maintenance-2026",
+      title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
+      excerpt: "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung.",
+      published_at: "2026-03-01T09:00:00Z",
+    },
+    {
+      slug: "trust-ampel-guide",
+      title: "Trust-Ampel richtig lesen: Dokumentationsqualität statt Technikurteil",
+      excerpt: "Die Trust-Ampel beschreibt, wie gut Historie und Nachweise dokumentiert sind. Sie ist bewusst keine technische Diagnose.",
+      published_at: "2026-02-28T09:00:00Z",
+    },
+    {
+      slug: "digital-vehicle-passport",
+      title: "Serviceeinträge sauber vorbereiten: Welche Angaben wirklich helfen",
+      excerpt: "Datum, Typ, durchgeführt von, Kilometerstand und passender Nachweis machen aus einem Eintrag eine prüfbare Historie.",
+      published_at: "2026-02-25T09:00:00Z",
+    },
+  ];
+  const newsList = [
+    {
+      slug: "eu-digital-vehicle-passport-2027",
+      title: "Produktstatus: Public-QR bleibt bewusst datenarm",
+      excerpt: "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor.",
+      published_at: "2026-03-01T09:00:00Z",
+    },
+    {
+      slug: "ltc-expands-to-fleet-management",
+      title: "Produktupdate: Uploads starten weiterhin in Quarantäne",
+      excerpt: "Nachweise werden zuerst geprüft. Erst danach sind sie im vorgesehenen Flow nutzbar. Das schützt Public- und Kernbereiche vor ungeprüften Dateien.",
+      published_at: "2026-02-27T09:00:00Z",
+    },
+    {
+      slug: "trust-ampel-reaches-100k-vehicles",
+      title: "Governance: Moderator bleibt strikt auf Blog und News begrenzt",
+      excerpt: "Die Rollenlogik bleibt eng: Moderator bearbeitet Inhalte, aber keine Fahrzeug-, Dokument- oder Admin-Prozesse.",
+      published_at: "2026-02-20T09:00:00Z",
+    },
+  ];
+
+  const json = (body: unknown) => ({
+    status: 200,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  await page.route("**/api/blog", async (route) => {
+    await route.fulfill(json(blogList));
+  });
+  await page.route("**/api/blog/spring-maintenance-2026", async (route) => {
+    await route.fulfill(
+      json({
+        ...blogList[0],
+        content_md:
+          "Eine belastbare Fahrzeughistorie beginnt nicht mit einer großen Behauptung, sondern mit einem sauberen Eintrag und einem passenden Nachweis.\n\n**Was in jeden guten Eintrag gehört:**\n- Datum der Arbeit\n- Typ des Eintrags\n- durchgeführt von\n- Kilometerstand\n- kurze, sachliche Beschreibung\n\n**Welche Nachweise den Unterschied machen:**\n- Rechnung oder Werkstattbeleg\n- Prüfbericht oder Gutachten\n- Foto der Arbeit oder des Bauteils\n- Zusatzdokumente nur dann, wenn sie zum Eintrag passen\n\nWenn Einträge und Nachweise sauber zusammengehören, wird Historie nachvollziehbar. Genau darauf baut das Service Heft 4.0 auf.",
+      }),
+    );
+  });
+  await page.route("**/api/news", async (route) => {
+    await route.fulfill(json(newsList));
+  });
+  await page.route("**/api/news/eu-digital-vehicle-passport-2027", async (route) => {
+    await route.fulfill(
+      json({
+        ...newsList[0],
+        content_md:
+          "Der Public-QR Mini-Check bleibt bewusst knapp. Er zeigt nur das, was öffentlich vertretbar und fachlich sinnvoll ist.\n\n**Was sichtbar ist:**\n- Ampel Rot, Orange, Gelb oder Grün\n- kurze textliche Hinweise zur Dokumentationsqualität\n- keine Halterdaten und keine Technikdiagnose\n\n**Was bewusst nicht sichtbar ist:**\n- keine Kennzahlen oder Prozentwerte\n- keine Dokumente oder Downloads\n- keine internen Freigaben, keine PII und keine Diagnosedaten\n\nDamit bleibt der öffentliche Einstieg nützlich, ohne in Detaildaten oder sicherheitskritische Bereiche zu kippen.",
+      }),
+    );
+  });
+}
+
 async function boot(page: Page): Promise<void> {
   await page.goto("/");
   await page.waitForLoadState("domcontentloaded");
@@ -246,24 +320,48 @@ async function setHash(page: Page, hash: string): Promise<void> {
   }, hash);
 }
 
-test("public contact page shows email", async ({ page }) => {
+test("public contact page shows support guidance and email", async ({ page }) => {
   await boot(page);
   await setHash(page, "#/contact");
-  await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
+  const main = page.locator("main");
+  await expect(main).toContainText("Kontakt");
+  await expect(main).toContainText("lifetimecircle@online.de");
+  await expect(main).toContainText("keine persönlichen Fahrzeugdaten");
+});
+
+test("public faq, jobs and datenschutz pages align with copy source of truth", async ({ page }) => {
+  await boot(page);
+
+  await setHash(page, "#/faq");
+  let main = page.locator("main");
+  await expect(main).toContainText("Trust-Ampel");
+  await expect(main).toContainText("keine Dokumente, keine Downloads und keine Metadaten");
+
+  await setHash(page, "#/jobs");
+  main = page.locator("main");
+  await expect(main).toContainText("Security-First");
+  await expect(main).toContainText("lifetimecircle@online.de");
+  await expect(main).not.toContainText("jobs@lifetimecircle.example");
+
+  await setHash(page, "#/datenschutz");
+  main = page.locator("main");
+  await expect(main).toContainText("Produktiver Zugriff setzt die Zustimmung zu AGB und Datenschutz voraus");
+  await expect(main).toContainText("Öffentliche Downloads gibt es nicht");
 });
 
 // blog/news routes are now ACTIVE (FEATURES.blogNews = true in appRouting.ts)
 // the old test "blog/news routes return 404 when feature disabled" is now replaced by the new blog/news accessibility tests above
 test("blog/news routes return content when feature enabled", async ({ page }) => {
+  await mockPublicEditorialApi(page);
   await boot(page);
   await setHash(page, "#/blog");
   // Should NOT be 404 anymore - should show blog content in main
   await expect(page.locator("main")).toContainText("Blog");
-  await expect(page.locator("main")).toContainText("Frühjahrsinspektion");
+  await expect(page.locator("main")).toContainText("Nachweise statt Behauptung");
   await setHash(page, "#/news");
   // Should NOT be 404 anymore - should show news content in main
   await expect(page.locator("main")).toContainText("News");
-  await expect(page.locator("main")).toContainText("EU-Verordnung");
+  await expect(page.locator("main")).toContainText("Public-QR bleibt bewusst datenarm");
 });
 
 test("public entry page offers both role paths into auth", async ({ page }) => {
@@ -536,6 +634,22 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("PENDING");
   await expect(page.locator("#documents-upload-input")).toHaveAttribute("aria-required", "true");
   await expect(page.locator("#documents-lookup-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator('[data-testid="documents-notice"]')).toContainText("service.pdf");
+});
+
+test("Documents lookup validates empty input and keeps focus on lookup field", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await mockAppGateApi(page, "me_200_consent_ok");
+  await boot(page);
+  await setHash(page, "#/documents");
+
+  await page.getByRole("button", { name: "Dokument laden" }).click();
+
+  await expect(page.locator("#documents-lookup-error")).toContainText("Bitte eine Dokument-ID eingeben.");
+  await expect(page.locator("#documents-lookup-input")).toBeFocused();
 });
 
 test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
@@ -591,9 +705,11 @@ test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", 
   await boot(page);
   await setHash(page, "#/onboarding");
 
+  await expect(page.locator("#vin-input")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("VIN").fill("WAUZZZ1JZXW999999");
   await page.getByRole("button", { name: "Weiter" }).click();
   await page.getByRole("button", { name: "Fahrzeug speichern" }).click();
+  await expect(page.locator("#entry-km")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("Kilometerstand").fill("120000");
   await page.getByRole("button", { name: "Entry speichern" }).click();
 
@@ -650,12 +766,16 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
   await boot(page);
   await setHash(page, "#/auth?next=%23%2Fdocuments");
 
+  await expect(page.locator("#auth-email-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#auth-email-input")).toBeFocused();
   await page.getByLabel("E-Mail").fill("vip@example.com");
   await page.getByRole("button", { name: "Code anfordern" }).click();
 
   await expect(page.locator('[data-testid="auth-challenge-id"]')).toHaveText("challenge-123");
   await expect(page.locator('[data-testid="auth-dev-otp"]')).toHaveText("123456");
 
+  await expect(page.locator("#auth-otp-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#auth-otp-input")).toBeFocused();
   await page.getByLabel("OTP").fill("123456");
   await page.getByRole("button", { name: "Login verifizieren" }).click();
 
@@ -714,6 +834,7 @@ test("Auth page goes directly to target when consent is already complete", async
 
   await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/vehicles");
   await expect(page.locator("main h1")).toContainText("Vehicles");
+  await expect(page.locator("#vehicles-vin-input")).toHaveAttribute("aria-required", "true");
 });
 
 test("Consent page accepts required versions and continues to target route", async ({ page }) => {
@@ -785,6 +906,9 @@ test("Consent page accepts required versions and continues to target route", asy
   await boot(page);
   await setHash(page, "#/consent?next=%23%2Fvehicles");
 
+  await expect(page.locator("#consent-terms")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#consent-privacy")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#consent-terms")).toBeFocused();
   await expect(page.locator("main")).toContainText("v2");
   await expect(page.locator("main")).toContainText("v3");
 
@@ -857,6 +981,8 @@ test("Trust Folders route loads with auth, consent and vehicle context", async (
   );
   await expect(page.locator("main h1")).toContainText("Trust Folders");
   await expect(page.locator("main")).toContainText("Restauration 2026");
+  await expect(page.locator("#trust-folder-title")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#trust-folder-title")).toBeFocused();
 });
 
 test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
@@ -885,6 +1011,69 @@ test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
   await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
 
   await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
+});
+
+test("Trust Folders route shows addon required panel on addon gate", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "vip" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/trust/folders") return json(403, { detail: "addon_required" });
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect(page.locator('[data-testid="addon-required-panel"]')).toContainText("Add-on erforderlich");
+});
+
+test("Trust Folder detail exposes accessible rename and delete controls", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "vip" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/trust/folders/7") {
+      return json(200, { id: 7, vehicle_id: "demo-1", owner_user_id: "u1", addon_key: "restauration", title: "Restauration 2026" });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders/7?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect(page.locator("main h1")).toContainText("Restauration 2026");
+  await expect(page.locator("#trust-folder-detail-title")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#trust-folder-detail-title")).toBeFocused();
+  await expect(page.getByRole("button", { name: "Trust-Folder Restauration 2026 löschen" })).toHaveCount(1);
 });
 
 test("Admin route manages roles, VIP businesses and export grants", async ({ page }) => {
@@ -1074,6 +1263,8 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
   await expect(page.locator("main h1")).toContainText("Admin");
   await expect(page.locator('[data-testid="admin-page"]')).toContainText("uid-user-1");
+  await expect(page.locator("#admin-business-owner-id")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#admin-export-target-id")).toHaveAttribute("aria-required", "true");
 
   const userCard = page.locator("article").filter({ hasText: "uid-user-1" }).first();
   await userCard.getByLabel("Zielrolle").selectOption("vip");
@@ -1099,11 +1290,93 @@ test("Admin route manages roles, VIP businesses and export grants", async ({ pag
 
   await page.getByRole("button", { name: "Full Grant anfordern" }).click();
   await expect.poll(() => grantIssued).toBe(true);
+  await expect(page.locator('[data-testid="admin-notice"]')).toContainText("One-time Export-Grant");
   await expect(page.locator("main")).toContainText("grant-token-1");
 
   await page.getByRole("button", { name: "Voll-Export laden" }).click();
   await expect.poll(() => fullLoaded).toBe(true);
   await expect(page.locator("main")).toContainText("ciphertext-demo-1");
+});
+
+test("Admin export validates missing target before request", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_admin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/admin/users") return json(200, []);
+    if (path === "/api/admin/vip-businesses") return json(200, []);
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/admin");
+
+  await page.getByRole("button", { name: "Redacted laden" }).click();
+  await expect(page.locator("#admin-export-target-error")).toContainText("Ziel-ID ist erforderlich.");
+  await expect(page.locator("#admin-export-target-id")).toBeFocused();
+});
+
+test("Admin export shows helpful error when full export grant is rejected by backend", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_admin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/admin/users") return json(200, []);
+    if (path === "/api/admin/vip-businesses") return json(200, []);
+    if (path === "/api/export/vehicle/veh-admin-1/grant") {
+      return json(200, {
+        vehicle_id: "veh-admin-1",
+        export_token: "grant-token-1",
+        token: "grant-token-1",
+        expires_at: "2026-02-28T11:20:00Z",
+        ttl_seconds: 300,
+        one_time: true,
+        header: "X-Export-Token",
+      });
+    }
+    if (path === "/api/export/vehicle/veh-admin-1/full") {
+      return json(403, { detail: "forbidden" });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/admin");
+
+  await page.getByLabel("Ziel-ID").fill("veh-admin-1");
+  await page.getByRole("button", { name: "Full Grant anfordern" }).click();
+  await expect(page.locator('[data-testid="admin-notice"]')).toContainText("One-time Export-Grant");
+
+  await page.getByRole("button", { name: "Voll-Export laden" }).click();
+  await expect(page.locator("main")).toContainText("Der Voll-Export wurde vom Server abgelehnt. Prüfe Grant, Ziel-ID und Ablaufzeit.");
 });
 
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {
@@ -1125,51 +1398,237 @@ test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ p
 
 // blog/news routes are now active (FEATURES.blogNews = true)
 test("blog list page is accessible and shows posts", async ({ page }) => {
+  await mockPublicEditorialApi(page);
   await boot(page);
   await setHash(page, "#/blog");
   
   const main = page.locator("main");
   await expect(main).toContainText("Blog");
-  await expect(main).toContainText("Frühjahrsinspektion 2026");
-  await expect(main).toContainText("Trust-Ampel");
-  await expect(main).toContainText("Digitaler Fahrzeugpass");
+  await expect(main).toContainText("Nachweise statt Behauptung");
+  await expect(main).toContainText("Trust-Ampel richtig lesen");
+  await expect(main).toContainText("Serviceeinträge sauber vorbereiten");
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
 test("blog post page displays full article content", async ({ page }) => {
+  await mockPublicEditorialApi(page);
   await boot(page);
   await setHash(page, "#/blog/spring-maintenance-2026");
   
   const main = page.locator("main");
-  await expect(main).toContainText("Frühjahrsinspektion 2026");
-  await expect(main).toContainText("Reifen:");
-  await expect(main).toContainText("Bremsanlage:");
+  await expect(main).toContainText("Nachweise statt Behauptung");
+  await expect(main).toContainText("Was in jeden guten Eintrag gehört:");
+  await expect(main).toContainText("Welche Nachweise den Unterschied machen:");
   await expect(main).toContainText("Zurück zum Blog");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
 
 test("news list page is accessible and shows articles", async ({ page }) => {
+  await mockPublicEditorialApi(page);
   await boot(page);
   await setHash(page, "#/news");
   
   const main = page.locator("main");
   await expect(main).toContainText("News");
-  await expect(main).toContainText("EU-Verordnung");
-  await expect(main).toContainText("Flottenmanagement");
-  await expect(main).toContainText("100.000 Fahrzeuge");
+  await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
+  await expect(main).toContainText("Uploads starten weiterhin in Quarantäne");
+  await expect(main).toContainText("Moderator bleibt strikt auf Blog und News begrenzt");
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
 test("news post page displays full article content", async ({ page }) => {
+  await mockPublicEditorialApi(page);
   await boot(page);
   await setHash(page, "#/news/eu-digital-vehicle-passport-2027");
   
   const main = page.locator("main");
-  await expect(main).toContainText("EU-Verordnung");
-  await expect(main).toContainText("Digitalen Fahrzeugpass");
-  await expect(main).toContainText("Was ändert sich?");
+  await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
+  await expect(main).toContainText("Was sichtbar ist:");
+  await expect(main).toContainText("Was bewusst nicht sichtbar ist:");
   await expect(main).toContainText("Zurück zu News");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
+});
+
+test("moderator can access CMS blog without consent check and sees no review or publish actions", async ({ page }) => {
+  let consentCalls = 0;
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_moderator");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "mod-1", role: "moderator" });
+    if (path === "/api/consent/status") {
+      consentCalls += 1;
+      return json(200, { is_complete: true, required: [], accepted: [] });
+    }
+    if (path === "/api/cms/blog") {
+      return json(200, [
+        {
+          article_id: "blog-1",
+          content_type: "blog",
+          slug: "spring-maintenance-2026",
+          title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
+          excerpt: "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung.",
+          workflow_state: "draft",
+          review_note: null,
+          created_at: "2026-03-01T08:45:00Z",
+          updated_at: "2026-03-01T09:00:00Z",
+          submitted_at: null,
+          reviewed_at: null,
+          published_at: null,
+        },
+      ]);
+    }
+    if (path === "/api/cms/blog/blog-1") {
+      return json(200, {
+        article_id: "blog-1",
+        content_type: "blog",
+        slug: "spring-maintenance-2026",
+        title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
+        excerpt: "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung.",
+        workflow_state: "draft",
+        review_note: null,
+        created_at: "2026-03-01T08:45:00Z",
+        updated_at: "2026-03-01T09:00:00Z",
+        submitted_at: null,
+        reviewed_at: null,
+        published_at: null,
+        content_md: "Kurztext",
+      });
+    }
+    if (path === "/api/cms/blog/blog-1/submit") {
+      return json(200, {
+        article_id: "blog-1",
+        content_type: "blog",
+        slug: "spring-maintenance-2026",
+        title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
+        excerpt: "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung.",
+        workflow_state: "in_review",
+        review_note: null,
+        created_at: "2026-03-01T08:45:00Z",
+        updated_at: "2026-03-01T09:05:00Z",
+        submitted_at: "2026-03-01T09:05:00Z",
+        reviewed_at: null,
+        published_at: null,
+        content_md: "Kurztext",
+      });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/cms/blog");
+
+  await expect(page.locator("main h1")).toContainText("Blog CMS");
+  await expect.poll(async () => page.evaluate(() => window.location.hash)).toBe("#/cms/blog");
+  expect(consentCalls).toBe(0);
+
+  await page.getByRole("button", { name: "Öffnen" }).click();
+  await expect(page.getByRole("button", { name: "Review anfordern" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Review setzen" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Final publish" })).toHaveCount(0);
+});
+
+test("superadmin can final publish CMS news content", async ({ page }) => {
+  let publishCalls = 0;
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_superadmin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/cms/news") {
+      return json(200, [
+        {
+          article_id: "news-1",
+          content_type: "news",
+          slug: "eu-digital-vehicle-passport-2027",
+          title: "Produktstatus: Public-QR bleibt bewusst datenarm",
+          excerpt: "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor.",
+          workflow_state: publishCalls === 0 ? "in_review" : "published",
+          review_note: "Freigabefähig.",
+          created_at: "2026-03-01T08:45:00Z",
+          updated_at: publishCalls === 0 ? "2026-03-01T09:05:00Z" : "2026-03-01T09:10:00Z",
+          submitted_at: "2026-03-01T09:00:00Z",
+          reviewed_at: "2026-03-01T09:05:00Z",
+          published_at: publishCalls === 0 ? null : "2026-03-01T09:10:00Z",
+        },
+      ]);
+    }
+    if (path === "/api/cms/news/news-1") {
+      return json(200, {
+        article_id: "news-1",
+        content_type: "news",
+        slug: "eu-digital-vehicle-passport-2027",
+        title: "Produktstatus: Public-QR bleibt bewusst datenarm",
+        excerpt: "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor.",
+        workflow_state: publishCalls === 0 ? "in_review" : "published",
+        review_note: "Freigabefähig.",
+        created_at: "2026-03-01T08:45:00Z",
+        updated_at: publishCalls === 0 ? "2026-03-01T09:05:00Z" : "2026-03-01T09:10:00Z",
+        submitted_at: "2026-03-01T09:00:00Z",
+        reviewed_at: "2026-03-01T09:05:00Z",
+        published_at: publishCalls === 0 ? null : "2026-03-01T09:10:00Z",
+        content_md: "Kurztext",
+      });
+    }
+    if (path === "/api/cms/publish/news-1") {
+      publishCalls += 1;
+      return json(200, {
+        article_id: "news-1",
+        content_type: "news",
+        slug: "eu-digital-vehicle-passport-2027",
+        title: "Produktstatus: Public-QR bleibt bewusst datenarm",
+        excerpt: "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor.",
+        workflow_state: "published",
+        review_note: "Freigabefähig.",
+        created_at: "2026-03-01T08:45:00Z",
+        updated_at: "2026-03-01T09:10:00Z",
+        submitted_at: "2026-03-01T09:00:00Z",
+        reviewed_at: "2026-03-01T09:05:00Z",
+        published_at: "2026-03-01T09:10:00Z",
+        content_md: "Kurztext",
+      });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/cms/news");
+
+  await expect(page.locator("main h1")).toContainText("News CMS");
+  await page.getByRole("button", { name: "Öffnen" }).click();
+  await expect(page.getByRole("button", { name: "Final publish" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Final publish" }).click();
+  await expect.poll(() => publishCalls).toBe(1);
+  await expect(page.locator("main")).toContainText("Beitrag wurde final veröffentlicht.");
+  await expect(page.locator("main")).toContainText("Public Preview");
 });
 
 /* ========== RESPONSIVE DESIGN TESTS ========== */
@@ -1198,6 +1657,7 @@ test("responsive stylesheet includes mobile-first media queries (640px, 768px, 1
   const mediaQueryText = mediaQueries.join(" ");
   expect(mediaQueryText.toLowerCase()).toContain("max-width");
   expect(mediaQueryText.toLowerCase()).toContain("min-width");
+  expect(mediaQueryText).toContain("1920px");
   expect(mediaQueries.length).toBeGreaterThan(0);
 });
 
@@ -1295,4 +1755,146 @@ test("mobile layouts avoid horizontal overflow on vehicles, vehicle detail and a
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
     expect(hasOverflow).toBe(false);
   }
+});
+
+test("desktop layouts use split grids on vehicles, vehicle detail, admin and documents at 1920px", async ({ page }) => {
+  let role: "user" | "superadmin" = "superadmin";
+
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_desktop");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/vehicles") return json(200, [{ id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} }]);
+    if (path === "/api/vehicles/veh_test_1") {
+      return json(200, { id: "veh_test_1", vin_masked: "WAU********1234", nickname: "Demo Fahrzeug", meta: {} });
+    }
+    if (path === "/api/vehicles/veh_test_1/trust-summary") {
+      return json(200, {
+        trust_light: "gruen",
+        hint: "Dokumentation ist vollständig nachweisbar.",
+        reason_codes: ["history_complete", "evidence_verified"],
+        todo_codes: ["review_next_service"],
+        verification_level: "hoch",
+        accident_status: "unfallfrei",
+        accident_status_label: "Unfallfrei",
+        history_status: "vorhanden",
+        evidence_status: "vorhanden",
+        top_trust_level: "T3",
+      });
+    }
+    if (path === "/api/vehicles/veh_test_1/entries") {
+      return json(200, [
+        {
+          id: "entry_test_1",
+          vehicle_id: "veh_test_1",
+          entry_group_id: "grp_1",
+          supersedes_entry_id: null,
+          version: 2,
+          revision_count: 2,
+          is_latest: true,
+          date: "2026-02-20",
+          type: "Inspektion",
+          performed_by: "Werkstatt",
+          km: 123456,
+          note: "Große Inspektion durchgeführt",
+          cost_amount: 499.9,
+          trust_level: "T3",
+          created_at: "2026-02-20T12:00:00Z",
+          updated_at: "2026-02-21T12:00:00Z",
+        },
+      ]);
+    }
+    if (path === "/api/admin/users") {
+      return json(200, [{ user_id: "uid-user-1", role: "user", created_at: "2026-02-28T10:00:00Z" }]);
+    }
+    if (path === "/api/admin/vip-businesses") {
+      return json(200, [
+        {
+          business_id: "biz-demo-1",
+          owner_user_id: "uid-owner-1",
+          approved: true,
+          created_at: "2026-02-28T10:30:00Z",
+          approved_at: "2026-02-28T11:05:00Z",
+          approved_by_user_id: "sa-1",
+          staff_user_ids: ["uid-staff-1"],
+          staff_count: 1,
+        },
+      ]);
+    }
+    if (path === "/api/documents/admin/quarantine") {
+      return json(200, [
+        {
+          id: "doc_test_1",
+          filename: "service.pdf",
+          content_type: "application/pdf",
+          size_bytes: 24,
+          status: "QUARANTINED",
+          scan_status: "PENDING",
+          pii_status: "OK",
+          created_at: "2026-02-28T12:00:00Z",
+          created_by_user_id: "u1",
+        },
+      ]);
+    }
+    if (path.startsWith("/api/documents/") && !path.endsWith("/download") && !path.endsWith("/approve") && !path.endsWith("/reject") && !path.endsWith("/scan")) {
+      return json(200, {
+        id: "doc_test_1",
+        filename: "service.pdf",
+        content_type: "application/pdf",
+        size_bytes: 24,
+        status: "QUARANTINED",
+        scan_status: "PENDING",
+        pii_status: "OK",
+        created_at: "2026-02-28T12:00:00Z",
+        created_by_user_id: "u1",
+      });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+
+  await setHash(page, "#/vehicles");
+  const vehiclesColumns = await Promise.all([
+    page.locator('[data-testid="vehicles-desktop-grid"] > *').nth(0).boundingBox(),
+    page.locator('[data-testid="vehicles-desktop-grid"] > *').nth(1).boundingBox(),
+  ]);
+  expect(vehiclesColumns[0]?.x).toBeLessThan(vehiclesColumns[1]?.x ?? 0);
+
+  await setHash(page, "#/vehicles/veh_test_1");
+  const detailColumns = await Promise.all([
+    page.locator('[data-testid="vehicle-detail-primary"]').boundingBox(),
+    page.locator('[data-testid="vehicle-detail-rail"]').boundingBox(),
+  ]);
+  expect(detailColumns[0]?.x).toBeLessThan(detailColumns[1]?.x ?? 0);
+
+  await setHash(page, "#/admin");
+  const adminColumns = await Promise.all([
+    page.locator('[data-testid="admin-desktop-grid"] > *').nth(0).boundingBox(),
+    page.locator('[data-testid="admin-desktop-grid"] > *').nth(1).boundingBox(),
+  ]);
+  expect(adminColumns[0]?.x).toBeLessThan(adminColumns[1]?.x ?? 0);
+
+  role = "user";
+  await setHash(page, "#/documents");
+  const documentColumns = await Promise.all([
+    page.locator('[data-testid="documents-desktop-grid"] > *').nth(0).boundingBox(),
+    page.locator('[data-testid="documents-desktop-grid"] > *').nth(1).boundingBox(),
+  ]);
+  expect(documentColumns[0]?.x).toBeLessThan(documentColumns[1]?.x ?? 0);
 });

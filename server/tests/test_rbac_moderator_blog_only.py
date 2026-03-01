@@ -11,7 +11,7 @@ from starlette.testclient import TestClient
 def _is_allowed_path(path: str) -> bool:
     """
     MODERATOR-Allowlist (SoT):
-    strikt nur /blog/* und /news/* (+ /auth/* für Login/Token-Erneuerung).
+    strikt nur /blog/*, /news/*, /cms/blog/* und /cms/news/* (+ /auth/* fuer Login/Token-Erneuerung).
     """
     if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
         return True
@@ -20,6 +20,10 @@ def _is_allowed_path(path: str) -> bool:
     if path == "/blog" or path.startswith("/blog/"):
         return True
     if path == "/news" or path.startswith("/news/"):
+        return True
+    if path == "/cms/blog" or path.startswith("/cms/blog/"):
+        return True
+    if path == "/cms/news" or path.startswith("/cms/news/"):
         return True
     return False
 

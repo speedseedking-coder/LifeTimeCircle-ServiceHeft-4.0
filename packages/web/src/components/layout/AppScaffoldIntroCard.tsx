@@ -1,4 +1,4 @@
-import { type NonModeratorRole, type Role, ROLE_NAV } from "../../lib/appGate";
+import { type Role, ROLE_NAV } from "../../lib/appGate";
 
 export default function AppScaffoldIntroCard(props: { actorRole: Role | null }): JSX.Element {
   return (
@@ -22,11 +22,11 @@ export default function AppScaffoldIntroCard(props: { actorRole: Role | null }):
         )}
       </div>
 
-      {props.actorRole && props.actorRole !== "moderator" && (
+      {props.actorRole && (
         <div style={{ marginTop: 12 }}>
           <strong>App-Navigation</strong>
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {ROLE_NAV[props.actorRole as NonModeratorRole].map((item) => (
+            {ROLE_NAV[props.actorRole].map((item) => (
               <a key={item.href} className="ltc-link" href={item.href}>
                 {item.label}
               </a>

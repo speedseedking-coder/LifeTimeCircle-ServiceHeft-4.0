@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { prettyBody } from "../api";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import {
@@ -50,12 +50,26 @@ function extractErrorMessage(result: { status: number; error: string }): string 
   if (result.status === 403 && result.error === "admin_step_up_required") return "Für diese Admin-Aktion ist ein Step-up erforderlich.";
   if (result.status === 403 && result.error === "admin_step_up_invalid") return "Der Step-up ist ungültig oder abgelaufen. Bitte Aktion erneut auslösen.";
   if (result.status === 403 && result.error === "superadmin_required") return "Diese Aktion ist nur für SUPERADMIN erlaubt.";
+  if (result.status === 403 && result.error === "export_grant_rejected") return "Der Voll-Export wurde vom Server abgelehnt. Prüfe Grant, Ziel-ID und Ablaufzeit.";
   if (result.status === 403 && result.error === "forbidden") return "Kein Zugriff auf diese Admin-Aktion.";
   if (result.status === 404 && result.error === "user_not_found") return "User-ID wurde nicht gefunden.";
   if (result.status === 404 && result.error === "business_not_found") return "Business-ID wurde nicht gefunden.";
+  if (result.status === 404 && result.error === "not_found") return "Zieldatensatz wurde nicht gefunden.";
   if (result.status === 409 && result.error === "staff_limit_reached") return "Für dieses VIP-Business sind keine weiteren Staff-Slots frei.";
   if (result.status === 400 && result.error === "business_not_approved") return "Staff kann erst nach SUPERADMIN-Freigabe hinzugefügt werden.";
   if (result.status === 400 && result.error === "invalid_role") return "Die Zielrolle ist ungültig.";
+  if (result.status === 400 && result.error === "missing_export_token") return "Für den Voll-Export fehlt ein gültiger Export-Grant.";
+  if (
+    result.status === 403 &&
+    (result.error === "invalid_export_token" ||
+      result.error === "expired_export_token" ||
+      result.error === "export_token_invalid" ||
+      result.error === "export_token_expired" ||
+      result.error === "export_token_already_used")
+  ) {
+    return "Der Export-Grant ist ungültig, abgelaufen oder bereits verbraucht. Bitte neuen Grant anfordern.";
+  }
+  if (result.status === 500 && result.error === "invalid_body") return "Serverantwort hatte ein unerwartetes Format. Bitte Backend prüfen.";
   return "Die Admin-Aktion konnte nicht ausgeführt werden.";
 }
 
@@ -90,9 +104,11 @@ function AdminUserCard(props: {
         <label>
           Zielrolle
           <select
+            id={`admin-role-${props.user.user_id}`}
             value={props.currentRole}
             onChange={(e) => props.onRoleChange(e.target.value)}
             className="ltc-form-group__select"
+            aria-required="true"
           >
             {ROLE_OPTIONS.map((role) => (
               <option key={role} value={role} disabled={role === "superadmin" && superadminOptionLocked}>
@@ -105,6 +121,7 @@ function AdminUserCard(props: {
         <label>
           Grund (optional)
           <input
+            id={`admin-reason-${props.user.user_id}`}
             value={props.currentReason}
             onChange={(e) => props.onReasonChange(e.target.value)}
             placeholder="Wird nur als reason_provided auditiert"
@@ -137,6 +154,8 @@ function VipBusinessCard(props: {
   onApprove: () => void;
   onAddStaff: () => void;
 }): JSX.Element {
+  const staffInvalid = props.staffDraft.trim().length > 0 && props.staffDraft.trim().length < 8;
+
   return (
     <article className="ltc-card ltc-section ltc-section--card">
       <div className="ltc-admin-head">
@@ -171,13 +190,22 @@ function VipBusinessCard(props: {
           <label>
             Staff User-ID
             <input
+              id={`admin-staff-${props.business.business_id}`}
               value={props.staffDraft}
               onChange={(e) => props.onStaffDraftChange(e.target.value)}
               placeholder="bestehende auth_users user_id"
               autoComplete="off"
               className="ltc-form-group__input"
+              aria-required="true"
+              aria-invalid={staffInvalid}
+              aria-describedby={staffInvalid ? `admin-staff-error-${props.business.business_id}` : undefined}
             />
           </label>
+          {staffInvalid ? (
+            <p id={`admin-staff-error-${props.business.business_id}`} className="ltc-helper-text ltc-helper-text--error">
+              Staff User-ID muss mindestens 8 Zeichen lang sein.
+            </p>
+          ) : null}
 
           <label>
             Grund (optional)
@@ -205,6 +233,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [vipBusinesses, setVipBusinesses] = useState<VipBusiness[]>([]);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"businessOwner" | "exportTarget" | "exportTtl" | null>(null);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState("");
@@ -221,10 +250,15 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   const [exportGrant, setExportGrant] = useState<ExportGrant | null>(null);
   const [redactedExportBody, setRedactedExportBody] = useState<unknown>(null);
   const [fullExportBody, setFullExportBody] = useState<FullExportCiphertext | null>(null);
+  const businessOwnerRef = useRef<HTMLInputElement | null>(null);
+  const exportTargetRef = useRef<HTMLInputElement | null>(null);
+  const exportTtlRef = useRef<HTMLInputElement | null>(null);
 
   const isSuperadmin = props.actorRole === "superadmin";
   const visibleUsers = useMemo(() => sortUsers(users), [users]);
   const visibleBusinesses = useMemo(() => sortBusinesses(vipBusinesses), [vipBusinesses]);
+  const ownerUserIdInvalid = businessOwnerUserId.trim().length > 0 && businessOwnerUserId.trim().length < 8;
+  const exportTtlInvalid = exportTtlSeconds.trim().length > 0 && !Number.isFinite(Number.parseInt(exportTtlSeconds, 10));
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -239,6 +273,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   async function loadAll() {
     setLoading(true);
     setError("");
+    setErrorField(null);
     const [usersRes, businessesRes] = await Promise.all([listAdminUsers(headers()), listVipBusinesses(headers())]);
     setLoading(false);
 
@@ -271,6 +306,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   async function runAction<T>(key: string, action: () => Promise<AdminApiResult<T>>, onSuccess: (body: T) => void, successMessage: string) {
     setBusyKey(key);
     setError("");
+    setErrorField(null);
     setNotice("");
     const result = await action();
     setBusyKey("");
@@ -297,6 +333,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   ) {
     setBusyKey(key);
     setError("");
+    setErrorField(null);
     setNotice("");
 
     const grant = await requestAdminStepUpGrant(scope, ADMIN_STEP_UP_TTL_SECONDS, headers());
@@ -340,14 +377,27 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   }
 
   return (
-    <main className="ltc-main ltc-main--wide" data-testid="admin-page">
-      <h1>Admin</h1>
-      <p>Rollen, Moderator-Akkreditierung, VIP-Business-Freigaben und Export-Step-up auf den produktiven Server-Contracts.</p>
+    <main className="ltc-main ltc-main--xl" data-testid="admin-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Operations</div>
+          <h1>Admin</h1>
+          <p>Rollen, Moderator-Akkreditierung, VIP-Business-Freigaben und Export-Step-up auf den produktiven Server-Contracts.</p>
+        </div>
+        <div className="ltc-page-intro__meta">
+          <div className="ltc-kpi-tile">
+            <div className="ltc-kpi-tile__label">Actor</div>
+            <div className="ltc-kpi-tile__value">{props.actorRole}</div>
+            <div className="ltc-kpi-tile__meta">Aktive Admin-Sicht</div>
+          </div>
+        </div>
+      </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}
       {notice ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <div className="ltc-muted">{notice}</div>
+        <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--info" role="status" aria-live="polite" data-testid="admin-notice">
+          <div className="ltc-state-panel__title">Status</div>
+          <p className="ltc-state-panel__copy">{notice}</p>
         </section>
       ) : null}
 
@@ -359,45 +409,73 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
 
       {!loading ? (
         <>
+          <div className="ltc-kpi-band">
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Users</div>
+              <div className="ltc-kpi-tile__value">{visibleUsers.length}</div>
+              <div className="ltc-kpi-tile__meta">Serverseitig sichtbare Accounts</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">VIP-Businesses</div>
+              <div className="ltc-kpi-tile__value">{visibleBusinesses.length}</div>
+              <div className="ltc-kpi-tile__meta">Anträge und freigegebene Business-Container</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Pending</div>
+              <div className="ltc-kpi-tile__value">{visibleBusinesses.filter((item) => !item.approved).length}</div>
+              <div className="ltc-kpi-tile__meta">Warten auf SUPERADMIN-Step-up</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Export-Grant</div>
+              <div className="ltc-kpi-tile__value">{exportGrant ? "aktiv" : "none"}</div>
+              <div className="ltc-kpi-tile__meta">{exportGrant ? "One-time Token vorhanden" : "Noch kein Full-Grant erstellt"}</div>
+            </div>
+          </div>
+
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Access</span>
             <div className="ltc-card__title">Rollen & Moderator</div>
             <div className="ltc-muted">
               Der Server auditiert nur ID-bezogene Metadaten und `reason_provided`, keine Freitext-Begründungen. Sensible Aktionen holen automatisch einen One-time Step-up.
             </div>
             {visibleUsers.length === 0 ? <p className="ltc-muted ltc-mt-4">Keine Nutzer gefunden.</p> : null}
-            {visibleUsers.map((user) => (
-              <AdminUserCard
-                key={user.user_id}
-                actorRole={props.actorRole}
-                user={user}
-                currentRole={roleDrafts[user.user_id] ?? user.role}
-                currentReason={reasonDrafts[user.user_id] ?? ""}
-                busy={busyKey === `role:${user.user_id}` || busyKey === `moderator:${user.user_id}`}
-                onRoleChange={(role) => setRoleDrafts((prev) => ({ ...prev, [user.user_id]: role }))}
-                onReasonChange={(reason) => setReasonDrafts((prev) => ({ ...prev, [user.user_id]: reason }))}
-                onSaveRole={() =>
-                  void runSensitiveAction(
-                    `role:${user.user_id}`,
-                    "role_grant",
-                    (init) => setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", init),
-                    (body) => updateUserRole(user.user_id, body.new_role),
-                    `Rolle für ${user.user_id} wurde auf ${roleDrafts[user.user_id] ?? user.role} gesetzt.`,
-                  )
-                }
-                onAccreditModerator={() =>
-                  void runSensitiveAction(
-                    `moderator:${user.user_id}`,
-                    "moderator_accredit",
-                    (init) => accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", init),
-                    (body) => updateUserRole(user.user_id, body.new_role),
-                    `Moderator-Akkreditierung für ${user.user_id} abgeschlossen.`,
-                  )
-                }
-              />
-            ))}
+            <div className="ltc-admin-list">
+              {visibleUsers.map((user) => (
+                <AdminUserCard
+                  key={user.user_id}
+                  actorRole={props.actorRole}
+                  user={user}
+                  currentRole={roleDrafts[user.user_id] ?? user.role}
+                  currentReason={reasonDrafts[user.user_id] ?? ""}
+                  busy={busyKey === `role:${user.user_id}` || busyKey === `moderator:${user.user_id}`}
+                  onRoleChange={(role) => setRoleDrafts((prev) => ({ ...prev, [user.user_id]: role }))}
+                  onReasonChange={(reason) => setReasonDrafts((prev) => ({ ...prev, [user.user_id]: reason }))}
+                  onSaveRole={() =>
+                    void runSensitiveAction(
+                      `role:${user.user_id}`,
+                      "role_grant",
+                      (init) => setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", init),
+                      (body) => updateUserRole(user.user_id, body.new_role),
+                      `Rolle für ${user.user_id} wurde auf ${roleDrafts[user.user_id] ?? user.role} gesetzt.`,
+                    )
+                  }
+                  onAccreditModerator={() =>
+                    void runSensitiveAction(
+                      `moderator:${user.user_id}`,
+                      "moderator_accredit",
+                      (init) => accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", init),
+                      (body) => updateUserRole(user.user_id, body.new_role),
+                      `Moderator-Akkreditierung für ${user.user_id} abgeschlossen.`,
+                    )
+                  }
+                />
+              ))}
+            </div>
           </section>
 
+          <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section" data-testid="admin-desktop-grid">
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Business</span>
             <div className="ltc-card__title">VIP-Businesses</div>
             <div className="ltc-muted">
               Admin kann Requests anlegen. Freigabe und Staff-Zuordnung bleiben serverseitig auf SUPERADMIN begrenzt und erfordern pro Aktion einen frischen Step-up.
@@ -410,6 +488,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                 const ownerUserId = businessOwnerUserId.trim();
                 if (ownerUserId.length < 8) {
                   setError("Owner User-ID ist zu kurz.");
+                  setErrorField("businessOwner");
+                  setNotice("");
+                  businessOwnerRef.current?.focus();
                   return;
                 }
                 void runAction(
@@ -437,17 +518,31 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Owner User-ID
                 <input
+                  ref={businessOwnerRef}
+                  id="admin-business-owner-id"
                   value={businessOwnerUserId}
-                  onChange={(e) => setBusinessOwnerUserId(e.target.value)}
+                  onChange={(e) => {
+                    setBusinessOwnerUserId(e.target.value);
+                    if (errorField === "businessOwner") setErrorField(null);
+                  }}
                   placeholder="bestehende auth_users user_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={ownerUserIdInvalid}
+                  aria-describedby={ownerUserIdInvalid || errorField === "businessOwner" ? "admin-business-owner-error" : undefined}
                 />
               </label>
+              {ownerUserIdInvalid || errorField === "businessOwner" ? (
+                <p id="admin-business-owner-error" className="ltc-helper-text ltc-helper-text--error">
+                  Owner User-ID muss mindestens 8 Zeichen lang sein.
+                </p>
+              ) : null}
 
               <label>
                 Business-ID (optional)
                 <input
+                  id="admin-business-id"
                   value={businessId}
                   onChange={(e) => setBusinessId(e.target.value)}
                   placeholder="externes Business-Kürzel oder leer für UUID"
@@ -459,6 +554,7 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Grund (optional)
                 <input
+                  id="admin-business-reason"
                   value={businessReason}
                   onChange={(e) => setBusinessReason(e.target.value)}
                   placeholder="Wird nur als reason_provided auditiert"
@@ -519,7 +615,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             ))}
           </section>
 
+          <div className="ltc-admin-rail">
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Export</span>
             <div className="ltc-card__title">Export-Step-up</div>
             <div className="ltc-muted">
               Redacted Exports sind für Admin und SUPERADMIN nutzbar. One-time Full Exports mit `X-Export-Token` bleiben strikt SUPERADMIN-only.
@@ -541,31 +639,64 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               <label>
                 Ziel-ID
                 <input
+                  id="admin-export-target-id"
+                  ref={exportTargetRef}
                   value={exportTargetId}
-                  onChange={(e) => setExportTargetId(e.target.value)}
+                  onChange={(e) => {
+                    setExportTargetId(e.target.value);
+                    if (errorField === "exportTarget") setErrorField(null);
+                  }}
                   placeholder="vehicle_id / user_id / servicebook_id"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={errorField === "exportTarget"}
+                  aria-describedby={errorField === "exportTarget" ? "admin-export-target-error" : undefined}
                 />
               </label>
+              {errorField === "exportTarget" ? (
+                <p id="admin-export-target-error" className="ltc-helper-text ltc-helper-text--error">
+                  Ziel-ID ist erforderlich.
+                </p>
+              ) : null}
 
               <label>
                 TTL Sekunden (für Full Grant)
                 <input
+                  id="admin-export-ttl"
+                  ref={exportTtlRef}
                   value={exportTtlSeconds}
-                  onChange={(e) => setExportTtlSeconds(e.target.value)}
+                  onChange={(e) => {
+                    setExportTtlSeconds(e.target.value);
+                    if (errorField === "exportTtl") setErrorField(null);
+                  }}
                   inputMode="numeric"
                   autoComplete="off"
                   className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={exportTtlInvalid}
+                  aria-describedby={exportTtlInvalid || errorField === "exportTtl" ? "admin-export-ttl-error" : undefined}
                 />
               </label>
+              {exportTtlInvalid || errorField === "exportTtl" ? (
+                <p id="admin-export-ttl-error" className="ltc-helper-text ltc-helper-text--error">
+                  TTL muss numerisch sein.
+                </p>
+              ) : null}
 
               <div className="ltc-admin-actions">
                 <button
                   type="button"
                   className="ltc-btn ltc-btn--primary"
-                  disabled={busyKey === "export:redacted" || exportTargetId.trim().length === 0}
-                  onClick={() =>
+                  disabled={busyKey === "export:redacted"}
+                  onClick={() => {
+                    if (exportTargetId.trim().length === 0) {
+                      setError("Ziel-ID ist erforderlich.");
+                      setErrorField("exportTarget");
+                      setNotice("");
+                      exportTargetRef.current?.focus();
+                      return;
+                    }
                     void runAction(
                       "export:redacted",
                       () => fetchRedactedExport(exportKind, exportTargetId.trim(), headers()),
@@ -574,8 +705,8 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                         setFullExportBody(null);
                       },
                       `Redacted Export für ${exportKind}:${exportTargetId.trim()} geladen.`,
-                    )
-                  }
+                    );
+                  }}
                 >
                   Redacted laden
                 </button>
@@ -584,11 +715,21 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   <button
                     type="button"
                     className="ltc-btn ltc-btn--ghost"
-                    disabled={busyKey === "export:grant" || exportTargetId.trim().length === 0}
+                    disabled={busyKey === "export:grant"}
                     onClick={() => {
+                      if (exportTargetId.trim().length === 0) {
+                        setError("Ziel-ID ist erforderlich.");
+                        setErrorField("exportTarget");
+                        setNotice("");
+                        exportTargetRef.current?.focus();
+                        return;
+                      }
                       const ttl = Number.parseInt(exportTtlSeconds, 10);
                       if (!Number.isFinite(ttl)) {
                         setError("TTL muss numerisch sein.");
+                        setErrorField("exportTtl");
+                        setNotice("");
+                        exportTtlRef.current?.focus();
                         return;
                       }
                       void runAction(
@@ -610,21 +751,37 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
                   <button
                     type="button"
                     className="ltc-btn ltc-btn--soft"
-                    disabled={busyKey === "export:full" || !exportGrant || exportTargetId.trim().length === 0}
-                    onClick={() =>
+                    disabled={busyKey === "export:full" || !exportGrant}
+                    onClick={() => {
+                      if (exportTargetId.trim().length === 0) {
+                        setError("Ziel-ID ist erforderlich.");
+                        setErrorField("exportTarget");
+                        setNotice("");
+                        exportTargetRef.current?.focus();
+                        return;
+                      }
+                      if (!exportGrant) {
+                        setError("Bitte zuerst einen Full Grant anfordern.");
+                        setNotice("");
+                        return;
+                      }
                       void runAction(
                         "export:full",
-                        () => fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant?.export_token ?? "", headers()),
+                        () => fetchFullExportCiphertext(exportKind, exportTargetId.trim(), exportGrant.export_token, headers()),
                         (body) => setFullExportBody(body),
                         `Voll-Export für ${exportKind}:${exportTargetId.trim()} geladen und Token verbraucht.`,
-                      )
-                    }
+                      );
+                    }}
                   >
                     Voll-Export laden
                   </button>
                 ) : null}
               </div>
             </form>
+
+            {!exportGrant && isSuperadmin ? (
+              <p className="ltc-helper-text ltc-mt-4">Für den Voll-Export zuerst einen frischen Full Grant anfordern. Das Token ist one-time und nur kurz gültig.</p>
+            ) : null}
 
             {exportGrant ? (
               <div className="ltc-quote ltc-quote--gold ltc-mt-4">
@@ -657,6 +814,8 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               </details>
             ) : null}
           </section>
+          </div>
+          </div>
         </>
       ) : null}
     </main>

@@ -1,12 +1,12 @@
 ./docs//00/_INDEX.md
 
-\# LifeTimeCircle – ServiceHeft 4.0
+\# LifeTimeCircle - ServiceHeft 4.0
 
 \## Docs Index (Start hier)
 
 
 
-Stand: 2026-01-29  
+Stand: 2026-03-01
 
 Kontakt: lifetimecircle@online.de
 
@@ -32,7 +32,8 @@ Regel: Policies liegen in `docs/policies/`, Modul- und Term-Definitionen in `doc
 
 \- Rechte-Matrix (RBAC – implementierbar): `docs/03\_RIGHTS\_MATRIX.md`
 
-\- Verifizierter Systemcheck (2026-02-28): `docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md`
+\- Master-Checkpoint (SoT): `docs/99_MASTER_CHECKPOINT.md`
+\- Release-Candidate / Übergabe: `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
 
 
 

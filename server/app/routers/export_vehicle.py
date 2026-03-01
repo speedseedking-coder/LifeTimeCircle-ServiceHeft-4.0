@@ -27,6 +27,7 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from app.auth.actor import dev_headers_enabled, require_actor as core_require_actor
 
 # ============================================================
 # Actor / RBAC (LAZY, keine Varargs => keine 422 Query-Fallen)
@@ -148,12 +149,21 @@ def get_actor(request: Request) -> Any:
     except Exception:
         pass
 
-    role = request.headers.get("X-LTC-ROLE") or request.headers.get("x-ltc-role")
-    uid = request.headers.get("X-LTC-UID") or request.headers.get("x-ltc-uid")
-    if role:
-        return {"role": role, "user_id": uid or "", "uid": uid or "", "roles": [role]}
+    try:
+        return core_require_actor(request)
+    except HTTPException as exc:
+        if exc.status_code != 401:
+            raise
 
-    raise HTTPException(status_code=403, detail="forbidden")
+    # Legacy test/dev compatibility: only honor X-LTC-* headers when the
+    # explicit dev-header gate is enabled. Production must never trust these.
+    if dev_headers_enabled():
+        role = request.headers.get("X-LTC-ROLE") or request.headers.get("x-ltc-role")
+        uid = request.headers.get("X-LTC-UID") or request.headers.get("x-ltc-uid")
+        if role:
+            return {"role": role, "user_id": uid or "", "uid": uid or "", "roles": [role]}
+
+    raise HTTPException(status_code=401, detail="unauthorized")
 
 
 def forbid_moderator(actor: Any = Depends(get_actor)) -> None:

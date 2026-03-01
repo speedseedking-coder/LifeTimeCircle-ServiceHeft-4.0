@@ -310,5 +310,8 @@ export async function fetchFullExportCiphertext(
       "X-Export-Token": exportToken,
     },
   });
+  if (!res.ok && res.status === 403 && (extractApiError(res.body) ?? res.error) === "forbidden") {
+    return { ok: false, status: 403, body: res.body, error: "export_grant_rejected" };
+  }
   return normalizeResult(res, mapFullExportCiphertext);
 }

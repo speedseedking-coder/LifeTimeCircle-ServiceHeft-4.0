@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 
+from app.auth.actor import require_actor
 from app.services.documents_store import DocumentsStore, default_store
 from app.schemas.documents import DocumentOut
 from app.models.documents import DocumentScanStatus
@@ -16,21 +17,6 @@ _STORE: DocumentsStore = default_store()
 
 def get_documents_store() -> DocumentsStore:
     return _STORE
-
-
-def require_actor(request: Request):
-    # Production: actor sollte durch Auth-Middleware gesetzt sein.
-    actor = getattr(request.state, "actor", None) or request.scope.get("actor")
-    if actor is not None:
-        return actor
-
-    # Dev/Smoke: Header-Fallback
-    role = request.headers.get("X-LTC-ROLE") or request.headers.get("x-ltc-role")
-    user_id = request.headers.get("X-LTC-UID") or request.headers.get("x-ltc-uid")
-    if role and user_id:
-        return {"role": role, "user_id": user_id}
-
-    raise HTTPException(status_code=401, detail="unauthorized")
 
 
 def forbid_moderator(actor=Depends(require_actor)) -> None:
@@ -170,4 +156,3 @@ def admin_reject(
         return store.reject(doc_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="not_found")
-

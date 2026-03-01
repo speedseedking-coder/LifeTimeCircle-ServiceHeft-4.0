@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
 import { createTrustFolder, listTrustFolders, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
@@ -15,8 +15,10 @@ export default function TrustFoldersPage(): JSX.Element {
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [items, setItems] = useState<TrustFolder[]>([]);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"name" | null>(null);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   const hash = useHash();
   const context = useMemo(() => readTrustFolderContextFromHash(hash), [hash]);
@@ -43,9 +45,16 @@ export default function TrustFoldersPage(): JSX.Element {
     void load(context.vehicleId, context.addonKey);
   }, [context.vehicleId, context.addonKey, load]);
 
+  useEffect(() => {
+    if (viewState === "ready") {
+      nameInputRef.current?.focus();
+    }
+  }, [viewState, items.length]);
+
   async function onCreate(e: FormEvent) {
     e.preventDefault();
     setError("");
+    setErrorField(null);
 
     if (!context.vehicleId) {
       setError("Vehicle-Kontext fehlt.");
@@ -55,10 +64,14 @@ export default function TrustFoldersPage(): JSX.Element {
     const nextTitle = name.trim();
     if (nextTitle.length < 1) {
       setError("Name darf nicht leer sein.");
+      setErrorField("name");
+      nameInputRef.current?.focus();
       return;
     }
     if (nextTitle.length > MAX_NAME_LENGTH) {
       setError(`Name darf maximal ${MAX_NAME_LENGTH} Zeichen enthalten.`);
+      setErrorField("name");
+      nameInputRef.current?.focus();
       return;
     }
 
@@ -80,12 +93,12 @@ export default function TrustFoldersPage(): JSX.Element {
 
   if (!context.vehicleId) {
     return (
-      <main style={{ padding: 12 }}>
+      <main className="ltc-main ltc-main--narrow">
         <h1>Trust Folders</h1>
-        <div className="ltc-card" role="status" style={{ marginTop: 12 }}>
+        <div className="ltc-card ltc-section" role="status">
           <div className="ltc-card__title">Bitte Vehicle wählen</div>
           <div className="ltc-muted">Öffne zuerst ein Fahrzeug und starte Trust-Folders mit Vehicle-Kontext.</div>
-          <div style={{ marginTop: 10 }}>
+          <div className="ltc-mt-4">
             <a className="ltc-link" href="#/vehicles">
               Zu Vehicles
             </a>
@@ -96,44 +109,70 @@ export default function TrustFoldersPage(): JSX.Element {
   }
 
   return (
-    <main style={{ padding: 12 }}>
-      <h1>Trust Folders</h1>
-      <p>
-        Vehicle: <code>{context.vehicleId}</code> · Add-on: <code>{context.addonKey}</code>
-      </p>
+    <main className="ltc-main ltc-main--narrow" data-testid="trust-folders-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Trust Workspace</div>
+          <h1>Trust Folders</h1>
+          <p>
+            Vehicle: <code>{context.vehicleId}</code> · Add-on: <code>{context.addonKey}</code>
+          </p>
+        </div>
+      </section>
 
-      <section className="ltc-card" style={{ marginTop: 12 }}>
+      <section className="ltc-card ltc-card--compact ltc-section">
+        <span className="ltc-card__eyebrow">Create</span>
         <form onSubmit={(e) => void onCreate(e)}>
-          <label htmlFor="trust-folder-title">Neuer Folder Name</label>
-          <input
-            id="trust-folder-title"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={MAX_NAME_LENGTH}
-            style={{ width: "100%", marginTop: 8, padding: 10 }}
-          />
-          <button type="submit" disabled={creating} style={{ marginTop: 10, padding: "8px 12px" }}>
+          <div className="ltc-form-grid ltc-form-grid--single">
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label" htmlFor="trust-folder-title">
+                Neuer Folder Name
+                <input
+                  ref={nameInputRef}
+                  id="trust-folder-title"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={MAX_NAME_LENGTH}
+                  className="ltc-form-group__input"
+                  aria-required="true"
+                  aria-invalid={errorField === "name"}
+                  aria-describedby={errorField === "name" ? "trust-folder-title-error trust-folder-title-hint" : "trust-folder-title-hint"}
+                />
+              </label>
+              <p id="trust-folder-title-hint" className="ltc-helper-text">
+                Maximal {MAX_NAME_LENGTH} Zeichen.
+              </p>
+              {errorField === "name" && error ? (
+                <p id="trust-folder-title-error" className="ltc-helper-text ltc-helper-text--error">
+                  {error}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <button type="submit" disabled={creating} className="ltc-button ltc-button--primary">
             {creating ? "Erstelle…" : "Folder erstellen"}
           </button>
         </form>
       </section>
 
-      {error && <InlineErrorBanner message={error} />}
-      {viewState === "loading" && <div className="ltc-card">Lädt…</div>}
+      {error && errorField === null && <InlineErrorBanner message={error} />}
+      {viewState === "loading" && <div className="ltc-card ltc-section">Lädt…</div>}
       {viewState === "forbidden" && <ForbiddenPanel />}
       {viewState === "addon" && <AddonRequiredPanel />}
       {viewState === "error" && !error && <InlineErrorBanner message="Unerwarteter Fehler." />}
 
       {viewState === "ready" && (
-        <section className="ltc-card" style={{ marginTop: 12 }}>
+        <section className="ltc-card ltc-card--compact ltc-section">
+          <span className="ltc-card__eyebrow">List</span>
           <h2>Liste</h2>
           {items.length === 0 ? (
             <p className="ltc-muted">Noch keine Trust-Folders vorhanden.</p>
           ) : (
-            <ul>
+            <ul className="ltc-list">
               {items.map((folder) => (
-                <li key={folder.id}>
+                <li key={folder.id} className="ltc-list__item">
                   <a
+                    className="ltc-list__link"
                     href={`#/trust-folders/${folder.id}?vehicle_id=${encodeURIComponent(
                       context.vehicleId,
                     )}&addon_key=${encodeURIComponent(context.addonKey)}`}

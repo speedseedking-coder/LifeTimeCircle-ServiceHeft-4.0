@@ -18,7 +18,7 @@ EXEMPT_PREFIXES = (
     "/redoc",
     "/auth",    # login/otp/magic-link/me/logout/consent-flow
 )
-ALLOWED_PREFIXES = ("/blog", "/news")  # sobald vorhanden: Moderator darf hier rein
+ALLOWED_PREFIXES = ("/blog", "/news", "/cms/blog", "/cms/news")
 
 
 def _make_app():

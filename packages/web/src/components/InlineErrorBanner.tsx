@@ -1,8 +1,8 @@
 export default function InlineErrorBanner(props: { message: string }): JSX.Element {
   return (
-    <div className="ltc-card" role="alert" style={{ borderColor: "rgba(255,120,120,0.6)", marginTop: 12 }}>
-      <div className="ltc-card__title">Fehler</div>
-      <div className="ltc-muted">{props.message}</div>
-    </div>
+    <section className="ltc-card ltc-card--compact ltc-section ltc-state-panel ltc-state-panel--error" role="alert" data-testid="inline-error-banner">
+      <div className="ltc-state-panel__title">Fehler</div>
+      <p className="ltc-state-panel__copy">{props.message}</p>
+    </section>
   );
 }
