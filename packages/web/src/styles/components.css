@@ -765,3 +765,81 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* ========== RESPONSIVE UTILITIES ========== */
+
+/* Mobile-first: stack layouts on screens <= 375px */
+@media (max-width: 640px) {
+  .ltc-main {
+    padding: var(--ltc-space-2);
+  }
+
+  .ltc-main--wide {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .ltc-form-grid {
+    max-width: 100%;
+  }
+
+  .ltc-button-group {
+    flex-direction: column;
+  }
+
+  .ltc-button-group button,
+  .ltc-button-group .ltc-button,
+  .ltc-button-group a {
+    width: 100%;
+  }
+
+  .ltc-trust-card {
+    padding: var(--ltc-space-2);
+  }
+
+  .ltc-public-qr {
+    padding: var(--ltc-space-2);
+  }
+
+  .ltc-stepper {
+    gap: var(--ltc-space-2);
+    font-size: var(--ltc-text-sm);
+  }
+
+  .ltc-list__item {
+    padding: var(--ltc-space-1) 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-size: var(--ltc-text-lg);
+  }
+}
+
+/* Tablets: adjust spacing */
+@media (max-width: 768px) and (min-width: 641px) {
+  .ltc-button-group {
+    flex-wrap: wrap;
+  }
+
+  .ltc-main--wide {
+    max-width: 100%;
+  }
+
+  .ltc-trust-metadata {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Desktop and up: larger spacing */
+@media (min-width: 769px) {
+  .ltc-main--wide {
+    max-width: 1200px;
+  }
+
+  .ltc-button-group--row {
+    flex-direction: row;
+  }
+}
+

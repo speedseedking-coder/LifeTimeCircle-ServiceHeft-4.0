@@ -28,14 +28,15 @@ export default function BlogListPage(): JSX.Element {
       <h1>Blog</h1>
       <p className="ltc-helper-text">Neueste Artikel über Fahrzeugdokumentation und digitale Nachweise</p>
 
-      <section className="ltc-section ltc-section--card">
-        <ul className="ltc-list">
+      <section className="ltc-section ltc-section--card" aria-label="Blog posts">
+        <ul className="ltc-list" role="list">
           {BLOG_POSTS.map((post) => (
-            <li key={post.id} className="ltc-list__item">
+            <li key={post.id} className="ltc-list__item" role="listitem">
               <a
                 className="ltc-list__link"
                 href={`#/blog/${encodeURIComponent(post.id)}`}
                 style={{ display: "block", marginBottom: 8 }}
+                aria-label={`Artikel: ${post.title}`}
               >
                 <strong>{post.title}</strong>
               </a>

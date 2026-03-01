@@ -104,19 +104,19 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
   const trustLight = normalizeTrustLight(data?.trust_light || "YELLOW");
 
   return (
-    <main className="ltc-main ltc-public-qr">
-      <header className="ltc-public-qr__header">
+    <main className="ltc-main ltc-public-qr" role="main" aria-label="Public QR Fahrzeugstatus">
+      <header className="ltc-public-qr__header" aria-label="Seiteninformationen">
         <div className="ltc-public-qr__subtitle">LifeTimeCircle</div>
         <h1 className="ltc-public-qr__title">Public QR</h1>
       </header>
 
-      <section className="ltc-trust-card">
+      <section className="ltc-trust-card" aria-label="Trust-Ampel Bewertung">
         <div className="ltc-trust-card__header">
           <h2 className="ltc-trust-card__title">Trust-Ampel</h2>
           <TrustLightBadge value={trustLight} />
         </div>
 
-        <div className="ltc-trust-card__content">
+        <div className="ltc-trust-card__content" aria-live="polite" aria-atomic="true">
           {loading && <div>laedt ...</div>}
 
           {!loading && error && (

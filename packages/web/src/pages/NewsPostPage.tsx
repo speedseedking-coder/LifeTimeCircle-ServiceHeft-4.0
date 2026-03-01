@@ -72,9 +72,9 @@ export default function NewsPostPage({ slug }: { slug: string }): JSX.Element {
 
   return (
     <main className="ltc-main ltc-main--narrow">
-      <a href="#/news" style={{ textDecoration: "none", color: "var(--ltc-color-text-secondary)" }}>← Zurück zu News</a>
+      <a href="#/news" style={{ textDecoration: "none", color: "var(--ltc-color-text-secondary)" }} aria-label="Zurück zur Nachrichtenlista">← Zurück zu News</a>
 
-      <article style={{ marginTop: 20 }}>
+      <article style={{ marginTop: 20 }} aria-label={`Nachrichtenartikel: ${news.title}`}>
         <h1>{news.title}</h1>
         <p style={{ fontSize: "14px", opacity: 0.75, marginTop: 8 }}>{new Date(news.date).toLocaleDateString("de-DE")}</p>
 

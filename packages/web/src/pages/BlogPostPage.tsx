@@ -31,9 +31,9 @@ export default function BlogPostPage({ slug }: { slug: string }): JSX.Element {
 
   return (
     <main className="ltc-main ltc-main--narrow">
-      <a href="#/blog" style={{ textDecoration: "none", color: "var(--ltc-color-text-secondary)" }}>← Zurück zum Blog</a>
+      <a href="#/blog" style={{ textDecoration: "none", color: "var(--ltc-color-text-secondary)" }} aria-label="Zurück zur Blogliste">← Zurück zum Blog</a>
 
-      <article style={{ marginTop: 20 }}>
+      <article style={{ marginTop: 20 }} aria-label={`Blogartikel: ${post.title}`}>
         <h1>{post.title}</h1>
         <p style={{ fontSize: "14px", opacity: 0.75, marginTop: 8 }}>{new Date(post.date).toLocaleDateString("de-DE")}</p>
 

@@ -28,14 +28,15 @@ export default function NewsListPage(): JSX.Element {
       <h1>News</h1>
       <p className="ltc-helper-text">Aktuelle Nachrichten rund um LifeTimeCircle und digitale Fahrzeugdokumentation</p>
 
-      <section className="ltc-section ltc-section--card">
-        <ul className="ltc-list">
+      <section className="ltc-section ltc-section--card" aria-label="News artikel">
+        <ul className="ltc-list" role="list">
           {NEWS_ITEMS.map((item) => (
-            <li key={item.id} className="ltc-list__item">
+            <li key={item.id} className="ltc-list__item" role="listitem">
               <a
                 className="ltc-list__link"
                 href={`#/news/${encodeURIComponent(item.id)}`}
                 style={{ display: "block", marginBottom: 8 }}
+                aria-label={`Artikel: ${item.title}`}
               >
                 <strong>{item.title}</strong>
               </a>
