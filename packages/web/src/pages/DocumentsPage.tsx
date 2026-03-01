@@ -301,11 +301,25 @@ export default function DocumentsPage(): JSX.Element {
   }
 
   return (
-    <main className="ltc-main">
-      <h1>Documents</h1>
-      <p>Live-Anbindung für Upload, Dokument-Abruf, Download und Admin-Quarantäne gemäß Backend-Vertrag.</p>
+    <main className="ltc-main ltc-main--xl" data-testid="documents-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Evidence</div>
+          <h1>Documents</h1>
+          <p>Live-Anbindung für Upload, Dokument-Abruf, Download und Admin-Quarantäne gemäß Backend-Vertrag.</p>
+        </div>
+        <div className="ltc-page-intro__meta">
+          <div className="ltc-kpi-tile">
+            <div className="ltc-kpi-tile__label">Arbeitskontext</div>
+            <div className="ltc-kpi-tile__value">{docStats.total}</div>
+            <div className="ltc-kpi-tile__meta">Dokumente in Upload-, Lookup- und Admin-Sicht</div>
+          </div>
+        </div>
+      </section>
 
-      <section className="ltc-card ltc-section ltc-section--card">
+      <div className="ltc-layout-grid ltc-layout-grid--split ltc-section" data-testid="documents-desktop-grid">
+      <section className="ltc-card ltc-section ltc-section--card ltc-card--subtle">
+        <span className="ltc-card__eyebrow">Upload</span>
         <h2>Upload</h2>
         <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
         <form onSubmit={(e) => void onUpload(e)}>
@@ -336,6 +350,7 @@ export default function DocumentsPage(): JSX.Element {
       </section>
 
       <section className="ltc-card ltc-section ltc-section--card">
+        <span className="ltc-card__eyebrow">Lookup</span>
         <h2>Dokument-ID prüfen</h2>
         <form onSubmit={(e) => void onLookup(e)}>
           <label className="ltc-form-group__label" htmlFor="documents-lookup-input">
@@ -364,6 +379,7 @@ export default function DocumentsPage(): JSX.Element {
           ) : null}
         </form>
       </section>
+      </div>
 
       {docStats.total > 0 ? (
         <section className="ltc-card ltc-section ltc-section--card">
@@ -401,43 +417,52 @@ export default function DocumentsPage(): JSX.Element {
 
       {error ? <InlineErrorBanner message={error} /> : null}
 
-      {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} /> : null}
+      <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section">
+        <div className="ltc-card-stack">
+          {lookupDoc ? <DocumentMetaCard title="Geladenes Dokument" doc={lookupDoc} admin={adminVisible} onRefresh={replaceAdminDoc} /> : null}
 
-      {recentDocs.length > 0 ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Kürzlich hochgeladen</h2>
-          <ul className="ltc-list">
-            {recentDocs.map((doc) => (
-              <li key={doc.id} className="ltc-list__item">
-                <a href={`#/documents`} className="ltc-list__link" onClick={() => setLookupDoc(doc)}>
-                  {doc.filename}
-                </a>{" "}
-                <span className="ltc-muted">({doc.status} / {doc.scan_status})</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+          {adminVisible ? (
+            <section className="ltc-card ltc-section ltc-section--card">
+              <span className="ltc-card__eyebrow">Moderation</span>
+              <h2>Admin-Quarantäne</h2>
+              {adminDocs.length === 0 ? (
+                <p className="ltc-muted">Keine Dokumente in Quarantäne.</p>
+              ) : (
+                adminDocs.map((doc) => (
+                  <DocumentMetaCard key={doc.id} title={`Quarantäne: ${doc.filename}`} doc={doc} admin onRefresh={replaceAdminDoc} />
+                ))
+              )}
+            </section>
+          ) : null}
 
-      {adminVisible ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Admin-Quarantäne</h2>
-          {adminDocs.length === 0 ? (
-            <p className="ltc-muted">Keine Dokumente in Quarantäne.</p>
-          ) : (
-            adminDocs.map((doc) => (
-              <DocumentMetaCard key={doc.id} title={`Quarantäne: ${doc.filename}`} doc={doc} admin onRefresh={replaceAdminDoc} />
-            ))
-          )}
-        </section>
-      ) : null}
+          {adminForbidden ? (
+            <section className="ltc-card ltc-section ltc-section--card">
+              <span className="ltc-card__eyebrow">Moderation</span>
+              <h2>Admin-Quarantäne</h2>
+              <p className="ltc-muted">Admin-Review ist für die aktuelle Rolle nicht sichtbar.</p>
+            </section>
+          ) : null}
+        </div>
 
-      {adminForbidden ? (
-        <section className="ltc-card ltc-section ltc-section--card">
-          <h2>Admin-Quarantäne</h2>
-          <p className="ltc-muted">Admin-Review ist für die aktuelle Rolle nicht sichtbar.</p>
-        </section>
-      ) : null}
+        <aside className="ltc-card-stack ltc-sticky-desktop">
+          {recentDocs.length > 0 ? (
+            <section className="ltc-card ltc-section ltc-section--card">
+              <span className="ltc-card__eyebrow">Recent</span>
+              <h2>Kürzlich hochgeladen</h2>
+              <ul className="ltc-list">
+                {recentDocs.map((doc) => (
+                  <li key={doc.id} className="ltc-list__item">
+                    <a href={`#/documents`} className="ltc-list__link" onClick={() => setLookupDoc(doc)}>
+                      {doc.filename}
+                    </a>{" "}
+                    <span className="ltc-muted">({doc.status} / {doc.scan_status})</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </aside>
+      </div>
 
       <section className="ltc-section">
         <h2>Navigation (Hash)</h2>

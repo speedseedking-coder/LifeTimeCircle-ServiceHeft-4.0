@@ -356,9 +356,21 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
   }
 
   return (
-    <main className="ltc-main ltc-main--wide" data-testid="admin-page">
-      <h1>Admin</h1>
-      <p>Rollen, Moderator-Akkreditierung, VIP-Business-Freigaben und Export-Step-up auf den produktiven Server-Contracts.</p>
+    <main className="ltc-main ltc-main--xl" data-testid="admin-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Operations</div>
+          <h1>Admin</h1>
+          <p>Rollen, Moderator-Akkreditierung, VIP-Business-Freigaben und Export-Step-up auf den produktiven Server-Contracts.</p>
+        </div>
+        <div className="ltc-page-intro__meta">
+          <div className="ltc-kpi-tile">
+            <div className="ltc-kpi-tile__label">Actor</div>
+            <div className="ltc-kpi-tile__value">{props.actorRole}</div>
+            <div className="ltc-kpi-tile__meta">Aktive Admin-Sicht</div>
+          </div>
+        </div>
+      </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}
       {notice ? (
@@ -375,45 +387,73 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
 
       {!loading ? (
         <>
+          <div className="ltc-kpi-band">
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Users</div>
+              <div className="ltc-kpi-tile__value">{visibleUsers.length}</div>
+              <div className="ltc-kpi-tile__meta">Serverseitig sichtbare Accounts</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">VIP-Businesses</div>
+              <div className="ltc-kpi-tile__value">{visibleBusinesses.length}</div>
+              <div className="ltc-kpi-tile__meta">Anträge und freigegebene Business-Container</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Pending</div>
+              <div className="ltc-kpi-tile__value">{visibleBusinesses.filter((item) => !item.approved).length}</div>
+              <div className="ltc-kpi-tile__meta">Warten auf SUPERADMIN-Step-up</div>
+            </div>
+            <div className="ltc-kpi-tile">
+              <div className="ltc-kpi-tile__label">Export-Grant</div>
+              <div className="ltc-kpi-tile__value">{exportGrant ? "aktiv" : "none"}</div>
+              <div className="ltc-kpi-tile__meta">{exportGrant ? "One-time Token vorhanden" : "Noch kein Full-Grant erstellt"}</div>
+            </div>
+          </div>
+
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Access</span>
             <div className="ltc-card__title">Rollen & Moderator</div>
             <div className="ltc-muted">
               Der Server auditiert nur ID-bezogene Metadaten und `reason_provided`, keine Freitext-Begründungen. Sensible Aktionen holen automatisch einen One-time Step-up.
             </div>
             {visibleUsers.length === 0 ? <p className="ltc-muted ltc-mt-4">Keine Nutzer gefunden.</p> : null}
-            {visibleUsers.map((user) => (
-              <AdminUserCard
-                key={user.user_id}
-                actorRole={props.actorRole}
-                user={user}
-                currentRole={roleDrafts[user.user_id] ?? user.role}
-                currentReason={reasonDrafts[user.user_id] ?? ""}
-                busy={busyKey === `role:${user.user_id}` || busyKey === `moderator:${user.user_id}`}
-                onRoleChange={(role) => setRoleDrafts((prev) => ({ ...prev, [user.user_id]: role }))}
-                onReasonChange={(reason) => setReasonDrafts((prev) => ({ ...prev, [user.user_id]: reason }))}
-                onSaveRole={() =>
-                  void runSensitiveAction(
-                    `role:${user.user_id}`,
-                    "role_grant",
-                    (init) => setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", init),
-                    (body) => updateUserRole(user.user_id, body.new_role),
-                    `Rolle für ${user.user_id} wurde auf ${roleDrafts[user.user_id] ?? user.role} gesetzt.`,
-                  )
-                }
-                onAccreditModerator={() =>
-                  void runSensitiveAction(
-                    `moderator:${user.user_id}`,
-                    "moderator_accredit",
-                    (init) => accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", init),
-                    (body) => updateUserRole(user.user_id, body.new_role),
-                    `Moderator-Akkreditierung für ${user.user_id} abgeschlossen.`,
-                  )
-                }
-              />
-            ))}
+            <div className="ltc-admin-list">
+              {visibleUsers.map((user) => (
+                <AdminUserCard
+                  key={user.user_id}
+                  actorRole={props.actorRole}
+                  user={user}
+                  currentRole={roleDrafts[user.user_id] ?? user.role}
+                  currentReason={reasonDrafts[user.user_id] ?? ""}
+                  busy={busyKey === `role:${user.user_id}` || busyKey === `moderator:${user.user_id}`}
+                  onRoleChange={(role) => setRoleDrafts((prev) => ({ ...prev, [user.user_id]: role }))}
+                  onReasonChange={(reason) => setReasonDrafts((prev) => ({ ...prev, [user.user_id]: reason }))}
+                  onSaveRole={() =>
+                    void runSensitiveAction(
+                      `role:${user.user_id}`,
+                      "role_grant",
+                      (init) => setAdminUserRole(user.user_id, roleDrafts[user.user_id] ?? user.role, reasonDrafts[user.user_id] ?? "", init),
+                      (body) => updateUserRole(user.user_id, body.new_role),
+                      `Rolle für ${user.user_id} wurde auf ${roleDrafts[user.user_id] ?? user.role} gesetzt.`,
+                    )
+                  }
+                  onAccreditModerator={() =>
+                    void runSensitiveAction(
+                      `moderator:${user.user_id}`,
+                      "moderator_accredit",
+                      (init) => accreditModerator(user.user_id, reasonDrafts[user.user_id] ?? "", init),
+                      (body) => updateUserRole(user.user_id, body.new_role),
+                      `Moderator-Akkreditierung für ${user.user_id} abgeschlossen.`,
+                    )
+                  }
+                />
+              ))}
+            </div>
           </section>
 
+          <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section" data-testid="admin-desktop-grid">
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Business</span>
             <div className="ltc-card__title">VIP-Businesses</div>
             <div className="ltc-muted">
               Admin kann Requests anlegen. Freigabe und Staff-Zuordnung bleiben serverseitig auf SUPERADMIN begrenzt und erfordern pro Aktion einen frischen Step-up.
@@ -546,7 +586,9 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
             ))}
           </section>
 
+          <div className="ltc-admin-rail">
           <section className="ltc-card ltc-section ltc-section--card">
+            <span className="ltc-card__eyebrow">Export</span>
             <div className="ltc-card__title">Export-Step-up</div>
             <div className="ltc-muted">
               Redacted Exports sind für Admin und SUPERADMIN nutzbar. One-time Full Exports mit `X-Export-Token` bleiben strikt SUPERADMIN-only.
@@ -695,6 +737,8 @@ export default function AdminPage(props: { actorRole: AdminActorRole }): JSX.Ele
               </details>
             ) : null}
           </section>
+          </div>
+          </div>
         </>
       ) : null}
     </main>

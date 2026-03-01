@@ -41,19 +41,20 @@
 ### Breakpoints (CSS)
 - [x] 375px (iPhone SE) – lowest
 - [x] 768px (iPad) – mid
-- [ ] 1920px (Desktop) – high
+- [x] 1920px (Desktop) – high
 
 ### Tests Needed
 - [x] Form layouts responsive (stack on mobile)
 - [x] Button groups wrap properly
-- Lists have adequate spacing
-- Text readable without zoom
+- [x] Lists have adequate spacing
+- [x] Text readable without zoom
 - Touch targets >= 44x44px
 
 ### CSS Updates
-- Add media queries for forms on small screens
-- Ensure padding/margin scales
-- Check font sizes on 375px
+- [x] Add media queries for forms on small screens
+- [x] Ensure padding/margin scales
+- [x] Check font sizes on 375px
+- [x] Add desktop grid/layout rules for 1440px+ and 1920px
 
 ## Implementation Order
 1. Add ARIA labels to existing components

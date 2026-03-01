@@ -125,122 +125,143 @@ export default function VehiclesPage(): JSX.Element {
   }
 
   return (
-    <main className="ltc-main ltc-main--wide">
-      <h1>Vehicles</h1>
-      <p>Owner-scoped Vehicle-Liste mit serverseitigem Consent-, RBAC- und Object-Level-Enforcement.</p>
-
-      <section className="ltc-card ltc-section--card">
-        <h2>Neues Fahrzeug anlegen</h2>
-        <form onSubmit={(e) => void onCreate(e)}>
-          <div className="ltc-form-grid">
-            <div className="ltc-form-group">
-              <label className="ltc-form-group__label" htmlFor="vehicles-vin-input">
-                VIN
-                <input
-                  id="vehicles-vin-input"
-                  className="ltc-form-group__input"
-                  value={vin}
-                  onChange={(e) => setVin(e.target.value)}
-                  placeholder="z. B. WAUZZZ..."
-                  autoComplete="off"
-                  aria-required="true"
-                  aria-invalid={errorField === "vin"}
-                  aria-describedby={errorField === "vin" ? "vehicles-vin-error vehicles-vin-hint" : "vehicles-vin-hint"}
-                />
-              </label>
-              <p id="vehicles-vin-hint" className="ltc-helper-text">
-                11 bis 17 Zeichen, ohne I, O und Q.
-              </p>
-              {errorField === "vin" && error ? (
-                <p id="vehicles-vin-error" className="ltc-helper-text ltc-helper-text--error">
-                  {error}
-                </p>
-              ) : null}
-            </div>
-            <div className="ltc-form-group">
-              <label className="ltc-form-group__label" htmlFor="vehicles-nickname-input">
-                Nickname (optional)
-                <input
-                  id="vehicles-nickname-input"
-                  className="ltc-form-group__input"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="z. B. Familienauto"
-                  autoComplete="off"
-                />
-              </label>
-            </div>
-            <div className="ltc-form-group">
-              <label className="ltc-form-group__label" htmlFor="vehicles-accident-status">
-                Unfallstatus
-                <select
-                  id="vehicles-accident-status"
-                  className="ltc-form-group__select"
-                  value={accidentStatus}
-                  onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
-                  aria-required="true"
-                >
-                  <option value="unknown">Unbekannt</option>
-                  <option value="accident_free">Unfallfrei</option>
-                  <option value="not_free">Nicht unfallfrei</option>
-                </select>
-              </label>
-            </div>
+    <main className="ltc-main ltc-main--xl" data-testid="vehicles-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Owner Workspace</div>
+          <h1>Vehicles</h1>
+          <p>Owner-scoped Vehicle-Liste mit serverseitigem Consent-, RBAC- und Object-Level-Enforcement.</p>
+        </div>
+        <div className="ltc-page-intro__meta">
+          <div className="ltc-kpi-tile">
+            <div className="ltc-kpi-tile__label">Fahrzeuge</div>
+            <div className="ltc-kpi-tile__value">{vehicles.length}</div>
+            <div className="ltc-kpi-tile__meta">Aktuell im sichtbaren Owner-Workspace.</div>
           </div>
-
-          <div className="ltc-button-group">
-            <button type="submit" className="ltc-button ltc-button--primary" disabled={creating}>
-              {creating ? "Speichert..." : "Fahrzeug speichern"}
-            </button>
-          </div>
-        </form>
+        </div>
       </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}
 
-      {viewState === "loading" ? (
-        <section className="ltc-card ltc-section--card">
-          <div className="ltc-muted">Vehicles werden geladen...</div>
-        </section>
-      ) : null}
+      <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section" data-testid="vehicles-desktop-grid">
+        <div className="ltc-card-stack">
+          <section className="ltc-card ltc-section--card ltc-card--subtle">
+            <span className="ltc-card__eyebrow">Create</span>
+            <h2>Neues Fahrzeug anlegen</h2>
+            <form onSubmit={(e) => void onCreate(e)}>
+              <div className="ltc-form-grid ltc-form-grid--wide">
+                <div className="ltc-form-group">
+                  <label className="ltc-form-group__label" htmlFor="vehicles-vin-input">
+                    VIN
+                    <input
+                      id="vehicles-vin-input"
+                      className="ltc-form-group__input"
+                      value={vin}
+                      onChange={(e) => setVin(e.target.value)}
+                      placeholder="z. B. WAUZZZ..."
+                      autoComplete="off"
+                      aria-required="true"
+                      aria-invalid={errorField === "vin"}
+                      aria-describedby={errorField === "vin" ? "vehicles-vin-error vehicles-vin-hint" : "vehicles-vin-hint"}
+                    />
+                  </label>
+                  <p id="vehicles-vin-hint" className="ltc-helper-text">
+                    11 bis 17 Zeichen, ohne I, O und Q.
+                  </p>
+                  {errorField === "vin" && error ? (
+                    <p id="vehicles-vin-error" className="ltc-helper-text ltc-helper-text--error">
+                      {error}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="ltc-form-group">
+                  <label className="ltc-form-group__label" htmlFor="vehicles-nickname-input">
+                    Nickname (optional)
+                    <input
+                      id="vehicles-nickname-input"
+                      className="ltc-form-group__input"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder="z. B. Familienauto"
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
+                <div className="ltc-form-group ltc-form-grid__span-2">
+                  <label className="ltc-form-group__label" htmlFor="vehicles-accident-status">
+                    Unfallstatus
+                    <select
+                      id="vehicles-accident-status"
+                      className="ltc-form-group__select"
+                      value={accidentStatus}
+                      onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
+                      aria-required="true"
+                    >
+                      <option value="unknown">Unbekannt</option>
+                      <option value="accident_free">Unfallfrei</option>
+                      <option value="not_free">Nicht unfallfrei</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
 
-      {viewState === "ready" ? (
-        <section className="ltc-card ltc-section--card">
-          <h2>Meine Fahrzeuge</h2>
-          {vehicles.length === 0 ? (
-            <p className="ltc-muted">Noch keine Fahrzeuge vorhanden.</p>
-          ) : (
+              <div className="ltc-button-group">
+                <button type="submit" className="ltc-button ltc-button--primary" disabled={creating}>
+                  {creating ? "Speichert..." : "Fahrzeug speichern"}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="ltc-page-nav">
+            <h2>Navigation (Hash)</h2>
             <ul className="ltc-list">
-              {vehicles.map((vehicle) => (
-                <li key={vehicle.id} className="ltc-list__item">
-                  <a className="ltc-list__link" href={`#/vehicles/${encodeURIComponent(vehicle.id)}`}>
-                    {vehicle.nickname?.trim() || vehicle.vin_masked}
-                  </a>{" "}
-                  <span className="ltc-muted">({vehicle.vin_masked})</span> ·{" "}
-                  <a className="ltc-list__link" href={trustFoldersHref(vehicle.id)}>
-                    Trust Folders
-                  </a>
-                </li>
-              ))}
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href="#/documents">Zu Documents</a>
+              </li>
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href="#/onboarding">Zu Onboarding</a>
+              </li>
+              <li className="ltc-list__item">
+                <a className="ltc-list__link" href="#/consent">Zu Consent</a>
+              </li>
             </ul>
-          )}
-        </section>
-      ) : null}
+          </section>
+        </div>
 
-      <section className="ltc-page-nav">
-        <h2>Navigation (Hash)</h2>
-        <ul className="ltc-list">
-          <li className="ltc-list__item">
-            <a className="ltc-list__link" href="#/documents">Zu Documents</a>
-          </li>
-          <li className="ltc-list__item">
-            <a className="ltc-list__link" href="#/onboarding">Zu Onboarding</a>
-          </li>
-          <li className="ltc-list__item">
-            <a className="ltc-list__link" href="#/consent">Zu Consent</a>
-          </li>
-        </ul>
-      </section>
+        <aside className="ltc-card-stack">
+          <section className="ltc-card ltc-section--card" data-testid="vehicles-list-card">
+            <span className="ltc-card__eyebrow">Fleet</span>
+            <h2>Meine Fahrzeuge</h2>
+            {viewState === "loading" ? <div className="ltc-muted">Vehicles werden geladen...</div> : null}
+            {viewState === "ready" && vehicles.length === 0 ? <p className="ltc-muted">Noch keine Fahrzeuge vorhanden.</p> : null}
+            {viewState === "ready" && vehicles.length > 0 ? (
+              <ul className="ltc-list">
+                {vehicles.map((vehicle) => (
+                  <li key={vehicle.id} className="ltc-list__item">
+                    <a className="ltc-list__link" href={`#/vehicles/${encodeURIComponent(vehicle.id)}`}>
+                      {vehicle.nickname?.trim() || vehicle.vin_masked}
+                    </a>{" "}
+                    <span className="ltc-muted">({vehicle.vin_masked})</span> ·{" "}
+                    <a className="ltc-list__link" href={trustFoldersHref(vehicle.id)}>
+                      Trust Folders
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+
+          <section className="ltc-card ltc-section--card">
+            <span className="ltc-card__eyebrow">Hinweis</span>
+            <h2>Arbeitskontext</h2>
+            <p className="ltc-muted">
+              Neue Fahrzeuge landen direkt in der Owner-Ansicht. Der nächste sinnvolle Schritt ist danach die Detailpflege mit Timeline,
+              Trust-Folders und Nachweisen.
+            </p>
+          </section>
+        </aside>
+      </div>
     </main>
   );
 }
