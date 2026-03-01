@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
 import { deleteTrustFolder, getTrustFolder, renameTrustFolder, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
@@ -17,6 +17,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
   const [errorField, setErrorField] = useState<"title" | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   const hash = useHash();
   const context = useMemo(() => readTrustFolderContextFromHash(hash), [hash]);
@@ -27,6 +28,12 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
   }, [props.folderId]);
   const resolvedVehicleId = folder?.vehicle_id ?? context.vehicleId;
   const resolvedAddonKey = folder?.addon_key ?? context.addonKey;
+
+  useEffect(() => {
+    if (viewState === "ready" && folder) {
+      titleInputRef.current?.focus();
+    }
+  }, [viewState, folder]);
 
   useEffect(() => {
     let alive = true;
@@ -73,6 +80,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
     if (nextTitle.length < 1 || nextTitle.length > MAX_NAME_LENGTH) {
       setError(`Name muss zwischen 1 und ${MAX_NAME_LENGTH} Zeichen liegen.`);
       setErrorField("title");
+      titleInputRef.current?.focus();
       return;
     }
 
@@ -156,6 +164,7 @@ export default function TrustFolderDetailPage(props: { folderId: string }): JSX.
                 <label className="ltc-form-group__label" htmlFor="trust-folder-detail-title">
                   Name
                   <input
+                    ref={titleInputRef}
                     id="trust-folder-detail-title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import {
   acceptRequiredConsents,
@@ -43,10 +43,23 @@ export default function ConsentPage(): JSX.Element {
   const [termsChecked, setTermsChecked] = useState(false);
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [error, setError] = useState("");
+  const termsRef = useRef<HTMLInputElement | null>(null);
+  const privacyRef = useRef<HTMLInputElement | null>(null);
 
   const nextHash = useMemo(() => nextHashFromLocation(), []);
   const acceptedByKey = useMemo(() => acceptedMap(acceptedConsents), [acceptedConsents]);
   const consentInvalid = !termsChecked || !privacyChecked;
+
+  useEffect(() => {
+    if (viewState !== "ready" || requiredConsents.length === 0 || isComplete) return;
+    if (!termsChecked) {
+      termsRef.current?.focus();
+      return;
+    }
+    if (!privacyChecked) {
+      privacyRef.current?.focus();
+    }
+  }, [viewState, requiredConsents.length, isComplete, termsChecked, privacyChecked]);
 
   useEffect(() => {
     let alive = true;
@@ -120,6 +133,11 @@ export default function ConsentPage(): JSX.Element {
 
     if (!termsChecked || !privacyChecked) {
       setError("Bitte Terms und Privacy bestätigen.");
+      if (!termsChecked) {
+        termsRef.current?.focus();
+      } else {
+        privacyRef.current?.focus();
+      }
       return;
     }
 
@@ -221,6 +239,7 @@ export default function ConsentPage(): JSX.Element {
             <div className="ltc-checkbox-card">
               <label className="ltc-checkbox-card__label" htmlFor="consent-terms">
                 <input
+                  ref={termsRef}
                   id="consent-terms"
                   type="checkbox"
                   checked={termsChecked}
@@ -237,6 +256,7 @@ export default function ConsentPage(): JSX.Element {
             <div className="ltc-checkbox-card">
               <label className="ltc-checkbox-card__label" htmlFor="consent-privacy">
                 <input
+                  ref={privacyRef}
                   id="consent-privacy"
                   type="checkbox"
                   checked={privacyChecked}

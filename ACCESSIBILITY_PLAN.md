@@ -38,6 +38,7 @@
 
 ### Keyboard Navigation
 - Tab order logical across all pages
+- [x] Initial focus and focus handoff covered on Auth, Consent, Trust Folders
 - Enter/Space activate buttons
 - Escape closes modals (if any)
 
@@ -64,5 +65,5 @@
 ## Implementation Order
 1. Run accessibility audit (Playwright + accessibility APIs) on newly added routes/components
 2. Fix any contrast issues
-3. Verify keyboard navigation
+3. Extend keyboard-navigation checks when new complex widgets enter the UI
 4. Add ARIA semantics again when new icon/toggle controls enter the UI

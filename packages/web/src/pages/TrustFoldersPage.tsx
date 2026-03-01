@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authHeaders, getAuthToken } from "../lib.auth";
 import { createTrustFolder, listTrustFolders, TrustFolder } from "../trustFoldersApi";
 import ForbiddenPanel from "../components/ForbiddenPanel";
@@ -18,6 +18,7 @@ export default function TrustFoldersPage(): JSX.Element {
   const [errorField, setErrorField] = useState<"name" | null>(null);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   const hash = useHash();
   const context = useMemo(() => readTrustFolderContextFromHash(hash), [hash]);
@@ -44,6 +45,12 @@ export default function TrustFoldersPage(): JSX.Element {
     void load(context.vehicleId, context.addonKey);
   }, [context.vehicleId, context.addonKey, load]);
 
+  useEffect(() => {
+    if (viewState === "ready") {
+      nameInputRef.current?.focus();
+    }
+  }, [viewState, items.length]);
+
   async function onCreate(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -58,11 +65,13 @@ export default function TrustFoldersPage(): JSX.Element {
     if (nextTitle.length < 1) {
       setError("Name darf nicht leer sein.");
       setErrorField("name");
+      nameInputRef.current?.focus();
       return;
     }
     if (nextTitle.length > MAX_NAME_LENGTH) {
       setError(`Name darf maximal ${MAX_NAME_LENGTH} Zeichen enthalten.`);
       setErrorField("name");
+      nameInputRef.current?.focus();
       return;
     }
 
@@ -119,6 +128,7 @@ export default function TrustFoldersPage(): JSX.Element {
               <label className="ltc-form-group__label" htmlFor="trust-folder-title">
                 Neuer Folder Name
                 <input
+                  ref={nameInputRef}
                   id="trust-folder-title"
                   value={name}
                   onChange={(e) => setName(e.target.value)}

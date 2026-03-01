@@ -653,6 +653,7 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
   await setHash(page, "#/auth?next=%23%2Fdocuments");
 
   await expect(page.locator("#auth-email-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#auth-email-input")).toBeFocused();
   await page.getByLabel("E-Mail").fill("vip@example.com");
   await page.getByRole("button", { name: "Code anfordern" }).click();
 
@@ -660,6 +661,7 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
   await expect(page.locator('[data-testid="auth-dev-otp"]')).toHaveText("123456");
 
   await expect(page.locator("#auth-otp-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#auth-otp-input")).toBeFocused();
   await page.getByLabel("OTP").fill("123456");
   await page.getByRole("button", { name: "Login verifizieren" }).click();
 
@@ -792,6 +794,7 @@ test("Consent page accepts required versions and continues to target route", asy
 
   await expect(page.locator("#consent-terms")).toHaveAttribute("aria-required", "true");
   await expect(page.locator("#consent-privacy")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#consent-terms")).toBeFocused();
   await expect(page.locator("main")).toContainText("v2");
   await expect(page.locator("main")).toContainText("v3");
 
@@ -865,6 +868,7 @@ test("Trust Folders route loads with auth, consent and vehicle context", async (
   await expect(page.locator("main h1")).toContainText("Trust Folders");
   await expect(page.locator("main")).toContainText("Restauration 2026");
   await expect(page.locator("#trust-folder-title")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#trust-folder-title")).toBeFocused();
 });
 
 test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
@@ -925,6 +929,7 @@ test("Trust Folder detail exposes accessible rename and delete controls", async 
 
   await expect(page.locator("main h1")).toContainText("Restauration 2026");
   await expect(page.locator("#trust-folder-detail-title")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#trust-folder-detail-title")).toBeFocused();
   await expect(page.getByRole("button", { name: "Trust-Folder Restauration 2026 löschen" })).toHaveCount(1);
 });
 

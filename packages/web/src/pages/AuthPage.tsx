@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import {
   logoutSession,
@@ -43,9 +43,28 @@ export default function AuthPage(): JSX.Element {
   const [error, setError] = useState("");
   const [errorField, setErrorField] = useState<"email" | "otp" | null>(null);
   const [tokenPresent, setTokenPresent] = useState(() => getAuthToken() !== null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const otpInputRef = useRef<HTMLInputElement | null>(null);
 
   const nextHash = useMemo(() => nextHashFromLocation(), []);
   const canVerify = challengeId.trim().length > 0 && otp.trim().length > 0;
+
+  useEffect(() => {
+    if (!tokenPresent && !challengeId) {
+      emailInputRef.current?.focus();
+    }
+  }, [tokenPresent, challengeId]);
+
+  useEffect(() => {
+    if (challengeId) {
+      otpInputRef.current?.focus();
+    }
+  }, [challengeId]);
+
+  useEffect(() => {
+    if (errorField === "email") emailInputRef.current?.focus();
+    if (errorField === "otp") otpInputRef.current?.focus();
+  }, [errorField]);
 
   async function onRequestChallenge(e: FormEvent) {
     e.preventDefault();
@@ -170,6 +189,7 @@ export default function AuthPage(): JSX.Element {
               <label className="ltc-form-group__label" htmlFor="auth-email-input">
                 E-Mail
                 <input
+                  ref={emailInputRef}
                   id="auth-email-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -223,6 +243,7 @@ export default function AuthPage(): JSX.Element {
               <label className="ltc-form-group__label" htmlFor="auth-otp-input">
                 OTP
                 <input
+                  ref={otpInputRef}
                   id="auth-otp-input"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
