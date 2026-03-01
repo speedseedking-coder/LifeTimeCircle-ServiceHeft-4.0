@@ -1,3 +1,5 @@
+/* DEV-SCAFFOLD: Design system reference page — developer-only.\n   This page intentionally exposes internal components and inline styles for visual reference.\n   Do NOT include in production navigation; keep behind a dev-only route or gated flag. */
+
 /**
  * DESIGN SYSTEM REFERENCE
  * LifeTimeCircle – Service Heft 4.0

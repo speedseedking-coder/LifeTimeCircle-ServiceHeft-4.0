@@ -1,3 +1,5 @@
+/* DEV-SCAFFOLD: Debug API box — developer-only helper component.\n   Intended to be used in debug pages only. */
+
 import { useEffect, useState } from "react";
 import { apiGet, prettyBody } from "../../api";
 import DebugCard from "./DebugCard";

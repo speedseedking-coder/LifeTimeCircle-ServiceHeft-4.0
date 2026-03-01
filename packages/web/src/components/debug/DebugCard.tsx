@@ -1,3 +1,5 @@
+/* DEV-SCAFFOLD: Simple debug card wrapper — intended for dev pages only. */
+
 import { type ReactNode } from "react";
 
 export default function DebugCard(props: { title: string; children: ReactNode }): JSX.Element {

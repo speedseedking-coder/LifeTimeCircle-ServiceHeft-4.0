@@ -1,3 +1,5 @@
+/* DEV-SCAFFOLD: Debug items list — developer-only helper for blog/news scaffolds. */
+
 import { useEffect, useState } from "react";
 import { apiGet, asString, isRecord, prettyBody } from "../../api";
 import DebugCard from "./DebugCard";
