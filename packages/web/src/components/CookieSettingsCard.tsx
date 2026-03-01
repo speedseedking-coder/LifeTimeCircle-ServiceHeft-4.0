@@ -50,36 +50,38 @@ export default function CookieSettingsCard(props: { onSaved?: () => void }): JSX
       <div className="ltc-divider" />
 
       <div className="ltc-row">
-        <div>
+        <div id="cookies-necessary-copy">
           <div className="ltc-strong">Notwendig</div>
           <div className="ltc-muted">Sitzung, Sicherheit, grundlegende Funktionen</div>
         </div>
-        <input type="checkbox" checked disabled className="ltc-check" />
+        <input type="checkbox" checked disabled className="ltc-check" aria-describedby="cookies-necessary-copy" />
       </div>
 
       <div className="ltc-divider" />
 
       <div className="ltc-row">
-        <div>
+        <div id="cookies-analytics-copy">
           <div className="ltc-strong">Analytics (optional)</div>
           <div className="ltc-muted">anonymisierte Nutzungsstatistik zur Verbesserung</div>
         </div>
         <input
+          id="cookies-analytics-toggle"
           type="checkbox"
           checked={prefs.analytics}
           onChange={(event) => setPrefs((current) => ({ ...current, analytics: event.target.checked }))}
           className="ltc-check"
+          aria-describedby="cookies-analytics-copy"
         />
       </div>
 
       <div className="ltc-divider" />
 
       <div className="ltc-row">
-        <div>
+        <div id="cookies-marketing-copy">
           <div className="ltc-strong">Marketing/Tracking</div>
           <div className="ltc-muted">derzeit nicht verwendet</div>
         </div>
-        <input type="checkbox" checked={prefs.marketing} disabled className="ltc-check" />
+        <input type="checkbox" checked={prefs.marketing} disabled className="ltc-check" aria-describedby="cookies-marketing-copy" />
       </div>
 
       <div className="ltc-actions">

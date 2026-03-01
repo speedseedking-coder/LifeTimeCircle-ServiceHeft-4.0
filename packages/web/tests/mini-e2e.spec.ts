@@ -652,12 +652,14 @@ test("Auth page requests OTP, verifies login and forwards into consent flow", as
   await boot(page);
   await setHash(page, "#/auth?next=%23%2Fdocuments");
 
+  await expect(page.locator("#auth-email-input")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("E-Mail").fill("vip@example.com");
   await page.getByRole("button", { name: "Code anfordern" }).click();
 
   await expect(page.locator('[data-testid="auth-challenge-id"]')).toHaveText("challenge-123");
   await expect(page.locator('[data-testid="auth-dev-otp"]')).toHaveText("123456");
 
+  await expect(page.locator("#auth-otp-input")).toHaveAttribute("aria-required", "true");
   await page.getByLabel("OTP").fill("123456");
   await page.getByRole("button", { name: "Login verifizieren" }).click();
 
@@ -788,6 +790,8 @@ test("Consent page accepts required versions and continues to target route", asy
   await boot(page);
   await setHash(page, "#/consent?next=%23%2Fvehicles");
 
+  await expect(page.locator("#consent-terms")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#consent-privacy")).toHaveAttribute("aria-required", "true");
   await expect(page.locator("main")).toContainText("v2");
   await expect(page.locator("main")).toContainText("v3");
 
@@ -860,6 +864,7 @@ test("Trust Folders route loads with auth, consent and vehicle context", async (
   );
   await expect(page.locator("main h1")).toContainText("Trust Folders");
   await expect(page.locator("main")).toContainText("Restauration 2026");
+  await expect(page.locator("#trust-folder-title")).toHaveAttribute("aria-required", "true");
 });
 
 test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
@@ -888,6 +893,39 @@ test("Trust Folders stay forbidden for plain user role", async ({ page }) => {
   await setHash(page, "#/trust-folders?vehicle_id=demo-1&addon_key=restauration");
 
   await expect(page.locator('[data-testid="forbidden-ui"]')).toHaveCount(1);
+});
+
+test("Trust Folder detail exposes accessible rename and delete controls", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_123");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "u1", role: "vip" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/trust/folders/7") {
+      return json(200, { id: 7, vehicle_id: "demo-1", owner_user_id: "u1", addon_key: "restauration", title: "Restauration 2026" });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/trust-folders/7?vehicle_id=demo-1&addon_key=restauration");
+
+  await expect(page.locator("main h1")).toContainText("Restauration 2026");
+  await expect(page.locator("#trust-folder-detail-title")).toHaveAttribute("aria-required", "true");
+  await expect(page.getByRole("button", { name: "Trust-Folder Restauration 2026 löschen" })).toHaveCount(1);
 });
 
 test("Admin route manages roles, VIP businesses and export grants", async ({ page }) => {

@@ -46,6 +46,7 @@ export default function ConsentPage(): JSX.Element {
 
   const nextHash = useMemo(() => nextHashFromLocation(), []);
   const acceptedByKey = useMemo(() => acceptedMap(acceptedConsents), [acceptedConsents]);
+  const consentInvalid = !termsChecked || !privacyChecked;
 
   useEffect(() => {
     let alive = true;
@@ -150,17 +151,23 @@ export default function ConsentPage(): JSX.Element {
   }
 
   return (
-    <main style={{ padding: 12 }}>
-      <h1>Consent</h1>
-      <p>Anzeige und Speicherung der aktuell erforderlichen Terms-/Privacy-Versionen über `/consent/current`, `/consent/status` und `/consent/accept`.</p>
+    <main className="ltc-main ltc-main--narrow" data-testid="consent-page">
+      <section className="ltc-page-intro">
+        <div className="ltc-page-intro__copy">
+          <div className="ltc-page-intro__eyebrow">Compliance</div>
+          <h1>Consent</h1>
+          <p>Anzeige und Speicherung der aktuell erforderlichen Terms-/Privacy-Versionen über `/consent/current`, `/consent/status` und `/consent/accept`.</p>
+        </div>
+      </section>
 
-      <section className="ltc-card" style={{ marginTop: 16 }}>
+      <section className="ltc-card ltc-card--compact ltc-section">
+        <span className="ltc-card__eyebrow">Flow</span>
         <h2>Flow</h2>
         <p className="ltc-muted">
           Nächster Zielbereich nach erfolgreichem Consent: <code>{nextHash}</code>
         </p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          <button type="button" onClick={goNext} disabled={!isComplete}>
+        <div className="ltc-button-group">
+          <button type="button" onClick={goNext} disabled={!isComplete} className="ltc-button ltc-button--secondary">
             Weiter
           </button>
           <a href="#/auth">Zurück zu Auth</a>
@@ -168,25 +175,26 @@ export default function ConsentPage(): JSX.Element {
       </section>
 
       {viewState === "loading" ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-card--compact ltc-section">
           <div className="ltc-muted">Consent-Status wird geladen...</div>
         </section>
       ) : null}
 
       {viewState !== "loading" ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-card--compact ltc-section">
+          <span className="ltc-card__eyebrow">Required</span>
           <h2>Erforderliche Dokumente</h2>
 
           {requiredConsents.length === 0 ? <p className="ltc-muted">Keine erforderlichen Dokumente gefunden.</p> : null}
 
           {requiredConsents.length > 0 ? (
-            <ul>
+            <ul className="ltc-list">
               {requiredConsents.map((item) => {
                 const key = `${item.doc_type}:${item.doc_version}`;
                 const accepted = acceptedByKey[key];
 
                 return (
-                  <li key={key} style={{ marginBottom: 12 }}>
+                  <li key={key} className="ltc-list__item">
                     <strong>{item.doc_type}</strong> <code>{item.doc_version}</code>
                     {accepted ? (
                       <span className="ltc-muted">
@@ -205,43 +213,74 @@ export default function ConsentPage(): JSX.Element {
       ) : null}
 
       {viewState !== "loading" && requiredConsents.length > 0 ? (
-        <section className="ltc-card" style={{ marginTop: 16 }}>
+        <section className="ltc-card ltc-card--compact ltc-section">
+          <span className="ltc-card__eyebrow">Accept</span>
           <h2>Akzeptieren</h2>
-          <div style={{ display: "grid", gap: 10 }}>
-            <label>
-              <input type="checkbox" checked={termsChecked} onChange={(e) => setTermsChecked(e.target.checked)} /> Terms in aktueller Version
-              akzeptieren
-            </label>
-            <label>
-              <input type="checkbox" checked={privacyChecked} onChange={(e) => setPrivacyChecked(e.target.checked)} /> Privacy in aktueller
-              Version akzeptieren
-            </label>
-          </div>
+          <fieldset className="ltc-checkbox-list" aria-describedby="consent-status-hint">
+            <legend className="ltc-form-group__label">Erforderliche Zustimmungen</legend>
+            <div className="ltc-checkbox-card">
+              <label className="ltc-checkbox-card__label" htmlFor="consent-terms">
+                <input
+                  id="consent-terms"
+                  type="checkbox"
+                  checked={termsChecked}
+                  onChange={(e) => setTermsChecked(e.target.checked)}
+                  className="ltc-checkbox"
+                  aria-required="true"
+                />
+                <span className="ltc-checkbox-card__copy">
+                  <span className="ltc-checkbox-card__title">Terms akzeptieren</span>
+                  <span className="ltc-checkbox-card__text">Aktuelle Terms-Version bestätigen.</span>
+                </span>
+              </label>
+            </div>
+            <div className="ltc-checkbox-card">
+              <label className="ltc-checkbox-card__label" htmlFor="consent-privacy">
+                <input
+                  id="consent-privacy"
+                  type="checkbox"
+                  checked={privacyChecked}
+                  onChange={(e) => setPrivacyChecked(e.target.checked)}
+                  className="ltc-checkbox"
+                  aria-required="true"
+                />
+                <span className="ltc-checkbox-card__copy">
+                  <span className="ltc-checkbox-card__title">Privacy akzeptieren</span>
+                  <span className="ltc-checkbox-card__text">Aktuelle Privacy-Version bestätigen.</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-            <button type="button" disabled={viewState === "saving"} onClick={() => void onAccept()}>
+          <div className="ltc-button-group">
+            <button type="button" disabled={viewState === "saving"} onClick={() => void onAccept()} className="ltc-button ltc-button--primary">
               {viewState === "saving" ? "Speichert..." : isComplete ? "Erneut speichern" : "Consent speichern"}
             </button>
-            <button type="button" onClick={goNext} disabled={!isComplete}>
+            <button type="button" onClick={goNext} disabled={!isComplete} className="ltc-button ltc-button--secondary">
               Weiter zum Zielbereich
             </button>
           </div>
 
-          <p className="ltc-muted" style={{ marginTop: 10 }}>
+          <p id="consent-status-hint" className="ltc-muted ltc-mt-4" role="status" aria-live="polite">
             Status: {isComplete ? "aktuell" : "unvollständig"}
           </p>
+          {consentInvalid && !isComplete ? (
+            <p className="ltc-helper-text">
+              Beide Dokumente müssen bestätigt werden, bevor der Zielbereich freigeschaltet wird.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
       {error ? <InlineErrorBanner message={error} /> : null}
 
-      <section style={{ marginTop: 16 }}>
+      <section className="ltc-page-nav ltc-page-nav--compact">
         <h2>Navigation (Hash)</h2>
-        <ul>
-          <li>
+        <ul className="ltc-list">
+          <li className="ltc-list__item">
             <a href="#/auth">Zurück zu Auth</a>
           </li>
-          <li>
+          <li className="ltc-list__item">
             <a href={nextHash}>Zum Zielbereich</a>
           </li>
         </ul>
