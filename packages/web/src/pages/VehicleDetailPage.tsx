@@ -370,6 +370,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
   }
 
   return (
+<<<<<<< HEAD
     <main className="ltc-main ltc-main--xl" data-testid="vehicle-detail-page">
       <section className="ltc-page-intro">
         <div className="ltc-page-intro__copy">
@@ -387,6 +388,10 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           </div>
         ) : null}
       </section>
+=======
+    <main className="ltc-main ltc-main--wide">
+      <h1>Vehicle Detail</h1>
+>>>>>>> origin/main
 
       {error ? <InlineErrorBanner message={error} /> : null}
       {viewState === "loading" ? <div className="ltc-card">Fahrzeug wird geladen...</div> : null}
@@ -417,6 +422,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
             </div>
           </div>
 
+<<<<<<< HEAD
           <section className="ltc-card ltc-section ltc-section--card ltc-card--subtle">
             <span className="ltc-card__eyebrow">Overview</span>
             <h2>Stammdaten & Kennwerte</h2>
@@ -484,6 +490,96 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           <div className="ltc-card-stack" data-testid="vehicle-detail-primary">
           <section className="ltc-card ltc-section ltc-section--card">
             <span className="ltc-card__eyebrow">Timeline</span>
+=======
+          {/* QUICK STATS DASHBOARD */}
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h3 className="ltc-helper-text">
+              📊 Fahrzeug-Übersicht
+            </h3>
+            <div className="ltc-stats-grid">
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Einträge gesamt</div>
+                <div className="ltc-stat-card__value">{entryStats.totalEntries}</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Km gefahren</div>
+                <div className="ltc-stat-card__value">{entryStats.totalKmTraveled.toLocaleString()}</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Kosten gesamt</div>
+                <div className="ltc-stat-card__value">{entryStats.totalCost.toFixed(0)} €</div>
+              </div>
+              <div className="ltc-stat-card">
+                <div className="ltc-stat-card__label">Ø Intervall</div>
+                <div className="ltc-stat-card__value">{entryStats.avgIntervalDays} Tage</div>
+              </div>
+            </div>
+          </section>
+
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h2>Stammdaten & Kennwerte</h2>
+            <div className="ltc-two-col-grid">
+              <div>
+                <p>
+                  <strong>ID:</strong> <code>{vehicle.id}</code>
+                </p>
+                <p>
+                  <strong>VIN:</strong> <code>{vehicle.vin_masked}</code>
+                </p>
+                <p>
+                  <strong>Nickname:</strong> {vehicle.nickname?.trim() || "nicht gesetzt"}
+                </p>
+              </div>
+              <div>
+                {entryStats.totalEntries > 0 && (
+                  <>
+                    <p>
+                      <strong>Erste Eintrag:</strong> {entryStats.firstEntryDate} ({entryStats.minKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Letzte Eintrag:</strong> {entryStats.lastEntryDate} ({entryStats.maxKm.toLocaleString()} km)
+                    </p>
+                    <p>
+                      <strong>Zeitspanne:</strong> ~{Math.floor((new Date(entryStats.lastEntryDate!).getTime() - new Date(entryStats.firstEntryDate!).getTime()) / (1000 * 60 * 60 * 24))} Tage
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Entry Types Breakdown */}
+            {Object.keys(entryStats.typeBreakdown).length > 0 && (
+              <div className="ltc-section">
+                <strong>Eintragstypen:</strong>
+                <div className="ltc-token-row">
+                  {Object.entries(entryStats.typeBreakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, count]) => (
+                      <div key={type} className="ltc-token ltc-token--neutral">
+                        <strong>{type}:</strong> {count}x
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trust Levels Breakdown */}
+            {Object.keys(entryStats.trustLevelBreakdown).length > 0 && (
+              <div className="ltc-section">
+                <strong>T-Level Verteilung:</strong>
+                <div className="ltc-token-row">
+                  {Object.entries(entryStats.trustLevelBreakdown).map(([level, count]) => (
+                    <div key={level} className="ltc-token ltc-token--warning">
+                      <strong>{level === "keine" ? "keine" : level}:</strong> {count}x
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="ltc-card ltc-section ltc-section--card">
+>>>>>>> origin/main
             <h2>Timeline</h2>
             <p className="ltc-muted">
               Pflichtfelder: Datum, Typ, durchgeführt von und Kilometerstand. Optionalfelder bleiben wertsteigernd.
@@ -540,6 +636,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           </section>
           </div>
 
+<<<<<<< HEAD
           <aside className="ltc-card-stack ltc-sticky-desktop" data-testid="vehicle-detail-rail">
           <section className="ltc-card ltc-section ltc-section--card" data-testid="vehicle-detail-trust-card">
             <span className="ltc-card__eyebrow">Trust</span>
@@ -553,6 +650,21 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                     style={{ backgroundColor: trustLightColor(trustSummary.trust_light) }}
                     aria-label={`Trust-Light ${trustLightLabel(trustSummary.trust_light)}`}
                   >
+=======
+          <section className="ltc-card ltc-section ltc-section--card">
+            <h2>🚦 Trust-Ampel & Bewertung</h2>
+            <p className="ltc-muted">T1 = kein physisches Serviceheft, T2 = physisches Serviceheft vorhanden, T3 = Dokument vorhanden.</p>
+            {trustSummary ? (
+              <div className="ltc-trust-panel">
+                {/* Visual Trust Light Indicator */}
+                <div className="ltc-trust-panel__hero">
+                  <div className="ltc-trust-panel__light" style={{
+                     width: 60,
+                     height: 60,
+                     backgroundColor: trustLightColor(trustSummary.trust_light),
+                     boxShadow: `0 4px 6px rgba(0, 0, 0, 0.1)`
+                   }}>
+>>>>>>> origin/main
                      {trustSummary.trust_light === "gruen" ? "✓" : trustSummary.trust_light === "gelb" ? "⚠" : "!"}
                   </div>
                   <div>
@@ -568,6 +680,10 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   </div>
                 </div>
 
+<<<<<<< HEAD
+=======
+                {/* Status Grid */}
+>>>>>>> origin/main
                 <div className="ltc-status-grid">
                   <div className={`ltc-status-card ${trustSummary.history_status === "vorhanden" ? "ltc-status-card--success" : "ltc-status-card--error"}`}>
                     <div><strong>Historie</strong></div>
@@ -589,6 +705,7 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   </div>
                 </div>
 
+<<<<<<< HEAD
                 <p className="ltc-inline-note ltc-inline-note--info">
                   {trustSummary.hint}
                 </p>
@@ -596,6 +713,19 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                 {trustSummary.reason_codes.length > 0 ? (
                   <div>
                     <strong className="ltc-helper-text">Bewertungsfaktoren</strong>
+=======
+                {/* Hint */}
+                <p className="ltc-inline-note ltc-inline-note--info">
+                  💡 {trustSummary.hint}
+                </p>
+
+                {/* Reason Codes */}
+                {trustSummary.reason_codes.length > 0 ? (
+                  <div>
+                    <strong className="ltc-helper-text">
+                      Bewertungsfaktoren
+                    </strong>
+>>>>>>> origin/main
                     <div className="ltc-token-row">
                       {trustSummary.reason_codes.map((code) => (
                         <div key={code} className="ltc-token ltc-token--neutral">
@@ -606,9 +736,18 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
                   </div>
                 ) : null}
 
+<<<<<<< HEAD
                 {trustSummary.todo_codes.length > 0 ? (
                   <div className="ltc-inline-note ltc-inline-note--warning">
                     <strong className="ltc-helper-text">Priorisierte To-dos</strong>
+=======
+                {/* To-Do Codes */}
+                {trustSummary.todo_codes.length > 0 ? (
+                  <div className="ltc-inline-note ltc-inline-note--warning">
+                    <strong className="ltc-helper-text">
+                      Priorisierte To-dos
+                    </strong>
+>>>>>>> origin/main
                     <div className="ltc-token-row">
                       {trustSummary.todo_codes.map((code) => (
                         <div key={code} className="ltc-token ltc-token--warning">
@@ -623,8 +762,13 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
               <p className="ltc-muted">Trust-Zusammenfassung wird geladen…</p>
             )}
           </section>
+<<<<<<< HEAD
           <section className="ltc-card ltc-section ltc-section--card ltc-card--subtle">
             <span className="ltc-card__eyebrow">Entry Editor</span>
+=======
+
+          <section className="ltc-card ltc-section ltc-section--card">
+>>>>>>> origin/main
             <h2>{revisionTarget ? "Entry-Version aktualisieren" : "Neuen Entry anlegen"}</h2>
             <p className="ltc-muted">{optionalHint}</p>
             <p className="ltc-muted">T1/T2/T3 bitte nur entsprechend der Nachweislage setzen.</p>
@@ -720,7 +864,10 @@ export default function VehicleDetailPage(props: { vehicleId: string }): JSX.Ele
           </section>
 
           <section className="ltc-card ltc-section ltc-section--card">
+<<<<<<< HEAD
             <span className="ltc-card__eyebrow">Module</span>
+=======
+>>>>>>> origin/main
             <h2>Trust-Modul</h2>
             <p>
               Für dieses Fahrzeug können Trust-Folders add-on-gated und consent-gated geöffnet werden. Der Link übergibt den

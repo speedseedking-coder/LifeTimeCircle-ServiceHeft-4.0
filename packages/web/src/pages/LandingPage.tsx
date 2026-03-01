@@ -52,7 +52,11 @@ export default function LandingPage(): JSX.Element {
         <section className="ltc-hero">
           <div className="ltc-hero__copy">
             <h1 className="ltc-hero__h1">Digitales Fahrzeug-Serviceheft</h1>
+<<<<<<< HEAD
             <div className="ltc-hero__sub">Nachweise statt Behauptung</div>
+=======
+            <div className="ltc-hero__sub">Dokumentation, Vertrauen &amp; Zukunft</div>
+>>>>>>> origin/main
             <Button
               variant="primary"
               size="lg"
@@ -61,13 +65,18 @@ export default function LandingPage(): JSX.Element {
               }}
               className="ltc-hero__cta"
             >
+<<<<<<< HEAD
               Einsteigen
+=======
+              Eintritt
+>>>>>>> origin/main
             </Button>
           </div>
         </section>
         <section className="ltc-features">
           <div className="ltc-features__grid">
             <Card className="ltc-features__card">
+<<<<<<< HEAD
               <h3>Timeline &amp; Nachweise</h3>
               <p>Service, Wartung und Reparaturen nachvollziehbar dokumentieren.</p>
             </Card>
@@ -78,6 +87,18 @@ export default function LandingPage(): JSX.Element {
             <Card className="ltc-features__card">
               <h3>Public QR</h3>
               <p>Datenarmer Mini-Check ohne Kennzahlen und ohne Dokument-Downloads.</p>
+=======
+              <h3>Uploads &amp; Dokumente</h3>
+              <p>Sichere Nachweise speichern und verwalten.</p>
+            </Card>
+            <Card className="ltc-features__card">
+              <h3>Trust-Ampel</h3>
+              <p>Bewerte die Dokumentationsqualität deines Fahrzeugs.</p>
+            </Card>
+            <Card className="ltc-features__card">
+              <h3>Public QR</h3>
+              <p>Datenarme Fahrzeug-Ansicht mit QR-Code.</p>
+>>>>>>> origin/main
             </Card>
           </div>
         </section>

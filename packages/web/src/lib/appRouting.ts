@@ -185,7 +185,11 @@ export function getPageTitle(route: Route): string {
     case "notFound":
       return "404";
     case "entry":
+<<<<<<< HEAD
       return "Einsteigen";
+=======
+      return "Eintritt";
+>>>>>>> origin/main
     case "debugPublicSite":
       return "Debug: Public Site (API)";
     case "faq":
@@ -199,7 +203,11 @@ export function getPageTitle(route: Route): string {
     case "datenschutz":
       return "Datenschutz";
     case "contact":
+<<<<<<< HEAD
       return "Kontakt";
+=======
+      return "Contact";
+>>>>>>> origin/main
     case "blogList":
       return "Blog";
     case "blogPost":

@@ -337,6 +337,7 @@ export default function OnboardingWizardPage(): JSX.Element {
             onChange={(e) => setWizard((prev) => ({ ...prev, vin: e.target.value }))}
             placeholder="z. B. WAUZZZ..."
             autoComplete="off"
+<<<<<<< HEAD
             aria-required="true"
             aria-invalid={errorField === "vin" || Boolean(vinValidation)}
             aria-describedby={vinValidation ? "onboarding-vin-hint onboarding-vin-error" : "onboarding-vin-hint"}
@@ -345,6 +346,13 @@ export default function OnboardingWizardPage(): JSX.Element {
             Warum VIN? Wir nutzen die VIN nur zur eindeutigen Zuordnung. Public wird sie maskiert angezeigt.
           </p>
           {vinValidation ? <p id="onboarding-vin-error" className="ltc-error-message">{vinValidation}</p> : null}
+=======
+          />
+          <p className="ltc-helper-text">
+            Warum VIN? Wir nutzen die VIN nur zur eindeutigen Zuordnung. Public wird sie maskiert angezeigt.
+          </p>
+          {vinValidation ? <p className="ltc-error-message">{vinValidation}</p> : null}
+>>>>>>> origin/main
           <button
             type="button"
             onClick={() => setWizard((prev) => ({ ...prev, step: 2, vin: normalizeVin(prev.vin) }))}
@@ -375,7 +383,10 @@ export default function OnboardingWizardPage(): JSX.Element {
                   accidentStatus: e.target.value as WizardState["accidentStatus"],
                 }))
               }
+<<<<<<< HEAD
               aria-required="true"
+=======
+>>>>>>> origin/main
             >
               <option value="unknown">Unbekannt</option>
               <option value="accident_free">Unfallfrei</option>
@@ -455,7 +466,11 @@ export default function OnboardingWizardPage(): JSX.Element {
             </div>
           </div>
 
+<<<<<<< HEAD
           {kmValidation ? <p id="onboarding-km-error" className="ltc-error-message">{kmValidation}</p> : null}
+=======
+          {kmValidation ? <p className="ltc-error-message">{kmValidation}</p> : null}
+>>>>>>> origin/main
 
           <div className="ltc-button-group ltc-button-group--row">
             <button type="button" onClick={() => setWizard((prev) => ({ ...prev, step: 2 }))} disabled={submitting} className="ltc-button ltc-button--secondary">

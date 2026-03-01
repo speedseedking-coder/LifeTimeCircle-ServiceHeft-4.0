@@ -61,25 +61,42 @@ export function DesignSystemReference() {
         </Footer>
       }
     >
+<<<<<<< HEAD
       <main className="ltc-main ltc-main--wide" data-testid="design-system-reference">
         <h1>Design System Reference</h1>
         <p className="ltc-muted">Interne Referenzseite für Komponenten, Zustände und Tokens. Nicht Teil der produktiven Navigation.</p>
+=======
+      <div className="ltc-container-small">
+        <h1>Design System Reference</h1>
+>>>>>>> origin/main
 
         {/* ========== BUTTONS ========== */}
         <div className="ltc-mb-8">
           <h2>Buttons</h2>
+<<<<<<< HEAD
           <div className="ltc-token-row">
+=======
+          <div style={{ display: "flex", gap: "var(--ltc-space-4)", flexWrap: "wrap" }}>
+>>>>>>> origin/main
             <Button variant="primary">Primary</Button>
             <Button variant="secondary">Secondary</Button>
             <Button variant="danger">Danger</Button>
             <Button variant="ghost">Ghost</Button>
           </div>
+<<<<<<< HEAD
           <div className="ltc-token-row ltc-mt-4">
+=======
+          <div style={{ display: "flex", gap: "var(--ltc-space-4)", flexWrap: "wrap", marginTop: "var(--ltc-space-4)" }}>
+>>>>>>> origin/main
             <Button size="sm">Small</Button>
             <Button size="base">Base</Button>
             <Button size="lg">Large</Button>
           </div>
+<<<<<<< HEAD
           <div className="ltc-token-row ltc-mt-4">
+=======
+          <div style={{ display: "flex", gap: "var(--ltc-space-4)", flexWrap: "wrap", marginTop: "var(--ltc-space-4)" }}>
+>>>>>>> origin/main
             <Button disabled>Disabled</Button>
             <Button loading>Loading</Button>
           </div>
@@ -106,15 +123,24 @@ export function DesignSystemReference() {
         {/* ========== BADGE ========== */}
         <div className="ltc-mb-8">
           <h2>Badge (Status)</h2>
+<<<<<<< HEAD
           <div className="ltc-token-row">
+=======
+          <div style={{ display: "flex", gap: "var(--ltc-space-4)", flexWrap: "wrap" }}>
+>>>>>>> origin/main
             <Badge variant="neutral">Neutral</Badge>
             <Badge variant="info">Info</Badge>
             <Badge variant="success">Success</Badge>
             <Badge variant="warning">Warning</Badge>
             <Badge variant="error">Error</Badge>
           </div>
+<<<<<<< HEAD
           <h3 className="ltc-mt-6">Trust Ampel</h3>
           <div className="ltc-token-row">
+=======
+          <h3 style={{ marginTop: "var(--ltc-space-6)" }}>Trust Ampel</h3>
+          <div style={{ display: "flex", gap: "var(--ltc-space-4)", flexWrap: "wrap" }}>
+>>>>>>> origin/main
             <Badge variant="trust-green">Grün</Badge>
             <Badge variant="trust-yellow">Gelb</Badge>
             <Badge variant="trust-red">Rot</Badge>
@@ -128,6 +154,7 @@ export function DesignSystemReference() {
           <Alert variant="info" title="Hinweis">
             Dies ist eine Informationsmeldung.
           </Alert>
+<<<<<<< HEAD
           <Alert variant="success" title="Erfolg" className="ltc-mt-4">
             Die Aktion war erfolgreich.
           </Alert>
@@ -135,6 +162,15 @@ export function DesignSystemReference() {
             Bitte beachte diese Warnung.
           </Alert>
           <Alert variant="error" title="Fehler" className="ltc-mt-4" dismissible>
+=======
+          <Alert variant="success" title="Erfolg" style={{ marginTop: "var(--ltc-space-4)" }}>
+            Die Aktion war erfolgreich.
+          </Alert>
+          <Alert variant="warning" title="Warnung" style={{ marginTop: "var(--ltc-space-4)" }}>
+            Bitte beachte diese Warnung.
+          </Alert>
+          <Alert variant="error" title="Fehler" style={{ marginTop: "var(--ltc-space-4)" }} dismissible>
+>>>>>>> origin/main
             Es ist ein Fehler aufgetreten.
           </Alert>
         </div>
@@ -166,6 +202,7 @@ export function DesignSystemReference() {
         {/* ========== COLORS ========== */}
         <div className="ltc-mb-8">
           <h2>Farben (Tokens)</h2>
+<<<<<<< HEAD
           <div className="ltc-design-swatch-grid">
             <div className="ltc-design-swatch ltc-design-swatch--brand">
               Brand
@@ -183,11 +220,34 @@ export function DesignSystemReference() {
               Trust: Grün
             </div>
             <div className="ltc-design-swatch ltc-design-swatch--trust-yellow">
+=======
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "var(--ltc-space-4)" }}>
+            <div style={{ background: "var(--ltc-color-brand)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+              Brand
+            </div>
+            <div style={{ background: "var(--ltc-color-success)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+              Success
+            </div>
+            <div style={{ background: "var(--ltc-color-warning)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+              Warning
+            </div>
+            <div style={{ background: "var(--ltc-color-error)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+              Error
+            </div>
+            <div style={{ background: "var(--ltc-color-trust-green)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+              Trust: Grün
+            </div>
+            <div style={{ background: "var(--ltc-color-trust-yellow)", padding: "var(--ltc-space-4)", borderRadius: "var(--ltc-radius-base)" }}>
+>>>>>>> origin/main
               Trust: Gelb
             </div>
           </div>
         </div>
+<<<<<<< HEAD
       </main>
+=======
+      </div>
+>>>>>>> origin/main
     </PublicLayout>
   );
 }

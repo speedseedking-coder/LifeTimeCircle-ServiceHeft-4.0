@@ -1,23 +1,41 @@
 const BLOG_POSTS = [
   {
     id: "spring-maintenance-2026",
+<<<<<<< HEAD
     title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
     excerpt:
       "Eine belastbare Fahrzeughistorie entsteht nicht durch Stichworte, sondern durch nachvollziehbare Einträge, Belege und klare Zuordnung.",
+=======
+    title: "Frühjahrsinspektion 2026: Das sollten Sie nicht vergessen",
+    excerpt:
+      "Die Frühjahrsinspektion ist essentiell, um Ihr Fahrzeug nach dem Winter wieder in Top-Zustand zu versetzen. Wir zeigen Ihnen, worauf Sie achten sollten.",
+>>>>>>> origin/main
     date: "2026-03-01",
   },
   {
     id: "trust-ampel-guide",
+<<<<<<< HEAD
     title: "Trust-Ampel richtig lesen: Dokumentationsqualität statt Technikurteil",
     excerpt:
       "Die Trust-Ampel beschreibt, wie gut Historie und Nachweise dokumentiert sind. Sie ist bewusst keine technische Diagnose.",
+=======
+    title: "So funktioniert die Trust-Ampel: Ein Leitfaden",
+    excerpt:
+      "Verstehen Sie die Trust-Ampel von LifeTimeCircle – wie sie funktioniert, was die Farben bedeuten und wie Sie Ihre Fahrzeugbewertung verbessern können.",
+>>>>>>> origin/main
     date: "2026-02-28",
   },
   {
     id: "digital-vehicle-passport",
+<<<<<<< HEAD
     title: "Serviceeinträge sauber vorbereiten: Welche Angaben wirklich helfen",
     excerpt:
       "Datum, Typ, durchgeführt von, Kilometerstand und passender Nachweis machen aus einem Eintrag eine prüfbare Historie.",
+=======
+    title: "Digitaler Fahrzeugpass: Die Zukunft der Fahrzeugdokumentation",
+    excerpt:
+      "Der digitale Fahrzeugpass revolutioniert die Art, wie wir Fahrzeughistorien speichern und verwalten. Erfahren Sie, was Sie erwartet.",
+>>>>>>> origin/main
     date: "2026-02-25",
   },
 ];

@@ -50,38 +50,64 @@ export default function CookieSettingsCard(props: { onSaved?: () => void }): JSX
       <div className="ltc-divider" />
 
       <div className="ltc-row">
+<<<<<<< HEAD
         <div id="cookies-necessary-copy">
           <div className="ltc-strong">Notwendig</div>
           <div className="ltc-muted">Sitzung, Sicherheit, grundlegende Funktionen</div>
         </div>
         <input type="checkbox" checked disabled className="ltc-check" aria-describedby="cookies-necessary-copy" />
+=======
+        <div>
+          <div className="ltc-strong">Notwendig</div>
+          <div className="ltc-muted">Sitzung, Sicherheit, grundlegende Funktionen</div>
+        </div>
+        <input type="checkbox" checked disabled className="ltc-check" />
+>>>>>>> origin/main
       </div>
 
       <div className="ltc-divider" />
 
       <div className="ltc-row">
+<<<<<<< HEAD
         <div id="cookies-analytics-copy">
+=======
+        <div>
+>>>>>>> origin/main
           <div className="ltc-strong">Analytics (optional)</div>
           <div className="ltc-muted">anonymisierte Nutzungsstatistik zur Verbesserung</div>
         </div>
         <input
+<<<<<<< HEAD
           id="cookies-analytics-toggle"
+=======
+>>>>>>> origin/main
           type="checkbox"
           checked={prefs.analytics}
           onChange={(event) => setPrefs((current) => ({ ...current, analytics: event.target.checked }))}
           className="ltc-check"
+<<<<<<< HEAD
           aria-describedby="cookies-analytics-copy"
+=======
+>>>>>>> origin/main
         />
       </div>
 
       <div className="ltc-divider" />
 
       <div className="ltc-row">
+<<<<<<< HEAD
         <div id="cookies-marketing-copy">
           <div className="ltc-strong">Marketing/Tracking</div>
           <div className="ltc-muted">derzeit nicht verwendet</div>
         </div>
         <input type="checkbox" checked={prefs.marketing} disabled className="ltc-check" aria-describedby="cookies-marketing-copy" />
+=======
+        <div>
+          <div className="ltc-strong">Marketing/Tracking</div>
+          <div className="ltc-muted">derzeit nicht verwendet</div>
+        </div>
+        <input type="checkbox" checked={prefs.marketing} disabled className="ltc-check" />
+>>>>>>> origin/main
       </div>
 
       <div className="ltc-actions">

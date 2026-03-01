@@ -246,6 +246,7 @@ async function setHash(page: Page, hash: string): Promise<void> {
   }, hash);
 }
 
+<<<<<<< HEAD
 test("public contact page shows support guidance and email", async ({ page }) => {
   await boot(page);
   await setHash(page, "#/contact");
@@ -273,6 +274,12 @@ test("public faq, jobs and datenschutz pages align with copy source of truth", a
   main = page.locator("main");
   await expect(main).toContainText("Produktiver Zugriff setzt die Zustimmung zu AGB und Datenschutz voraus");
   await expect(main).toContainText("Öffentliche Downloads gibt es nicht");
+=======
+test("public contact page shows email", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/contact");
+  await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
+>>>>>>> origin/main
 });
 
 // blog/news routes are now ACTIVE (FEATURES.blogNews = true in appRouting.ts)
@@ -282,11 +289,19 @@ test("blog/news routes return content when feature enabled", async ({ page }) =>
   await setHash(page, "#/blog");
   // Should NOT be 404 anymore - should show blog content in main
   await expect(page.locator("main")).toContainText("Blog");
+<<<<<<< HEAD
   await expect(page.locator("main")).toContainText("Nachweise statt Behauptung");
   await setHash(page, "#/news");
   // Should NOT be 404 anymore - should show news content in main
   await expect(page.locator("main")).toContainText("News");
   await expect(page.locator("main")).toContainText("Public-QR bleibt bewusst datenarm");
+=======
+  await expect(page.locator("main")).toContainText("Frühjahrsinspektion");
+  await setHash(page, "#/news");
+  // Should NOT be 404 anymore - should show news content in main
+  await expect(page.locator("main")).toContainText("News");
+  await expect(page.locator("main")).toContainText("EU-Verordnung");
+>>>>>>> origin/main
 });
 
 test("public entry page offers both role paths into auth", async ({ page }) => {
@@ -559,6 +574,7 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("PENDING");
   await expect(page.locator("#documents-upload-input")).toHaveAttribute("aria-required", "true");
   await expect(page.locator("#documents-lookup-input")).toHaveAttribute("aria-required", "true");
+<<<<<<< HEAD
   await expect(page.locator('[data-testid="documents-notice"]')).toContainText("service.pdf");
 });
 
@@ -575,6 +591,8 @@ test("Documents lookup validates empty input and keeps focus on lookup field", a
 
   await expect(page.locator("#documents-lookup-error")).toContainText("Bitte eine Dokument-ID eingeben.");
   await expect(page.locator("#documents-lookup-input")).toBeFocused();
+=======
+>>>>>>> origin/main
 });
 
 test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
@@ -1328,9 +1346,15 @@ test("blog list page is accessible and shows posts", async ({ page }) => {
   
   const main = page.locator("main");
   await expect(main).toContainText("Blog");
+<<<<<<< HEAD
   await expect(main).toContainText("Nachweise statt Behauptung");
   await expect(main).toContainText("Trust-Ampel richtig lesen");
   await expect(main).toContainText("Serviceeinträge sauber vorbereiten");
+=======
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Trust-Ampel");
+  await expect(main).toContainText("Digitaler Fahrzeugpass");
+>>>>>>> origin/main
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
@@ -1339,9 +1363,15 @@ test("blog post page displays full article content", async ({ page }) => {
   await setHash(page, "#/blog/spring-maintenance-2026");
   
   const main = page.locator("main");
+<<<<<<< HEAD
   await expect(main).toContainText("Nachweise statt Behauptung");
   await expect(main).toContainText("Was in jeden guten Eintrag gehört:");
   await expect(main).toContainText("Welche Nachweise den Unterschied machen:");
+=======
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Reifen:");
+  await expect(main).toContainText("Bremsanlage:");
+>>>>>>> origin/main
   await expect(main).toContainText("Zurück zum Blog");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
@@ -1352,9 +1382,15 @@ test("news list page is accessible and shows articles", async ({ page }) => {
   
   const main = page.locator("main");
   await expect(main).toContainText("News");
+<<<<<<< HEAD
   await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
   await expect(main).toContainText("Uploads starten weiterhin in Quarantäne");
   await expect(main).toContainText("Moderator bleibt strikt auf Blog und News begrenzt");
+=======
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Flottenmanagement");
+  await expect(main).toContainText("100.000 Fahrzeuge");
+>>>>>>> origin/main
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
@@ -1363,9 +1399,15 @@ test("news post page displays full article content", async ({ page }) => {
   await setHash(page, "#/news/eu-digital-vehicle-passport-2027");
   
   const main = page.locator("main");
+<<<<<<< HEAD
   await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
   await expect(main).toContainText("Was sichtbar ist:");
   await expect(main).toContainText("Was bewusst nicht sichtbar ist:");
+=======
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Digitalen Fahrzeugpass");
+  await expect(main).toContainText("Was ändert sich?");
+>>>>>>> origin/main
   await expect(main).toContainText("Zurück zu News");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
@@ -1396,7 +1438,10 @@ test("responsive stylesheet includes mobile-first media queries (640px, 768px, 1
   const mediaQueryText = mediaQueries.join(" ");
   expect(mediaQueryText.toLowerCase()).toContain("max-width");
   expect(mediaQueryText.toLowerCase()).toContain("min-width");
+<<<<<<< HEAD
   expect(mediaQueryText).toContain("1920px");
+=======
+>>>>>>> origin/main
   expect(mediaQueries.length).toBeGreaterThan(0);
 });
 
@@ -1494,6 +1539,7 @@ test("mobile layouts avoid horizontal overflow on vehicles, vehicle detail and a
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
     expect(hasOverflow).toBe(false);
   }
+<<<<<<< HEAD
 });
 
 test("desktop layouts use split grids on vehicles, vehicle detail, admin and documents at 1920px", async ({ page }) => {
@@ -1636,4 +1682,6 @@ test("desktop layouts use split grids on vehicles, vehicle detail, admin and doc
     page.locator('[data-testid="documents-desktop-grid"] > *').nth(1).boundingBox(),
   ]);
   expect(documentColumns[0]?.x).toBeLessThan(documentColumns[1]?.x ?? 0);
+=======
+>>>>>>> origin/main
 });

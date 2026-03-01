@@ -125,6 +125,7 @@ export default function VehiclesPage(): JSX.Element {
   }
 
   return (
+<<<<<<< HEAD
     <main className="ltc-main ltc-main--xl" data-testid="vehicles-page">
       <section className="ltc-page-intro">
         <div className="ltc-page-intro__copy">
@@ -139,10 +140,67 @@ export default function VehiclesPage(): JSX.Element {
             <div className="ltc-kpi-tile__meta">Aktuell im sichtbaren Owner-Workspace.</div>
           </div>
         </div>
+=======
+    <main className="ltc-main ltc-main--wide">
+      <h1>Vehicles</h1>
+      <p>Owner-scoped Vehicle-Liste mit serverseitigem Consent-, RBAC- und Object-Level-Enforcement.</p>
+
+      <section className="ltc-card ltc-section--card">
+        <h2>Neues Fahrzeug anlegen</h2>
+        <form onSubmit={(e) => void onCreate(e)}>
+          <div className="ltc-form-grid">
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                VIN
+                <input
+                  className="ltc-form-group__input"
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value)}
+                  placeholder="z. B. WAUZZZ..."
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                Nickname (optional)
+                <input
+                  className="ltc-form-group__input"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="z. B. Familienauto"
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+            <div className="ltc-form-group">
+              <label className="ltc-form-group__label">
+                Unfallstatus
+                <select
+                  className="ltc-form-group__select"
+                  value={accidentStatus}
+                  onChange={(e) => setAccidentStatus(e.target.value as typeof accidentStatus)}
+                >
+                  <option value="unknown">Unbekannt</option>
+                  <option value="accident_free">Unfallfrei</option>
+                  <option value="not_free">Nicht unfallfrei</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="ltc-button-group">
+            <button type="submit" className="ltc-button ltc-button--primary" disabled={creating}>
+              {creating ? "Speichert..." : "Fahrzeug speichern"}
+            </button>
+          </div>
+        </form>
+>>>>>>> origin/main
       </section>
 
       {error ? <InlineErrorBanner message={error} /> : null}
 
+<<<<<<< HEAD
       <div className="ltc-layout-grid ltc-layout-grid--sidebar ltc-section" data-testid="vehicles-desktop-grid">
         <div className="ltc-card-stack">
           <section className="ltc-card ltc-section--card ltc-card--subtle">
@@ -225,10 +283,37 @@ export default function VehiclesPage(): JSX.Element {
               <li className="ltc-list__item">
                 <a className="ltc-list__link" href="#/consent">Zu Consent</a>
               </li>
+=======
+      {viewState === "loading" ? (
+        <section className="ltc-card ltc-section--card">
+          <div className="ltc-muted">Vehicles werden geladen...</div>
+        </section>
+      ) : null}
+
+      {viewState === "ready" ? (
+        <section className="ltc-card ltc-section--card">
+          <h2>Meine Fahrzeuge</h2>
+          {vehicles.length === 0 ? (
+            <p className="ltc-muted">Noch keine Fahrzeuge vorhanden.</p>
+          ) : (
+            <ul className="ltc-list">
+              {vehicles.map((vehicle) => (
+                <li key={vehicle.id} className="ltc-list__item">
+                  <a className="ltc-list__link" href={`#/vehicles/${encodeURIComponent(vehicle.id)}`}>
+                    {vehicle.nickname?.trim() || vehicle.vin_masked}
+                  </a>{" "}
+                  <span className="ltc-muted">({vehicle.vin_masked})</span> ·{" "}
+                  <a className="ltc-list__link" href={trustFoldersHref(vehicle.id)}>
+                    Trust Folders
+                  </a>
+                </li>
+              ))}
+>>>>>>> origin/main
             </ul>
           </section>
         </div>
 
+<<<<<<< HEAD
         <aside className="ltc-card-stack">
           <section className="ltc-card ltc-section--card" data-testid="vehicles-list-card">
             <span className="ltc-card__eyebrow">Fleet</span>
@@ -262,6 +347,22 @@ export default function VehiclesPage(): JSX.Element {
           </section>
         </aside>
       </div>
+=======
+      <section className="ltc-page-nav">
+        <h2>Navigation (Hash)</h2>
+        <ul className="ltc-list">
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/documents">Zu Documents</a>
+          </li>
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/onboarding">Zu Onboarding</a>
+          </li>
+          <li className="ltc-list__item">
+            <a className="ltc-list__link" href="#/consent">Zu Consent</a>
+          </li>
+        </ul>
+      </section>
+>>>>>>> origin/main
     </main>
   );
 }

@@ -1,5 +1,6 @@
 const BLOG_CONTENT: Record<string, { title: string; date: string; content: string }> = {
   "spring-maintenance-2026": {
+<<<<<<< HEAD
     title: "Nachweise statt Behauptung: So wird Fahrzeughistorie belastbar",
     date: "2026-03-01",
     content: `Eine belastbare Fahrzeughistorie beginnt nicht mit einer großen Behauptung, sondern mit einem sauberen Eintrag und einem passenden Nachweis.\n\n**Was in jeden guten Eintrag gehört:**\n- Datum der Arbeit\n- Typ des Eintrags\n- durchgeführt von\n- Kilometerstand\n- kurze, sachliche Beschreibung\n\n**Welche Nachweise den Unterschied machen:**\n- Rechnung oder Werkstattbeleg\n- Prüfbericht oder Gutachten\n- Foto der Arbeit oder des Bauteils\n- Zusatzdokumente nur dann, wenn sie zum Eintrag passen\n\nWenn Einträge und Nachweise sauber zusammengehören, wird Historie nachvollziehbar. Genau darauf baut das Service Heft 4.0 auf.`,
@@ -13,6 +14,21 @@ const BLOG_CONTENT: Record<string, { title: string; date: string; content: strin
     title: "Serviceeinträge sauber vorbereiten: Welche Angaben wirklich helfen",
     date: "2026-02-25",
     content: `Ein Eintrag wird erst dann nützlich, wenn er für andere lesbar und prüfbar bleibt. Dafür helfen wenige Pflichtangaben mehr als viel Freitext.\n\n**Diese Felder sollten sauber gepflegt sein:**\n- Datum\n- Typ\n- durchgeführt von\n- Kilometerstand\n- kurze Bemerkung nur mit relevanten Fakten\n\n**Typische Fehler, die Trust kosten:**\n- unklare Werkstatt- oder Quellenangaben\n- fehlender Kilometerstand\n- Beleg ohne Bezug zum Eintrag\n- Fotos oder PDFs ohne erkennbaren Kontext\n\nWenn du diese Punkte konsequent pflegst, steigen Nachvollziehbarkeit, Trust-Stufe und Qualität des gesamten Verlaufs.`,
+=======
+    title: "Frühjahrsinspektion 2026: Das sollten Sie nicht vergessen",
+    date: "2026-03-01",
+    content: `Die Frühjahrsinspektion ist ein wichtiger Punkt im Wartungskalender jeden Fahrzeughalters. Nach den Wintermonaten sollten Sie Ihr Fahrzeug gründlich überprüfen.\n\n**Checkliste für die Frühjahrsinspektion:**\n- Reifen: Verschleiß prüfen, Druck kontrollieren (Winter- auf Sommerreifen wechseln)\n- Bremsanlage: Beläge inspizieren, Flüssigkeit überprüfen\n- Filter: Luft- und Pollenfilter wechseln\n- Beleuchtung: Scheinwerfer und Bremslichter testen\n- Flüssigkeiten: Motoröl, Kühlmittel, Scheibenwischflüssigkeit nachfüllen\n- Batterie: Spannung und Verschleiß testen\n- Korrosion: Fahrzeugboden und Unterboden auf Rost überprüfen\n\nDie digitale Dokumentation Ihrer Wartungen über LifeTimeCircle sorgt für Transparenz und erhöht langfristig den Wiederverkaufswert Ihres Fahrzeugs.`,
+  },
+  "trust-ampel-guide": {
+    title: "So funktioniert die Trust-Ampel: Ein Leitfaden",
+    date: "2026-02-28",
+    content: `Die Trust-Ampel von LifeTimeCircle ist ein innovatives Bewertungssystem zur Visualisierung der Dokumentations- und Nachweisqualität eines Fahrzeugs.\n\n**Farbbedeutung:**\n- **GRÜN**: Umfassende Dokumentation und Nachweise, hohe Transparenz\n- **GELB**: Teilweise Dokumentation, normale Transparenz\n- **ORANGE**: Begrenzte Dokumentation, niedrigere Transparenz\n- **ROT**: Unzureichende Dokumentation oder Hinweise auf Probleme\n\n**Wie verbessern Sie Ihre Bewertung?**\n1. Laden Sie regelmäßig Wartungsbelege hoch\n2. Dokumentieren Sie alle Inspektionen und Reparaturen\n3. Fügen Sie TÜV-Berichte und technische Unterlagen hinzu\n4. Halten Sie Ihre Unfalldaten aktuell\n\nDie Trust-Ampel ist **keine Aussage über den technischen Zustand** Ihres Fahrzeugs, sondern misst ausschließlich die Qualität der verfügbaren Dokumentation und Nachweise.`,
+  },
+  "digital-vehicle-passport": {
+    title: "Digitaler Fahrzeugpass: Die Zukunft der Fahrzeugdokumentation",
+    date: "2026-02-25",
+    content: `Der digitale Fahrzeugpass (Digital Vehicle Passport, DVP) ist ein EU-Standard, der ab 2027 verpflichtend wird. LifeTimeCircle bereitet Fahrzeughalter und Werkstätten auf diese Veränderung vor.\n\n**Was ist ein digitaler Fahrzeugpass?**\nEin zentrales, digitales Repository aller fahrzeugbezogenen Informationen:\n- Fahrzeugidentifikation und technische Daten\n- Wartungshistorie und Inspektionsberichte\n- Reparaturunterlagen und Teileaustausch\n- Verkehrsunfallhistorie\n- Emissionswerte und Compliance-Daten\n\n**Vorteile:**\n- Transparenz beim Fahrzeugkauf\n- Bessere Wartungsplanung\n- Erhöhte Verkehrssicherheit\n- Reduzierter Verwaltungsaufwand\n- Höherer Wiederverkaufswert\n\nLifeTimeCircle's Service-Heft-System ist bereits vollständig kompatibel mit den zukünftigen DVP-Standards.`,
+>>>>>>> origin/main
   },
 };
 
