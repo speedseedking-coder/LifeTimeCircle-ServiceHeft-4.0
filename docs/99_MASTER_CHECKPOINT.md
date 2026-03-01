@@ -101,11 +101,15 @@ Diese Punkte sind kein Ersatz für `git log`, sondern nur die aktuelle Lagebesch
 
 ---
 
-## 6) Offene Themen
-Die verbleibenden Themen liegen aktuell nicht mehr in generischer UI-/Copy-Politur, sondern in echten Produkt- und Betriebsentscheidungen:
+## 6) Offene Themen & Infrastruktur (TBD vor Live-Rollout)
+Die verbleibenden Aufgaben sind **Infrastruktur- und Betriebsentscheidungen**, nicht Softwarearbeit:
 
-- Finaler Live-Betrieb ist noch nicht als produktive Deployment-, Domain-, Monitoring- und Incident-Routine abgeschlossen.
-- Rechtliche und organisatorische Freigaben vor öffentlichem Rollout bleiben eigenständige Business-Entscheidungen.
+- **Deployment-Architektur** festlegen (Hosted-Plattform, APIs, DB, CDN – siehe `docs/14_DEPLOYMENT_GUIDE.md`)
+- **Secrets Management** implementieren (Production Secret-Manager, Rotation-Plan – siehe `docs/16_SECRETS_MANAGEMENT.md`)
+- **Monitoring & Incident-Response** aufsetzen (SLOs, Alerts, Runbooks – siehe `docs/15_MONITORING_INCIDENT_RESPONSE.md`)
+- **Domain, TLS und Redirect-Regeln** einrichten
+- **Datenbank-Backup/Restore** verifizieren
+- **Rechtliche, org. Freigaben** vor öffentlichem Rollout
 - Spätere Produktbereiche wie Übergabe-/Verkaufsflüsse für VIP/Dealer bleiben bewusst nachgelagerte Scope-Themen.
 
 ---
@@ -119,6 +123,9 @@ Wenn du wissen willst:
 - Welche Copy für Website/Web-App gelten soll: `docs/07_WEBSITE_COPY_MASTER_CONTEXT.md`
 - Welcher Release-Candidate aktuell übergabefähig ist: `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
 - Ob der Workspace technisch belastbar ist: `tools/test_all.ps1` und `tools/ist_check.ps1`
+- Wie Deployment zu Production läuft: `docs/14_DEPLOYMENT_GUIDE.md`
+- Wie Monitoring & Incidents funktionieren: `docs/15_MONITORING_INCIDENT_RESPONSE.md`
+- Wie Secrets sicher verwaltet werden: `docs/16_SECRETS_MANAGEMENT.md`
 
 ---
 
