@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Badge, type BadgeVariant } from "../components/ui/Badge";
 import InlineErrorBanner from "../components/InlineErrorBanner";
 import { authHeaders, getAuthToken } from "../lib.auth";
 import { handleUnauthorized } from "../lib/handleUnauthorized";
@@ -12,6 +13,15 @@ import {
   uploadDocument,
   type DocumentRecord,
 } from "../documentsApi";
+
+type DocumentStats = {
+  total: number;
+  totalSize: number;
+  byStatus: Record<string, number>;
+  byScanStatus: Record<string, number>;
+  byPiiStatus: Record<string, number>;
+  byContentType: Record<string, number>;
+};
 
 function extractCode(body: unknown): string {
   if (typeof body === "string") return body;
@@ -38,6 +48,56 @@ function toErrorMessage(result: { status: number; body?: unknown; error: string 
     return "Consent erforderlich.";
   }
   return "Documents konnten nicht verarbeitet werden.";
+}
+
+/* ========== DOCUMENT STATS & ANALYTICS ========== */
+
+function calculateDocumentStats(docs: DocumentRecord[]): DocumentStats {
+  const stats: DocumentStats = {
+    total: docs.length,
+    totalSize: 0,
+    byStatus: {},
+    byScanStatus: {},
+    byPiiStatus: {},
+    byContentType: {},
+  };
+
+  for (const doc of docs) {
+    stats.totalSize += doc.size_bytes;
+    stats.byStatus[doc.status] = (stats.byStatus[doc.status] ?? 0) + 1;
+    stats.byScanStatus[doc.scan_status] = (stats.byScanStatus[doc.scan_status] ?? 0) + 1;
+    stats.byPiiStatus[doc.pii_status] = (stats.byPiiStatus[doc.pii_status] ?? 0) + 1;
+
+    const mimeType = doc.content_type?.split("/")?.[1] || "unknown";
+    stats.byContentType[mimeType] = (stats.byContentType[mimeType] ?? 0) + 1;
+  }
+
+  return stats;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 10) / 10 + " " + sizes[i];
+}
+
+function getStatusVariant(status: string): BadgeVariant {
+  if (status === "APPROVED" || status === "CLEAN" || status === "OK") return "success";
+  if (status === "REJECTED" || status === "INFECTED" || status === "CONFIRMED") return "error";
+  if (status === "QUARANTINED" || status === "PENDING" || status === "SUSPECTED") return "warning";
+  return "neutral";
+}
+
+function renderStatBadges(values: Record<string, number>): JSX.Element[] {
+  return Object.entries(values)
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([label, count]) => (
+      <Badge key={label} variant={getStatusVariant(label)} size="sm">
+        {label}: {count}
+      </Badge>
+    ));
 }
 
 function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: boolean; onRefresh?: (next: DocumentRecord) => void }) {
@@ -116,6 +176,15 @@ export default function DocumentsPage(): JSX.Element {
   const [adminDocs, setAdminDocs] = useState<DocumentRecord[]>([]);
   const [adminVisible, setAdminVisible] = useState(false);
   const [adminForbidden, setAdminForbidden] = useState(false);
+  const docStats = useMemo(
+    () =>
+      calculateDocumentStats([
+        ...recentDocs,
+        ...adminDocs,
+        ...(lookupDoc && !recentDocs.includes(lookupDoc) && !adminDocs.includes(lookupDoc) ? [lookupDoc] : []),
+      ]),
+    [recentDocs, adminDocs, lookupDoc],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -262,6 +331,40 @@ export default function DocumentsPage(): JSX.Element {
           </div>
         </form>
       </section>
+
+      {docStats.total > 0 ? (
+        <section className="ltc-card ltc-section ltc-section--card">
+          <h2>Dokumentenstatus</h2>
+          <div className="ltc-grid ltc-grid--3">
+            <div>
+              <strong>Gesamt</strong>
+              <p className="ltc-muted">{docStats.total} Dokumente im aktuellen Arbeitskontext</p>
+            </div>
+            <div>
+              <strong>Volumen</strong>
+              <p className="ltc-muted">{formatBytes(docStats.totalSize)} Gesamtdatenmenge</p>
+            </div>
+            <div>
+              <strong>Formate</strong>
+              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byContentType)}</div>
+            </div>
+          </div>
+          <div className="ltc-grid ltc-grid--3 ltc-mt-4">
+            <div>
+              <strong>Freigabe</strong>
+              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byStatus)}</div>
+            </div>
+            <div>
+              <strong>Scan</strong>
+              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byScanStatus)}</div>
+            </div>
+            <div>
+              <strong>PII</strong>
+              <div className="ltc-flex ltc-flex--wrap ltc-mt-2">{renderStatBadges(docStats.byPiiStatus)}</div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {error ? <InlineErrorBanner message={error} /> : null}
 

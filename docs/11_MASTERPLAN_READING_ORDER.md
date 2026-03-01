@@ -9,7 +9,7 @@
 ### Szenario 1: Developer (du bist es wahrscheinlich)
 
 ```
-Montag 3/1, vor 9:00 CET:
+Sonntag, 2026-03-01, vor 09:00 CET:
 
 1. 📋 11_MASTERPLAN_CODEX_CHEATSHEET.md         (5 min)
    └─ Print + Laminate, auf Desk legen!
@@ -20,7 +20,7 @@ Montag 3/1, vor 9:00 CET:
 3. 📊 11_MASTERPLAN_INDEX.md                    (15 min)
    └─ Überblick + QuickStart
    
-4. � 11_MASTERPLAN_FIX_CARD.md                 (10 min)
+4. 🛠 11_MASTERPLAN_FIX_CARD.md                (10 min)
    └─ Alle Fixes + Tasks tracken
    
 5. 📝 11_MASTERPLAN_DAILY_CHECKLIST.md          (10 min)
@@ -35,7 +35,7 @@ TOTAL: ~60 min, dann START P0-W1!
 ### Szenario 2: Project Manager / Tech Lead
 
 ```
-Freitag 2/28 oder Montag früh:
+Samstag, 2026-02-28, oder Sonntag, 2026-03-01, früh:
 
 1. 📊 11_MASTERPLAN_INDEX.md                    (15 min)
    └─ Überblick
