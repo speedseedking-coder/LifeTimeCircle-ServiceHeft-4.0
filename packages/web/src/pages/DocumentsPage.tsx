@@ -167,6 +167,7 @@ function DocumentMetaCard(props: { title: string; doc: DocumentRecord; admin?: b
 
 export default function DocumentsPage(): JSX.Element {
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"upload" | "lookup" | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [recentDocs, setRecentDocs] = useState<DocumentRecord[]>([]);
@@ -224,11 +225,13 @@ export default function DocumentsPage(): JSX.Element {
     e.preventDefault();
     if (!selectedFile) {
       setError("Bitte zuerst eine Datei wählen.");
+      setErrorField("upload");
       return;
     }
 
     setUploading(true);
     setError("");
+    setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
     const res = await uploadDocument(selectedFile, { headers });
@@ -239,6 +242,7 @@ export default function DocumentsPage(): JSX.Element {
         handleUnauthorized();
         return;
       }
+      setErrorField("upload");
       setError(toErrorMessage(res));
       return;
     }
@@ -247,6 +251,7 @@ export default function DocumentsPage(): JSX.Element {
     setLookupDoc(res.body);
     setLookupId(res.body.id);
     setSelectedFile(null);
+    setErrorField(null);
     const input = document.getElementById("documents-upload-input") as HTMLInputElement | null;
     if (input) input.value = "";
 
@@ -260,11 +265,13 @@ export default function DocumentsPage(): JSX.Element {
     const id = lookupId.trim();
     if (!id) {
       setError("Bitte eine Dokument-ID eingeben.");
+      setErrorField("lookup");
       return;
     }
 
     setLookupBusy(true);
     setError("");
+    setErrorField(null);
     const token = getAuthToken();
     const headers = authHeaders(token);
     const res = await getDocument(id, { headers });
@@ -278,11 +285,13 @@ export default function DocumentsPage(): JSX.Element {
       if (res.status === 403) {
         setLookupDoc(null);
       }
+      setErrorField("lookup");
       setError(toErrorMessage(res));
       return;
     }
 
     setLookupDoc(res.body);
+    setErrorField(null);
   }
 
   function replaceAdminDoc(next: DocumentRecord) {
@@ -300,10 +309,17 @@ export default function DocumentsPage(): JSX.Element {
         <h2>Upload</h2>
         <p className="ltc-muted">Erlaubt: PDF, PNG, JPG, JPEG. Uploads starten immer als QUARANTINED + PENDING.</p>
         <form onSubmit={(e) => void onUpload(e)}>
+          <label className="ltc-form-group__label" htmlFor="documents-upload-input">
+            Dokument auswählen
+          </label>
           <input
             id="documents-upload-input"
             type="file"
             accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+            aria-label="Dokument für Upload auswählen"
+            aria-required="true"
+            aria-invalid={errorField === "upload"}
+            aria-describedby={errorField === "upload" ? "documents-upload-error" : undefined}
             onChange={(e) => setSelectedFile(e.currentTarget.files?.[0] ?? null)}
           />
           <div className="ltc-button-group">
@@ -311,24 +327,41 @@ export default function DocumentsPage(): JSX.Element {
               {uploading ? "Lädt hoch..." : "Dokument hochladen"}
             </button>
           </div>
+          {errorField === "upload" && error ? (
+            <p id="documents-upload-error" className="ltc-helper-text ltc-helper-text--error">
+              {error}
+            </p>
+          ) : null}
         </form>
       </section>
 
       <section className="ltc-card ltc-section ltc-section--card">
         <h2>Dokument-ID prüfen</h2>
         <form onSubmit={(e) => void onLookup(e)}>
+          <label className="ltc-form-group__label" htmlFor="documents-lookup-input">
+            Dokument-ID
+          </label>
           <input
+            id="documents-lookup-input"
             className="ltc-form-group__input"
             value={lookupId}
             onChange={(e) => setLookupId(e.target.value)}
             placeholder="Dokument-ID eingeben"
             autoComplete="off"
+            aria-required="true"
+            aria-invalid={errorField === "lookup"}
+            aria-describedby={errorField === "lookup" ? "documents-lookup-error" : undefined}
           />
           <div className="ltc-button-group">
             <button type="submit" disabled={lookupBusy} className="ltc-button ltc-button--primary">
               {lookupBusy ? "Prüft..." : "Dokument laden"}
             </button>
           </div>
+          {errorField === "lookup" && error ? (
+            <p id="documents-lookup-error" className="ltc-helper-text ltc-helper-text--error">
+              {error}
+            </p>
+          ) : null}
         </form>
       </section>
 

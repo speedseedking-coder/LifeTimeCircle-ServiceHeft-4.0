@@ -28,20 +28,19 @@ export default function NewsListPage(): JSX.Element {
       <h1>News</h1>
       <p className="ltc-helper-text">Aktuelle Nachrichten rund um LifeTimeCircle und digitale Fahrzeugdokumentation</p>
 
-      <section className="ltc-section ltc-section--card" aria-label="News artikel">
-        <ul className="ltc-list" role="list">
+      <section className="ltc-section ltc-section--card" aria-label="Newsartikel">
+        <ul className="ltc-list" role="list" aria-label="Article list">
           {NEWS_ITEMS.map((item) => (
-            <li key={item.id} className="ltc-list__item" role="listitem">
+            <li key={item.id} className="ltc-list__item ltc-article-list__item" role="listitem">
               <a
-                className="ltc-list__link"
+                className="ltc-list__link ltc-article-list__link"
                 href={`#/news/${encodeURIComponent(item.id)}`}
-                style={{ display: "block", marginBottom: 8 }}
                 aria-label={`Artikel: ${item.title}`}
               >
                 <strong>{item.title}</strong>
               </a>
-              <p style={{ margin: "4px 0", opacity: 0.85, fontSize: "14px" }}>{item.excerpt}</p>
-              <span style={{ opacity: 0.65, fontSize: "12px" }}>{new Date(item.date).toLocaleDateString("de-DE")}</span>
+              <p className="ltc-article-list__excerpt">{item.excerpt}</p>
+              <span className="ltc-article-list__meta">{new Date(item.date).toLocaleDateString("de-DE")}</span>
             </li>
           ))}
         </ul>

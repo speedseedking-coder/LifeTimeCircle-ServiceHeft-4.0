@@ -31,26 +31,30 @@ export default function BlogPostPage({ slug }: { slug: string }): JSX.Element {
 
   return (
     <main className="ltc-main ltc-main--narrow">
-      <a href="#/blog" style={{ textDecoration: "none", color: "var(--ltc-color-text-secondary)" }} aria-label="Zurück zur Blogliste">← Zurück zum Blog</a>
+      <nav className="ltc-article-nav" aria-label="Article navigation">
+        <a href="#/blog" className="ltc-article-nav__link" aria-label="Zurück zur Blogliste">
+          ← Zurück zum Blog
+        </a>
+      </nav>
 
-      <article style={{ marginTop: 20 }} aria-label={`Blogartikel: ${post.title}`}>
+      <article className="ltc-article" aria-label={`Blogartikel: ${post.title}`}>
         <h1>{post.title}</h1>
-        <p style={{ fontSize: "14px", opacity: 0.75, marginTop: 8 }}>{new Date(post.date).toLocaleDateString("de-DE")}</p>
+        <p className="ltc-article__meta">{new Date(post.date).toLocaleDateString("de-DE")}</p>
 
-        <section style={{ marginTop: 24, lineHeight: 1.6, color: "var(--ltc-color-text-primary)" }}>
+        <section className="ltc-article__content">
           {post.content.split("\\n\\n").map((paragraph, index) => {
             if (paragraph.startsWith("**")) {
               return (
-                <strong key={index} style={{ display: "block", marginTop: 12, marginBottom: 8 }}>
+                <strong key={index} className="ltc-article__heading">
                   {paragraph.replace(/\*\*/g, "")}
                 </strong>
               );
             }
             if (paragraph.startsWith("-")) {
               return (
-                <ul key={index} style={{ marginTop: 8, marginLeft: 20, opacity: 0.9 }}>
+                <ul key={index} className="ltc-article__list">
                   {paragraph.split("\\n").map((item, i) => (
-                    <li key={i} style={{ marginBottom: 4 }}>
+                    <li key={i}>
                       {item.replace(/^- /, "")}
                     </li>
                   ))}
@@ -58,7 +62,7 @@ export default function BlogPostPage({ slug }: { slug: string }): JSX.Element {
               );
             }
             return (
-              <p key={index} style={{ marginTop: 12 }}>
+              <p key={index} className="ltc-article__paragraph">
                 {paragraph}
               </p>
             );

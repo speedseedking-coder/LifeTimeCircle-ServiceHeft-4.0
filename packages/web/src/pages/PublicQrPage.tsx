@@ -39,7 +39,7 @@ function TrustLightBadge({ value }: { value: TrustLight }) {
   return (
     <div className="ltc-trust-badge">
       <span
-        aria-label={`Trust-Ampel: ${value}`}
+        aria-label={`Trust light indicator: ${value}`}
         className="ltc-trust-badge__light"
         style={{ background: color }}
       />
@@ -126,7 +126,11 @@ export function PublicQrPage({ vehicleId }: { vehicleId: string }) {
           )}
 
           {!loading && !error && (
-            <div className="ltc-trust-metadata">
+            <div
+              className="ltc-trust-metadata"
+              aria-label="Trust-Metadaten"
+              aria-description="Diese Liste beschreibt Hinweis, Historie, Nachweise, Verifizierung und Unfallstatus."
+            >
               <div className="ltc-trust-metadata__item">
                 <span className="ltc-trust-metadata__value">{data?.hint || "Hinweis nicht verfuegbar."}</span>
               </div>

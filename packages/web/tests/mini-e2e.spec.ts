@@ -534,6 +534,8 @@ test("Documents route uploads a file and renders returned document metadata", as
   await expect(page.locator("main")).toContainText("service.pdf");
   await expect(page.locator("main")).toContainText("QUARANTINED");
   await expect(page.locator("main")).toContainText("PENDING");
+  await expect(page.locator("#documents-upload-input")).toHaveAttribute("aria-required", "true");
+  await expect(page.locator("#documents-lookup-input")).toHaveAttribute("aria-required", "true");
 });
 
 test("Onboarding wizard creates vehicle and first entry via vehicle endpoints", async ({ page }) => {
@@ -1117,6 +1119,8 @@ test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ p
   const hidden = page.locator('[data-testid="public-qr-disclaimer"]');
   await expect(hidden).toHaveCount(1);
   await expect(hidden).toHaveText(DISCLAIMER_TEXT);
+  await expect(page.locator(".ltc-trust-badge__light")).toHaveAttribute("aria-label", /Trust light indicator/);
+  await expect(page.locator(".ltc-trust-metadata")).toHaveAttribute("aria-label", "Trust-Metadaten");
 });
 
 // blog/news routes are now active (FEATURES.blogNews = true)
@@ -1129,6 +1133,7 @@ test("blog list page is accessible and shows posts", async ({ page }) => {
   await expect(main).toContainText("Frühjahrsinspektion 2026");
   await expect(main).toContainText("Trust-Ampel");
   await expect(main).toContainText("Digitaler Fahrzeugpass");
+  await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
 test("blog post page displays full article content", async ({ page }) => {
@@ -1140,6 +1145,7 @@ test("blog post page displays full article content", async ({ page }) => {
   await expect(main).toContainText("Reifen:");
   await expect(main).toContainText("Bremsanlage:");
   await expect(main).toContainText("Zurück zum Blog");
+  await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
 
 test("news list page is accessible and shows articles", async ({ page }) => {
@@ -1151,6 +1157,7 @@ test("news list page is accessible and shows articles", async ({ page }) => {
   await expect(main).toContainText("EU-Verordnung");
   await expect(main).toContainText("Flottenmanagement");
   await expect(main).toContainText("100.000 Fahrzeuge");
+  await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
 test("news post page displays full article content", async ({ page }) => {
@@ -1162,6 +1169,7 @@ test("news post page displays full article content", async ({ page }) => {
   await expect(main).toContainText("Digitalen Fahrzeugpass");
   await expect(main).toContainText("Was ändert sich?");
   await expect(main).toContainText("Zurück zu News");
+  await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
 
 /* ========== RESPONSIVE DESIGN TESTS ========== */

@@ -11,17 +11,17 @@
 
 ### ARIA Enhancements Todo
 1. **Public QR Page:**
-   - Add `aria-label="Trust light indicator"` to badge light
-   - Add `aria-description` for trust metadata grid
+   - [x] Add `aria-label="Trust light indicator"` to badge light
+   - [x] Add `aria-description` for trust metadata grid
 
 2. **Blog/News Pages:**
-   - Add `aria-label="Article navigation"` to back links
-   - Add `aria-label="Article list"` to lists
+   - [x] Add `aria-label="Article navigation"` to back links
+   - [x] Add `aria-label="Article list"` to lists
 
 3. **Forms (Vehicles, Onboarding, Documents):**
-   - Add `aria-required` to required fields
-   - Add `aria-invalid` to error fields
-   - Add `aria-describedby` linking errors to fields
+   - [x] Add `aria-required` to required fields
+   - [x] Add `aria-invalid` to error fields
+   - [x] Add `aria-describedby` linking errors to fields
 
 4. **Buttons:**
    - Add `aria-label` to all icon-only buttons
