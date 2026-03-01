@@ -95,9 +95,13 @@
 - [x] VehiclesPage refaktoriert – alle inline styles → Design-System classes
 - [x] OnboardingWizardPage refaktoriert – Error/Layout/Button styles standardisiert
 - [x] DocumentsPage refaktoriert – Card/Admin/List styles auf Utilities migriert
+- [x] PublicQrPage finalisiert – 17+ inline styles → Utilities (`.ltc-public-qr`, `.ltc-trust-card*`, `.ltc-trust-metadata*`)
 - [x] Build + E2E: `19/19` tests grün ✓
-- [x] WIP-Branch gepusht mit commit "refactor(web): migrate inline styles to design-system utilities"
-- [x] Design-System Adoption jetzt bei ~98% (nur PublicQrPage + Minor-Exceptions verbleibend)
+- [x] WIP-Branch gepusht mit 3 Commits:
+  1. refactor(web): migrate inline styles to design-system utilities
+  2. docs(masterplan): update daily checklist with 2026-03-01 inline-styles refactoring progress
+  3. refactor(web): finalize PublicQrPage inline styles to design-system 100% complete
+- [x] **Design-System Adoption erreicht 100%** – Alle Core-Pages (<main>, Formulare, Karten, Error-States) verwenden ausschließlich CSS Classes + Design Tokens
 ---
 
 ## 🚀 PHASE P0: WEBSEITE (Mo 3/1 – Do 3/4)
