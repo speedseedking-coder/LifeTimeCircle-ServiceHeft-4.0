@@ -22,6 +22,7 @@ Für Betrieb und Prüfungen zusätzlich:
 
 - `docs/05_MAINTENANCE_RUNBOOK.md`
 - `docs/98_WEB_E2E_SMOKE.md`
+- `docs/13_GO_LIVE_CHECKLIST.md`
 
 ## 3) Verifizierte Gates
 Der Release-Candidate gilt als belastbar, wenn diese Gates grün sind:
@@ -56,6 +57,8 @@ Diese Punkte verhindern den aktuellen Release-Candidate nicht, sind aber vor ech
 - Produktive Deployment-, Domain-, Monitoring- und Incident-Routinen
 - Organisatorische und rechtliche Freigaben für öffentlichen Rollout
 - Nachgelagerte Scope-Themen wie spätere VIP-/Dealer-Verkaufs- und Übergabeflüsse
+
+Konkrete Go-Live-Punkte stehen in `docs/13_GO_LIVE_CHECKLIST.md`.
 
 ## 7) Übergabehinweis
 Für technische Übergaben oder Reviews immer zusammen heranziehen:

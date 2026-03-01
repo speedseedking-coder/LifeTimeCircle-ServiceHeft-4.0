@@ -50,6 +50,7 @@ function extractErrorMessage(result: { status: number; error: string }): string 
   if (result.status === 403 && result.error === "admin_step_up_required") return "Für diese Admin-Aktion ist ein Step-up erforderlich.";
   if (result.status === 403 && result.error === "admin_step_up_invalid") return "Der Step-up ist ungültig oder abgelaufen. Bitte Aktion erneut auslösen.";
   if (result.status === 403 && result.error === "superadmin_required") return "Diese Aktion ist nur für SUPERADMIN erlaubt.";
+  if (result.status === 403 && result.error === "export_grant_rejected") return "Der Voll-Export wurde vom Server abgelehnt. Prüfe Grant, Ziel-ID und Ablaufzeit.";
   if (result.status === 403 && result.error === "forbidden") return "Kein Zugriff auf diese Admin-Aktion.";
   if (result.status === 404 && result.error === "user_not_found") return "User-ID wurde nicht gefunden.";
   if (result.status === 404 && result.error === "business_not_found") return "Business-ID wurde nicht gefunden.";
@@ -58,8 +59,16 @@ function extractErrorMessage(result: { status: number; error: string }): string 
   if (result.status === 400 && result.error === "business_not_approved") return "Staff kann erst nach SUPERADMIN-Freigabe hinzugefügt werden.";
   if (result.status === 400 && result.error === "invalid_role") return "Die Zielrolle ist ungültig.";
   if (result.status === 400 && result.error === "missing_export_token") return "Für den Voll-Export fehlt ein gültiger Export-Grant.";
-  if (result.status === 403 && result.error === "invalid_export_token") return "Der Export-Grant ist ungültig oder bereits verbraucht.";
-  if (result.status === 403 && result.error === "expired_export_token") return "Der Export-Grant ist abgelaufen. Bitte neuen Grant anfordern.";
+  if (
+    result.status === 403 &&
+    (result.error === "invalid_export_token" ||
+      result.error === "expired_export_token" ||
+      result.error === "export_token_invalid" ||
+      result.error === "export_token_expired" ||
+      result.error === "export_token_already_used")
+  ) {
+    return "Der Export-Grant ist ungültig, abgelaufen oder bereits verbraucht. Bitte neuen Grant anfordern.";
+  }
   if (result.status === 500 && result.error === "invalid_body") return "Serverantwort hatte ein unerwartetes Format. Bitte Backend prüfen.";
   return "Die Admin-Aktion konnte nicht ausgeführt werden.";
 }

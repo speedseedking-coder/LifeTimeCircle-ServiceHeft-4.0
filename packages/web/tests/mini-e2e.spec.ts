@@ -1255,6 +1255,55 @@ test("Admin export validates missing target before request", async ({ page }) =>
   await expect(page.locator("#admin-export-target-id")).toBeFocused();
 });
 
+test("Admin export shows helpful error when full export grant is rejected by backend", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ltc_auth_token_v1", "tok_admin");
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+
+    const json = (status: number, body: unknown) =>
+      route.fulfill({
+        status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+    if (path === "/api/auth/me") return json(200, { user_id: "sa-1", role: "superadmin" });
+    if (path === "/api/consent/status") return json(200, { is_complete: true, required: [], accepted: [] });
+    if (path === "/api/admin/users") return json(200, []);
+    if (path === "/api/admin/vip-businesses") return json(200, []);
+    if (path === "/api/export/vehicle/veh-admin-1/grant") {
+      return json(200, {
+        vehicle_id: "veh-admin-1",
+        export_token: "grant-token-1",
+        token: "grant-token-1",
+        expires_at: "2026-02-28T11:20:00Z",
+        ttl_seconds: 300,
+        one_time: true,
+        header: "X-Export-Token",
+      });
+    }
+    if (path === "/api/export/vehicle/veh-admin-1/full") {
+      return json(403, { detail: "forbidden" });
+    }
+
+    return route.fallback();
+  });
+
+  await boot(page);
+  await setHash(page, "#/admin");
+
+  await page.getByLabel("Ziel-ID").fill("veh-admin-1");
+  await page.getByRole("button", { name: "Full Grant anfordern" }).click();
+  await expect(page.locator('[data-testid="admin-notice"]')).toContainText("One-time Export-Grant");
+
+  await page.getByRole("button", { name: "Voll-Export laden" }).click();
+  await expect(page.locator("main")).toContainText("Der Voll-Export wurde vom Server abgelehnt. Prüfe Grant, Ziel-ID und Ablaufzeit.");
+});
+
 test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ page }) => {
   await mockAppGateApi(page, "me_401");
   await boot(page);

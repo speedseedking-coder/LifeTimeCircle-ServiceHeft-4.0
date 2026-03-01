@@ -211,3 +211,17 @@ Wenn Review oder Übergabe ansteht, zusätzlich dokumentieren:
 - ausgeführte Verifikation
 - bekannte Restpunkte
 
+---
+
+## 11) Vor Live-Rollout
+
+Vor einem echten öffentlichen Rollout reicht der lokale RC-Stand nicht allein aus. Vorher explizit klären und dokumentieren:
+
+- Ziel-Domain, TLS und Redirect-Regeln
+- produktive Secrets und Rotation für `LTC_SECRET_KEY` und vergleichbare Schlüssel
+- produktive Datenbank-, Backup- und Restore-Routine
+- Monitoring für API, Web, Build- und Smoke-Gates
+- Incident-Kanal, Verantwortliche und Eskalationsweg
+- Rollback-Plan bei fehlerhaftem Deploy
+
+Siehe dafür auch `docs/13_GO_LIVE_CHECKLIST.md`.
