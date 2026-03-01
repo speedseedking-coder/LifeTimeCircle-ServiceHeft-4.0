@@ -252,6 +252,16 @@ test("public contact page shows email", async ({ page }) => {
   await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
 });
 
+// ensure blog/news are inaccessible while FEATURES.blogNews is false
+// (flag lives in appRouting.ts; this test validates the guard behaviour)
+test("blog and news routes return 404 when feature disabled", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog");
+  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+  await setHash(page, "#/news");
+  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+});
+
 test("public entry page offers both role paths into auth", async ({ page }) => {
   await boot(page);
   await setHash(page, "#/entry");
