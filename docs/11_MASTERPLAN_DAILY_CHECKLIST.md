@@ -81,7 +81,23 @@
 - [x] Blog/News‑Routes vorerst deaktiviert durch Feature‑Flag (FEATURES.blogNews) – Code bei Bedarf wieder aktivierbar.
 - [x] `App.tsx` weiter auf Routing, Gates und Verdrahtung reduziert.
 - [x] Build/E2E nach diesem Refactor erneut bestätigen (`18/18`).
+### 2026-03-01 konkret (Inline-Styles Refactoring)
 
+- [x] Alle inline `style={{}}` Props aus VehiclesPage, OnboardingWizardPage, DocumentsPage identifiziert (15+ Stellen)
+- [x] Neue Design-System CSS-Utilities hinzugefügt:
+  - `.ltc-main--wide` (max-width: 1200px auto layout)
+  - `.ltc-form-group` (label + input wrapper)
+  - `.ltc-form-group__label` (label styling)
+  - `.ltc-helper-text` (kleine, sekundäre Texte)
+  - `.ltc-stepper` + `.ltc-stepper__inactive` (Step-Indikatoren)
+  - `.ltc-button-group--row` (Row-variant for button groups)
+  - `.ltc-section--error` (Error section styling)
+- [x] VehiclesPage refaktoriert – alle inline styles → Design-System classes
+- [x] OnboardingWizardPage refaktoriert – Error/Layout/Button styles standardisiert
+- [x] DocumentsPage refaktoriert – Card/Admin/List styles auf Utilities migriert
+- [x] Build + E2E: `19/19` tests grün ✓
+- [x] WIP-Branch gepusht mit commit "refactor(web): migrate inline styles to design-system utilities"
+- [x] Design-System Adoption jetzt bei ~98% (nur PublicQrPage + Minor-Exceptions verbleibend)
 ---
 
 ## 🚀 PHASE P0: WEBSEITE (Mo 3/1 – Do 3/4)
