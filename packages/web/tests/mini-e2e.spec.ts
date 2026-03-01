@@ -246,10 +246,33 @@ async function setHash(page: Page, hash: string): Promise<void> {
   }, hash);
 }
 
-test("public contact page shows email", async ({ page }) => {
+test("public contact page shows support guidance and email", async ({ page }) => {
   await boot(page);
   await setHash(page, "#/contact");
-  await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
+  const main = page.locator("main");
+  await expect(main).toContainText("Kontakt");
+  await expect(main).toContainText("lifetimecircle@online.de");
+  await expect(main).toContainText("keine persönlichen Fahrzeugdaten");
+});
+
+test("public faq, jobs and datenschutz pages align with copy source of truth", async ({ page }) => {
+  await boot(page);
+
+  await setHash(page, "#/faq");
+  let main = page.locator("main");
+  await expect(main).toContainText("Trust-Ampel");
+  await expect(main).toContainText("keine Dokumente, keine Downloads und keine Metadaten");
+
+  await setHash(page, "#/jobs");
+  main = page.locator("main");
+  await expect(main).toContainText("Security-First");
+  await expect(main).toContainText("lifetimecircle@online.de");
+  await expect(main).not.toContainText("jobs@lifetimecircle.example");
+
+  await setHash(page, "#/datenschutz");
+  main = page.locator("main");
+  await expect(main).toContainText("Produktiver Zugriff setzt die Zustimmung zu AGB und Datenschutz voraus");
+  await expect(main).toContainText("Öffentliche Downloads gibt es nicht");
 });
 
 // blog/news routes are now ACTIVE (FEATURES.blogNews = true in appRouting.ts)

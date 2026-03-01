@@ -56,7 +56,7 @@ export function PublicSiteFooter() {
               <a href="#/datenschutz">Datenschutz</a>
               <a href="#/cookies">Cookie-Einstellungen</a>
               <a href="#/consent">Consent</a>
-              <a href="#/contact">Contact</a>
+              <a href="#/contact">Kontakt</a>
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export function PublicSiteShell(props: { title: string; appStyle?: CSSProperties
         right={
           <div className="ltc-nav">
             <a href="#/" className="ltc-nav__a">
-              Home
+              Start
             </a>
             <a href="#/faq" className="ltc-nav__a">
               FAQ
@@ -90,7 +90,7 @@ export function PublicSiteShell(props: { title: string; appStyle?: CSSProperties
               Jobs
             </a>
             <a href="#/contact" className="ltc-nav__a">
-              Contact
+              Kontakt
             </a>
             <a href="#/blog" className="ltc-nav__a">
               Blog

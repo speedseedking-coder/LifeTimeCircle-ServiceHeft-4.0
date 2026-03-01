@@ -1,57 +1,50 @@
-# Start Here – LifeTimeCircle Service Heft 4.0
+# Start Here - LifeTimeCircle Service Heft 4.0
 **Single Entry Point (SoT)**
 
-## 1) Was ist die Wahrheit?
-- Master-Status: docs/99_MASTER_CHECKPOINT.md
-- Produktlogik (bindend): docs/02_PRODUCT_SPEC_UNIFIED.md
-- Rollen/Rechte (bindend): docs/03_RIGHTS_MATRIX.md
-- Entscheidungen (bindend): docs/01_DECISIONS.md
-- Arbeitsregeln: docs/06_WORK_RULES.md
-- Repo-Struktur: docs/04_REPO_STRUCTURE.md
-- Wartung/Start/Smoke: docs/05_MAINTENANCE_RUNBOOK.md
-- Verifizierter lokaler Systemcheck: docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md
-- Codex-Kontext: docs/00_CODEX_CONTEXT.md
+Stand: **2026-03-01** (Europe/Berlin)
 
-## 2) 5-Minuten Start (Frontend + API)
-Vollständig & aktuell: docs/05_MAINTENANCE_RUNBOOK.md
+## 1) Erste Referenzen
+- Aktueller Master-Status: `docs/99_MASTER_CHECKPOINT.md`
+- Release-Candidate / Übergabe: `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
+- Produktlogik (bindend): `docs/02_PRODUCT_SPEC_UNIFIED.md`
+- Rollen/Rechte (bindend): `docs/03_RIGHTS_MATRIX.md`
+- Entscheidungen (bindend): `docs/01_DECISIONS.md`
+- Copy-SoT für Website/Web-App: `docs/07_WEBSITE_COPY_MASTER_CONTEXT.md`
+- Wartung, Start, Smoke: `docs/05_MAINTENANCE_RUNBOOK.md`
+- Codex-Kontext: `docs/00_CODEX_CONTEXT.md`
 
-Kurzfassung (Windows, 2 Tabs):
+## 2) 5-Minuten Start
+Vollständig und aktuell: `docs/05_MAINTENANCE_RUNBOOK.md`
 
-### TAB A (API)
-Repo-Root:
-- cd (git rev-parse --show-toplevel)
-- cd .\server
-- $env:LTC_SECRET_KEY="dev_test_secret_key_32_chars_minimum__OK"
-- poetry run uvicorn app.main:app --reload
+Kurzfassung für Windows:
 
-### TAB B (WEB)
-Repo-Root:
-- cd (git rev-parse --show-toplevel)
-- cd .\packages\web
-- 
-pm install (einmalig)
-- 
-pm run dev
+Backend:
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\server_start.ps1`
 
-URLs:
-- API: http://127.0.0.1:8000
-- Web: http://127.0.0.1:5173
+Frontend:
+- `cd .\packages\web`
+- `npm install`
+- `npm run dev`
 
-## 3) IST-Zustandsprüfung (bei jedem Kontextwechsel)
-Wenn vorhanden: 	ttools/ist_check.ps1
-- pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1
-- Verifizierter Bericht zum zuletzt geprüften lokalen Stand: docs/10_SYSTEMCHECK_BERICHT_2026-02-28.md
+Alternativ kombiniert:
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\start_dev.ps1`
 
-## 4) Quality Gate (immer vor PR)
-Repo-Root:
-- pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1
+## 3) IST-Zustandsprüfung
+Bei jedem Kontextwechsel im Repo-Root:
 
-Optional Web Build Smoke (Repo-Root):
-- pwsh -NoProfile -ExecutionPolicy Bypass -File .\server\scripts\ltc_web_toolkit.ps1 -Smoke -Clean
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\ist_check.ps1`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\test_all.ps1`
 
-## 5) „Definition of Done“ (Security)
-- deny-by-default eingehalten
-- Moderator überall 403 außer /auth/*, /blog/*, /news/*
-- object-level checks auf allen Vehicle/Dokument/Trust Ressourcen
-- keine PII/Secrets in Logs/Responses/Exports
-- Public-QR Pflichttext exakt und unverändert
+Der verifizierte Übergabestand liegt in `docs/12_RELEASE_CANDIDATE_2026-03-01.md`.
+
+## 4) Definition of Done
+- `deny-by-default` bleibt eingehalten.
+- Moderator bleibt außerhalb von `/auth/*`, `/blog/*`, `/news/*` gesperrt.
+- Object-level checks bleiben auf Vehicle-, Document- und Trust-Ressourcen serverseitig.
+- Keine PII oder Secrets in Logs, Responses oder Exports.
+- Public-QR Pflichttext bleibt exakt und unverändert.
+
+## 5) Wenn du nur drei Dinge lesen willst
+1. `docs/99_MASTER_CHECKPOINT.md`
+2. `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
+3. `docs/05_MAINTENANCE_RUNBOOK.md`

@@ -85,6 +85,7 @@ Der Workspace gilt als belastbar, wenn diese Gates grün sind und der Working Tr
 - Documents inkl. Upload, Lookup und Admin-Quarantäne ist technisch verifiziert.
 - Trust Folders inkl. Forbidden-/Addon-Gates ist technisch verifiziert.
 - Admin inkl. Step-up, VIP-Business und Export-Grant ist technisch verifiziert.
+- Öffentliche Kernseiten inkl. FAQ, Jobs, Kontakt, Datenschutz, Blog, News und Public-QR sind auf Copy-SoT gezogen.
 
 ---
 
@@ -101,11 +102,11 @@ Diese Punkte sind kein Ersatz für `git log`, sondern nur die aktuelle Lagebesch
 ---
 
 ## 6) Offene Themen
-Die verbleibenden Themen liegen aktuell nicht im Fundament, sondern in Produktreife und Dokumentation:
+Die verbleibenden Themen liegen aktuell nicht mehr in generischer UI-/Copy-Politur, sondern in echten Produkt- und Betriebsentscheidungen:
 
-- Masterplan-Dokumente enthalten teils veraltete Termin- und Planungsannahmen.
-- Release-/Deployment-Entscheidungen sind noch nicht als finaler Live-Betrieb dokumentiert.
-- Rest-Polish auf Dev-/Referenzflächen und zukünftige Spezialwidgets kann weiter verfeinert werden, blockiert aber den aktuellen Kernstand nicht.
+- Finaler Live-Betrieb ist noch nicht als produktive Deployment-, Domain-, Monitoring- und Incident-Routine abgeschlossen.
+- Rechtliche und organisatorische Freigaben vor öffentlichem Rollout bleiben eigenständige Business-Entscheidungen.
+- Spätere Produktbereiche wie Übergabe-/Verkaufsflüsse für VIP/Dealer bleiben bewusst nachgelagerte Scope-Themen.
 
 ---
 
@@ -116,6 +117,7 @@ Wenn du wissen willst:
 - Wer was darf: `docs/03_RIGHTS_MATRIX.md`
 - Warum Regeln so gesetzt sind: `docs/01_DECISIONS.md`
 - Welche Copy für Website/Web-App gelten soll: `docs/07_WEBSITE_COPY_MASTER_CONTEXT.md`
+- Welcher Release-Candidate aktuell übergabefähig ist: `docs/12_RELEASE_CANDIDATE_2026-03-01.md`
 - Ob der Workspace technisch belastbar ist: `tools/test_all.ps1` und `tools/ist_check.ps1`
 
 ---
