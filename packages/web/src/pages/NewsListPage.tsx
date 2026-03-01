@@ -1,23 +1,23 @@
 const NEWS_ITEMS = [
   {
     id: "eu-digital-vehicle-passport-2027",
-    title: "EU-Verordnung: Digitaler Fahrzeugpass ab 2027 verpflichtend",
+    title: "Produktstatus: Public-QR bleibt bewusst datenarm",
     excerpt:
-      "Die Europäische Union hat beschlossen, dass der digitale Fahrzeugpass (DVP) ab 2027 für alle Neufahrzeuge obligatorisch wird. LifeTimeCircle ist bereit.",
+      "Der öffentliche Mini-Check zeigt nur Ampel und textliche Indikatoren. Kennzahlen, Downloads und Technikdiagnosen bleiben bewusst außen vor.",
     date: "2026-03-01",
   },
   {
     id: "ltc-expands-to-fleet-management",
-    title: "LifeTimeCircle erweitert Angebot auf professionelle Flottenmanagement",
+    title: "Produktupdate: Uploads starten weiterhin in Quarantäne",
     excerpt:
-      "Ab Q2 2026 ist LifeTimeCircle auch für Fuhrpark-Manager und Autovermietungen verfügbar. Neue B2B-Features und Reporting-Tools.",
+      "Nachweise werden zuerst geprüft. Erst danach sind sie im vorgesehenen Flow nutzbar. Das schützt Public- und Kernbereiche vor ungeprüften Dateien.",
     date: "2026-02-27",
   },
   {
     id: "trust-ampel-reaches-100k-vehicles",
-    title: "Meilenstein: 100.000 Fahrzeuge auf LifeTimeCircle dokumentiert",
+    title: "Governance: Moderator bleibt strikt auf Blog und News begrenzt",
     excerpt:
-      "Die LifeTimeCircle-Community hat eine beeindruckende Marke erreicht! Mehr als 100.000 Fahrzeuge sind jetzt vollständig digital erfasst.",
+      "Die Rollenlogik bleibt eng: Moderator bearbeitet Inhalte, aber keine Fahrzeug-, Dokument- oder Admin-Prozesse.",
     date: "2026-02-20",
   },
 ];

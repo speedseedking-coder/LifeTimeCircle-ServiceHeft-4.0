@@ -4,7 +4,7 @@ import { PublicSiteShell } from "../components/layout/PublicSiteShell";
 
 export default function EntryPage(props: { appStyle?: CSSProperties }): JSX.Element {
   return (
-    <PublicSiteShell title="Eintritt" appStyle={props.appStyle}>
+    <PublicSiteShell title="Einsteigen" appStyle={props.appStyle}>
       <p>Wähle den passenden Einstieg. Die serverseitige Rechtevergabe bleibt maßgeblich, diese Auswahl führt nur kontrolliert in den Auth-Flow.</p>
 
       <div className="ltc-featureRow">
@@ -17,7 +17,7 @@ export default function EntryPage(props: { appStyle?: CSSProperties }): JSX.Elem
           </div>
           <div className="ltc-actions">
             <a href="#/auth" className="ltc-btn ltc-btn--primary">
-              Weiter als Privatnutzer
+              Weiter als Privat
             </a>
           </div>
         </Card>
@@ -31,7 +31,7 @@ export default function EntryPage(props: { appStyle?: CSSProperties }): JSX.Elem
           </div>
           <div className="ltc-actions">
             <a href="#/auth" className="ltc-btn ltc-btn--soft">
-              Weiter als Gewerbe
+              Weiter als Gewerblich
             </a>
           </div>
         </Card>

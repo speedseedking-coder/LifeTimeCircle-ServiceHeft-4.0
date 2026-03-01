@@ -259,11 +259,11 @@ test("blog/news routes return content when feature enabled", async ({ page }) =>
   await setHash(page, "#/blog");
   // Should NOT be 404 anymore - should show blog content in main
   await expect(page.locator("main")).toContainText("Blog");
-  await expect(page.locator("main")).toContainText("Frühjahrsinspektion");
+  await expect(page.locator("main")).toContainText("Nachweise statt Behauptung");
   await setHash(page, "#/news");
   // Should NOT be 404 anymore - should show news content in main
   await expect(page.locator("main")).toContainText("News");
-  await expect(page.locator("main")).toContainText("EU-Verordnung");
+  await expect(page.locator("main")).toContainText("Public-QR bleibt bewusst datenarm");
 });
 
 test("public entry page offers both role paths into auth", async ({ page }) => {
@@ -1256,9 +1256,9 @@ test("blog list page is accessible and shows posts", async ({ page }) => {
   
   const main = page.locator("main");
   await expect(main).toContainText("Blog");
-  await expect(main).toContainText("Frühjahrsinspektion 2026");
-  await expect(main).toContainText("Trust-Ampel");
-  await expect(main).toContainText("Digitaler Fahrzeugpass");
+  await expect(main).toContainText("Nachweise statt Behauptung");
+  await expect(main).toContainText("Trust-Ampel richtig lesen");
+  await expect(main).toContainText("Serviceeinträge sauber vorbereiten");
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
@@ -1267,9 +1267,9 @@ test("blog post page displays full article content", async ({ page }) => {
   await setHash(page, "#/blog/spring-maintenance-2026");
   
   const main = page.locator("main");
-  await expect(main).toContainText("Frühjahrsinspektion 2026");
-  await expect(main).toContainText("Reifen:");
-  await expect(main).toContainText("Bremsanlage:");
+  await expect(main).toContainText("Nachweise statt Behauptung");
+  await expect(main).toContainText("Was in jeden guten Eintrag gehört:");
+  await expect(main).toContainText("Welche Nachweise den Unterschied machen:");
   await expect(main).toContainText("Zurück zum Blog");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
@@ -1280,9 +1280,9 @@ test("news list page is accessible and shows articles", async ({ page }) => {
   
   const main = page.locator("main");
   await expect(main).toContainText("News");
-  await expect(main).toContainText("EU-Verordnung");
-  await expect(main).toContainText("Flottenmanagement");
-  await expect(main).toContainText("100.000 Fahrzeuge");
+  await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
+  await expect(main).toContainText("Uploads starten weiterhin in Quarantäne");
+  await expect(main).toContainText("Moderator bleibt strikt auf Blog und News begrenzt");
   await expect(page.locator('ul[aria-label="Article list"]')).toHaveCount(1);
 });
 
@@ -1291,9 +1291,9 @@ test("news post page displays full article content", async ({ page }) => {
   await setHash(page, "#/news/eu-digital-vehicle-passport-2027");
   
   const main = page.locator("main");
-  await expect(main).toContainText("EU-Verordnung");
-  await expect(main).toContainText("Digitalen Fahrzeugpass");
-  await expect(main).toContainText("Was ändert sich?");
+  await expect(main).toContainText("Public-QR bleibt bewusst datenarm");
+  await expect(main).toContainText("Was sichtbar ist:");
+  await expect(main).toContainText("Was bewusst nicht sichtbar ist:");
   await expect(main).toContainText("Zurück zu News");
   await expect(page.locator('nav[aria-label="Article navigation"]')).toHaveCount(1);
 });
