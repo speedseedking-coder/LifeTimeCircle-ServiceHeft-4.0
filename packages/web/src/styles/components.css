@@ -619,6 +619,95 @@
   margin-top: var(--ltc-space-4);
 }
 
+/* ========== PUBLIC QR PAGE STYLES ========== */
+.ltc-public-qr {
+  max-width: 860px;
+  margin: 0 auto;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+}
+
+.ltc-public-qr__header {
+  margin-bottom: var(--ltc-space-3);
+}
+
+.ltc-public-qr__subtitle {
+  font-size: var(--ltc-text-sm);
+  opacity: 0.75;
+}
+
+.ltc-public-qr__title {
+  margin: var(--ltc-space-1) 0 0;
+  font-size: 22px;
+}
+
+.ltc-trust-card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--ltc-radius-base);
+  padding: var(--ltc-space-3);
+  margin-bottom: var(--ltc-space-2);
+}
+
+.ltc-trust-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ltc-trust-card__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.ltc-trust-card__content {
+  margin-top: var(--ltc-space-3);
+  line-height: 1.4;
+}
+
+.ltc-trust-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--ltc-space-2);
+}
+
+.ltc-trust-badge__light {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.ltc-trust-badge__label {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ltc-trust-metadata {
+  display: grid;
+  gap: var(--ltc-space-1);
+  font-size: var(--ltc-text-sm);
+  opacity: 0.88;
+  line-height: 1.5;
+}
+
+.ltc-trust-metadata__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ltc-space-1);
+}
+
+.ltc-trust-metadata__label {
+  font-weight: 600;
+}
+
+.ltc-trust-metadata__value {
+  opacity: 0.9;
+}
+
+.ltc-hidden-verifier {
+  display: none;
+}
+
+
 /* ========== SKELETON ========== */
 .ltc-skeleton {
   background: linear-gradient(
