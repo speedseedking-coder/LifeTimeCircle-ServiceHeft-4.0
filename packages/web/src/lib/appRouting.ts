@@ -1,5 +1,10 @@
 import { type CSSProperties } from "react";
 
+// feature toggles; flip boolean when editorial content is ready or tests require access
+export const FEATURES = {
+  blogNews: false, // disables blog/news routes when false (kept for future use)
+} as const;
+
 export type Route =
   | { kind: "home" }
   | { kind: "notFound" }
@@ -80,10 +85,12 @@ export function parseHash(rawHash: string): Route {
   if (parts[0] === "impressum") return { kind: "impressum" };
   if (parts[0] === "datenschutz") return { kind: "datenschutz" };
 
-  if (parts[0] === "blog" && parts.length === 1) return { kind: "blogList" };
-  if (parts[0] === "blog" && parts[1]) return { kind: "blogPost", slug: parts[1] };
-  if (parts[0] === "news" && parts.length === 1) return { kind: "newsList" };
-  if (parts[0] === "news" && parts[1]) return { kind: "newsPost", slug: parts[1] };
+  if (FEATURES.blogNews) {
+    if (parts[0] === "blog" && parts.length === 1) return { kind: "blogList" };
+    if (parts[0] === "blog" && parts[1]) return { kind: "blogPost", slug: parts[1] };
+    if (parts[0] === "news" && parts.length === 1) return { kind: "newsList" };
+    if (parts[0] === "news" && parts[1]) return { kind: "newsPost", slug: parts[1] };
+  }
 
   if (parts[0] === "auth") return { kind: "auth" };
   if (parts[0] === "consent") return { kind: "consent" };

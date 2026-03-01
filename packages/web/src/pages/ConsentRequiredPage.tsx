@@ -13,15 +13,15 @@ type ConsentRequiredPageProps = {
 
 export function ConsentRequiredPage({ onConsent, returnTo }: ConsentRequiredPageProps) {
   return (
-    <div className="ltc-system-error" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--ltc-space-4)" }}>
+    <div className="ltc-system-error" data-testid="consent-required-ui">
       <Card>
-        <div style={{ textAlign: "center", maxWidth: "400px" }}>
-          <div style={{ fontSize: "48px", marginBottom: "var(--ltc-space-4)" }}>📋</div>
-          <h1 style={{ fontSize: "var(--ltc-h2-size)" }}>Zustimmung erforderlich</h1>
-          <p style={{ color: "var(--ltc-color-text-secondary)", margin: "var(--ltc-space-4) 0" }}>
+        <div className="ltc-system-error__card">
+          <div className="ltc-system-error__icon">📋</div>
+          <h1 className="ltc-system-error__title">Zustimmung erforderlich</h1>
+          <p className="ltc-system-error__message">
             Du musst den Allgemeinen Geschäftsbedingungen und der Datenschutzrichtlinie zustimmen, um fortzufahren.
           </p>
-          <div style={{ display: "flex", gap: "var(--ltc-space-3)", justifyContent: "center", marginTop: "var(--ltc-space-6)", flexDirection: "column" }}>
+          <div className="ltc-system-error__actions ltc-system-error__actions--column">
             <Button
               variant="primary"
               onClick={() => {
@@ -32,9 +32,7 @@ export function ConsentRequiredPage({ onConsent, returnTo }: ConsentRequiredPage
             >
               Jetzt akzeptieren
             </Button>
-            <Button variant="secondary" onClick={() => window.location.hash = "#/"}>
-              Abbrechen
-            </Button>
+            <Button variant="secondary" onClick={() => (window.location.hash = "#/")}>Abbrechen</Button>
           </div>
         </div>
       </Card>
