@@ -252,14 +252,18 @@ test("public contact page shows email", async ({ page }) => {
   await expect(page.locator("main")).toContainText("lifetimecircle@online.de");
 });
 
-// ensure blog/news are inaccessible while FEATURES.blogNews is false
-// (flag lives in appRouting.ts; this test validates the guard behaviour)
-test("blog and news routes return 404 when feature disabled", async ({ page }) => {
+// blog/news routes are now ACTIVE (FEATURES.blogNews = true in appRouting.ts)
+// the old test "blog/news routes return 404 when feature disabled" is now replaced by the new blog/news accessibility tests above
+test("blog/news routes return content when feature enabled", async ({ page }) => {
   await boot(page);
   await setHash(page, "#/blog");
-  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+  // Should NOT be 404 anymore - should show blog content in main
+  await expect(page.locator("main")).toContainText("Blog");
+  await expect(page.locator("main")).toContainText("Frühjahrsinspektion");
   await setHash(page, "#/news");
-  await expect(page.locator('[data-testid="not-found-ui"]')).toHaveCount(1);
+  // Should NOT be 404 anymore - should show news content in main
+  await expect(page.locator("main")).toContainText("News");
+  await expect(page.locator("main")).toContainText("EU-Verordnung");
 });
 
 test("public entry page offers both role paths into auth", async ({ page }) => {
@@ -1113,4 +1117,49 @@ test("Public QR shows disclaimer once (dedupe) and keeps exact text", async ({ p
   const hidden = page.locator('[data-testid="public-qr-disclaimer"]');
   await expect(hidden).toHaveCount(1);
   await expect(hidden).toHaveText(DISCLAIMER_TEXT);
+});
+
+// blog/news routes are now active (FEATURES.blogNews = true)
+test("blog list page is accessible and shows posts", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("Blog");
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Trust-Ampel");
+  await expect(main).toContainText("Digitaler Fahrzeugpass");
+});
+
+test("blog post page displays full article content", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/blog/spring-maintenance-2026");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("Frühjahrsinspektion 2026");
+  await expect(main).toContainText("Reifen:");
+  await expect(main).toContainText("Bremsanlage:");
+  await expect(main).toContainText("Zurück zum Blog");
+});
+
+test("news list page is accessible and shows articles", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/news");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("News");
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Flottenmanagement");
+  await expect(main).toContainText("100.000 Fahrzeuge");
+});
+
+test("news post page displays full article content", async ({ page }) => {
+  await boot(page);
+  await setHash(page, "#/news/eu-digital-vehicle-passport-2027");
+  
+  const main = page.locator("main");
+  await expect(main).toContainText("EU-Verordnung");
+  await expect(main).toContainText("Digitalen Fahrzeugpass");
+  await expect(main).toContainText("Was ändert sich?");
+  await expect(main).toContainText("Zurück zu News");
 });

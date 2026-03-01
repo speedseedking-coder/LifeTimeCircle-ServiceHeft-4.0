@@ -2,7 +2,7 @@ import { type CSSProperties } from "react";
 
 // feature toggles; flip boolean when editorial content is ready or tests require access
 export const FEATURES = {
-  blogNews: false, // disables blog/news routes when false (kept for future use)
+  blogNews: true, // enables blog/news routes for editorial content (activated 2026-03-01)
 } as const;
 
 export type Route =
